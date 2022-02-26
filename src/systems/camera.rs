@@ -3,22 +3,12 @@ use bevy::prelude::*;
 
 const SPEED: f32 = 500.0;
 
+#[derive(Default)]
 pub struct State {
     is_moving_up: bool,
     is_moving_down: bool,
     is_moving_left: bool,
     is_moving_right: bool,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            is_moving_up: false,
-            is_moving_down: false,
-            is_moving_left: false,
-            is_moving_right: false,
-        }
-    }
 }
 
 pub fn initialize(app: &mut App) {
