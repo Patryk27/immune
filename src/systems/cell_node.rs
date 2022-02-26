@@ -10,6 +10,9 @@ const MAP: &str = include_str!("./map.toml");
 #[derive(Component, Debug)]
 pub struct Node;
 
+#[derive(Component, Debug)]
+pub struct Unit;
+
 // TODO(pwy) rename to LymphNode? (not sure on the biological term ATM)
 #[derive(Component, Clone, Debug)]
 pub struct FactoryNode {
