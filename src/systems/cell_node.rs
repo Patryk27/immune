@@ -95,46 +95,6 @@ impl FactoryBundle {
     }
 }
 
-#[derive(Bundle)]
-pub struct LeukocyteBundle {
-    pub leukocyte: Leukocyte,
-    #[bundle]
-    pub sprite: SpriteBundle,
-    pub unit: Unit,
-}
-
-impl LeukocyteBundle {
-    pub fn new(
-        assets: &AssetServer,
-        leukocyte: Leukocyte,
-        translation: Vec2,
-    ) -> Self {
-        let transform = Transform::from_translation(translation.extend(1.0))
-            .with_scale(Vec3::splat(0.25));
-
-        let texture = assets.load(match leukocyte.body {
-            Body::Circle => "body-circle.png",
-            Body::Hexagon => "body-hexagon.png",
-        });
-
-        let sprite = SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb_u8(255, 255, 255),
-                ..Default::default()
-            },
-            transform,
-            texture,
-            ..Default::default()
-        };
-
-        Self {
-            leukocyte,
-            sprite,
-            unit: Unit::default(),
-        }
-    }
-}
-
 // ---
 
 pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
@@ -190,11 +150,36 @@ pub fn factory_node_system(
 
             match product {
                 FactoryProduct::Leukocyte(leukocyte) => {
-                    commands.spawn_bundle(LeukocyteBundle::new(
-                        &assets,
-                        leukocyte.to_owned(),
-                        transform.translation.truncate(),
-                    ));
+                    let transform = Transform::from_translation(
+                        transform.translation.truncate().extend(1.0),
+                    );
+
+                    commands
+                        .spawn()
+                        .insert(transform)
+                        .insert(GlobalTransform::default())
+                        .insert(Visibility::default())
+                        .insert(leukocyte.to_owned())
+                        .insert(Unit::default())
+                        .with_children(|entity| {
+                            let texture = assets.load(match leukocyte.body {
+                                Body::Circle => "body-circle.png",
+                                Body::Hexagon => "body-hexagon.png",
+                            });
+
+                            let sprite = SpriteBundle {
+                                sprite: Sprite {
+                                    color: Color::rgb_u8(255, 255, 255),
+                                    ..Default::default()
+                                },
+                                transform: Transform::default()
+                                    .with_scale(Vec3::splat(0.25)),
+                                texture,
+                                ..Default::default()
+                            };
+
+                            entity.spawn_bundle(sprite);
+                        });
                 }
             }
         }
