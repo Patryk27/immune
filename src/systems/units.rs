@@ -1,3 +1,4 @@
+use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 
 const SPEED: f32 = 500.0;
@@ -20,7 +21,16 @@ pub fn movement(
 
     for (mut transform, unit) in units.iter_mut() {
         if let Some(target) = unit.target {
-            let to_target = (target - transform.translation).normalize();
+            let target = target.xy();
+            let source = transform.translation.xy();
+
+            let to_target = (target - source).extend(0.0);
+
+            if to_target.length() < 2.0 {
+                continue;
+            }
+
+            let to_target = to_target.normalize();
 
             transform.translation += to_target * speed;
         }
