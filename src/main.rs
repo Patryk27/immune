@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_smud::SmudPlugin;
 use unfair_advantage::systems::cell_node;
 
 fn setup(mut commands: Commands) {
@@ -10,7 +11,9 @@ fn setup(mut commands: Commands) {
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb_u8(1, 8, 90)))
         .add_plugins(DefaultPlugins)
+        .add_plugin(SmudPlugin)
         .add_startup_system(setup)
         .add_startup_system(cell_node::setup)
         .add_system(cell_node::factory_node_system)

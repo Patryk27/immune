@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.6", features = ["dynamic", "wayland"] }
-rand = "0.8.5"
-serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0"
+bevy = { version = "0.6", features = ["dynamic", "wayland"] }
+bevy_smud = "0.1"
+indoc = "1.0"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
 toml = "0.5"
-indoc = "1.0.4"

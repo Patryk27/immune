@@ -61,12 +61,54 @@ pub enum Body {
     Hexagon,
 }
 
+#[derive(Bundle)]
+pub struct LeukocyteBundle {
+    pub leukocyte: Leukocyte,
+    #[bundle]
+    pub shape: bevy_smud::ShapeBundle,
+}
+
+impl LeukocyteBundle {
+    pub fn new(
+        assets: &AssetServer,
+        leukocyte: Leukocyte,
+        translation: Vec2,
+    ) -> Self {
+        // TODO: Do not load sprite every time, wtf?
+        let sdf = assets.load(match leukocyte.body {
+            Body::Circle => "body-circle.wgsl",
+            Body::Hexagon => "body-hexagon.wgsl",
+        });
+
+        let shape = bevy_smud::ShapeBundle {
+            shape: bevy_smud::SmudShape {
+                color: Color::rgb(1.00, 1.00, 1.00),
+                sdf,
+                frame: bevy_smud::Frame::Quad(400.),
+                ..Default::default()
+            },
+            transform: Transform::from_translation(translation.extend(1.0))
+                .with_scale(Vec3::splat(2.0)),
+            ..Default::default()
+        };
+
+        Self { leukocyte, shape }
+    }
+}
+
 pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let sprite_handle = assets.load("placeholder_circle.png");
 
     let map = Map::from_str(MAP).unwrap();
 
-    for factory_node in map.factory_nodes {
+    for (factory_idx, factory_node) in map.factory_nodes.iter().enumerate() {
+        // TODO this should be set by the user
+        let body = if factory_idx % 2 == 0 {
+            Body::Hexagon
+        } else {
+            Body::Circle
+        };
+
         commands
             .spawn_bundle(SpriteBundle {
                 texture: sprite_handle.clone(),
@@ -82,7 +124,7 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 timer: 1.0,
                 product: Some(FactoryProduct::Leukocyte(Leukocyte {
                     antigen: Antigen::Triangle,
-                    body: Body::Hexagon,
+                    body,
                     kind: LeukocyteKind::Killer,
                 })),
             });
@@ -105,9 +147,11 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
 pub fn brownian_motion_system(mut query: Query<(&Leukocyte, &mut Transform)>) {
     let mut rng = thread_rng();
+
     for (_, mut transform) in query.iter_mut() {
         transform.translation +=
-            Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0)
+                * 10.0;
     }
 }
 
@@ -131,26 +175,13 @@ pub fn factory_node_system(
         if factory_node.timer <= 0.0 {
             factory_node.timer = factory_node.time_to_spawn;
 
-            // TODO: Do not load sprite every time, wtf?
-            let sprite_handle = assets.load("placeholder_square.png");
-
             match product {
                 FactoryProduct::Leukocyte(leukocyte) => {
-                    let mut transform =
-                        (*transform).with_scale(Vec3::splat(0.25));
-                    transform.translation.z = 1.0;
-
-                    commands
-                        .spawn_bundle(SpriteBundle {
-                            texture: sprite_handle.clone(),
-                            transform,
-                            sprite: Sprite {
-                                color: Color::GREEN,
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        })
-                        .insert(leukocyte.to_owned());
+                    commands.spawn_bundle(LeukocyteBundle::new(
+                        &assets,
+                        leukocyte.to_owned(),
+                        transform.translation.truncate(),
+                    ));
                 }
             }
         }
