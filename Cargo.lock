@@ -195,14 +195,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy-fun"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "rand",
-]
-
-[[package]]
 name = "bevy_app"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2942,6 +2934,17 @@ name = "ttf-parser"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ccbe8381883510b6a2d8f1e32905bddd178c11caef8083086d0c0c9ab0ac281"
+
+[[package]]
+name = "unfair_advantage"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bevy",
+ "rand",
+ "serde",
+ "toml",
+]
 
 [[package]]
 name = "unicode-width"
