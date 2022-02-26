@@ -6,9 +6,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 bevy = { version = "0.6", features = ["dynamic", "wayland"] }
-bevy_smud = "0.1"
+bevy_prototype_debug_lines = "0.6.1"
 indoc = "1.0"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5"
-bevy_prototype_debug_lines = "0.6.1"

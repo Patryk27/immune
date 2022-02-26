@@ -65,9 +65,9 @@ pub enum Body {
 
 #[derive(Bundle)]
 pub struct FactoryBundle {
-    factory: Factory,
+    pub factory: Factory,
     #[bundle]
-    shape: bevy_smud::ShapeBundle,
+    pub sprite: SpriteBundle,
 }
 
 impl FactoryBundle {
@@ -76,34 +76,30 @@ impl FactoryBundle {
         factory: Factory,
         translation: Vec2,
     ) -> Self {
-        // TODO: Do not load sprite every time, wtf?
-        let sdf = assets.load("factory.wgsl");
-
         let transform = Transform::from_translation(translation.extend(0.9))
-            .with_scale(Vec3::splat(5.0));
+            .with_scale(Vec3::splat(0.5));
 
-        // TODO a shader could come handy
-        // (https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRSxrtv0JPgmb6jICODj-3D4viNE6D4elGlg&usqp=CAU)
-        let shape = bevy_smud::ShapeBundle {
-            shape: bevy_smud::SmudShape {
+        let texture = assets.load("body-circle.png");
+
+        let sprite = SpriteBundle {
+            sprite: Sprite {
                 color: Color::rgb_u8(195, 160, 229),
-                sdf,
-                frame: bevy_smud::Frame::Quad(20.),
                 ..Default::default()
             },
             transform,
+            texture,
             ..Default::default()
         };
 
-        Self { factory, shape }
+        Self { factory, sprite }
     }
 }
 
 #[derive(Bundle)]
 pub struct LeukocyteBundle {
-    leukocyte: Leukocyte,
+    pub leukocyte: Leukocyte,
     #[bundle]
-    shape: bevy_smud::ShapeBundle,
+    pub sprite: SpriteBundle,
     pub unit: Unit,
 }
 
@@ -113,27 +109,27 @@ impl LeukocyteBundle {
         leukocyte: Leukocyte,
         translation: Vec2,
     ) -> Self {
-        // TODO: Do not load sprite every time, wtf?
-        let sdf = assets.load(match leukocyte.body {
-            Body::Circle => "body-circle.wgsl",
-            Body::Hexagon => "body-hexagon.wgsl",
+        let transform = Transform::from_translation(translation.extend(1.0))
+            .with_scale(Vec3::splat(0.25));
+
+        let texture = assets.load(match leukocyte.body {
+            Body::Circle => "body-circle.png",
+            Body::Hexagon => "body-hexagon.png",
         });
 
-        let shape = bevy_smud::ShapeBundle {
-            shape: bevy_smud::SmudShape {
-                color: Color::rgb(1.0, 1.0, 1.0),
-                sdf,
-                frame: bevy_smud::Frame::Quad(20.),
+        let sprite = SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb_u8(255, 255, 255),
                 ..Default::default()
             },
-            transform: Transform::from_translation(translation.extend(1.0))
-                .with_scale(Vec3::splat(2.0)),
+            transform,
+            texture,
             ..Default::default()
         };
 
         Self {
             leukocyte,
-            shape,
+            sprite,
             unit: Unit::default(),
         }
     }
