@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::str::FromStr;
 
-use bevy::math::Vec3;
+use bevy::math::Vec2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -12,12 +12,12 @@ pub struct Map {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FactoryNode {
-    pub pos: Vec3,
+    pub pos: Vec2,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Node {
-    pub pos: Vec3,
+    pub pos: Vec2,
 }
 
 impl Map {

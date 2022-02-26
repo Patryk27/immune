@@ -15,7 +15,7 @@ pub struct Unit;
 
 // TODO(pwy) rename to LymphNode? (not sure on the biological term ATM)
 #[derive(Component, Clone, Debug)]
-pub struct FactoryNode {
+pub struct Factory {
     pub time_to_spawn: f32,
     pub timer: f32,
     pub product: Option<FactoryProduct>,
@@ -64,11 +64,49 @@ pub enum Body {
     Hexagon,
 }
 
+// ---
+
+#[derive(Bundle)]
+pub struct FactoryBundle {
+    factory: Factory,
+    #[bundle]
+    shape: bevy_smud::ShapeBundle,
+}
+
+impl FactoryBundle {
+    pub fn new(
+        assets: &AssetServer,
+        factory: Factory,
+        translation: Vec2,
+    ) -> Self {
+        // TODO: Do not load sprite every time, wtf?
+        let sdf = assets.load("factory.wgsl");
+
+        let transform = Transform::from_translation(translation.extend(0.9))
+            .with_scale(Vec3::splat(5.0));
+
+        // TODO a shader could come handy
+        // (https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRSxrtv0JPgmb6jICODj-3D4viNE6D4elGlg&usqp=CAU)
+        let shape = bevy_smud::ShapeBundle {
+            shape: bevy_smud::SmudShape {
+                color: Color::rgb_u8(195, 160, 229),
+                sdf,
+                frame: bevy_smud::Frame::Quad(20.),
+                ..Default::default()
+            },
+            transform,
+            ..Default::default()
+        };
+
+        Self { factory, shape }
+    }
+}
+
 #[derive(Bundle)]
 pub struct LeukocyteBundle {
-    pub leukocyte: Leukocyte,
+    leukocyte: Leukocyte,
     #[bundle]
-    pub shape: bevy_smud::ShapeBundle,
+    shape: bevy_smud::ShapeBundle,
 }
 
 impl LeukocyteBundle {
@@ -85,9 +123,9 @@ impl LeukocyteBundle {
 
         let shape = bevy_smud::ShapeBundle {
             shape: bevy_smud::SmudShape {
-                color: Color::rgb(1.00, 1.00, 1.00),
+                color: Color::rgb(1.0, 1.0, 1.0),
                 sdf,
-                frame: bevy_smud::Frame::Quad(400.),
+                frame: bevy_smud::Frame::Quad(20.),
                 ..Default::default()
             },
             transform: Transform::from_translation(translation.extend(1.0))
@@ -99,30 +137,21 @@ impl LeukocyteBundle {
     }
 }
 
-pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    let sprite_handle = assets.load("placeholder_circle.png");
+// ---
 
+pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let map = Map::from_str(MAP).unwrap();
 
-    for (factory_idx, factory_node) in map.factory_nodes.iter().enumerate() {
-        // TODO this should be set by the user
-        let body = if factory_idx % 2 == 0 {
-            Body::Hexagon
-        } else {
-            Body::Circle
-        };
+    for (idx, map_factory) in map.factory_nodes.iter().enumerate() {
+        let factory = {
+            // TODO this should be set by the user
+            let body = if idx % 2 == 0 {
+                Body::Hexagon
+            } else {
+                Body::Circle
+            };
 
-        commands
-            .spawn_bundle(SpriteBundle {
-                texture: sprite_handle.clone(),
-                transform: Transform::from_translation(factory_node.pos),
-                sprite: Sprite {
-                    color: Color::RED,
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .insert(FactoryNode {
+            Factory {
                 time_to_spawn: 1.0,
                 timer: 1.0,
                 product: Some(FactoryProduct::Leukocyte(Leukocyte {
@@ -130,21 +159,14 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                     body,
                     kind: LeukocyteKind::Killer,
                 })),
-            });
-    }
+            }
+        };
 
-    for node in map.nodes {
-        commands
-            .spawn_bundle(SpriteBundle {
-                texture: sprite_handle.clone(),
-                transform: Transform::from_translation(node.pos),
-                sprite: Sprite {
-                    color: Color::BLUE,
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .insert(Node);
+        commands.spawn_bundle(FactoryBundle::new(
+            &assets,
+            factory,
+            map_factory.pos,
+        ));
     }
 }
 
@@ -162,7 +184,7 @@ pub fn factory_node_system(
     mut commands: Commands,
     time: Res<Time>,
     assets: Res<AssetServer>,
-    mut query: Query<(&mut FactoryNode, &Transform)>,
+    mut query: Query<(&mut Factory, &Transform)>,
 ) {
     for (mut factory_node, transform) in &mut query.iter_mut() {
         let factory_node = &mut *factory_node;
