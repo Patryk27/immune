@@ -1,17 +1,14 @@
 use std::str::FromStr;
 
 use bevy::prelude::*;
-use rand::{thread_rng, Rng};
 
+use super::units::Unit;
 use crate::map::Map;
 
 const MAP: &str = include_str!("./map.toml");
 
 #[derive(Component, Debug)]
 pub struct Node;
-
-#[derive(Component, Debug)]
-pub struct Unit;
 
 // TODO(pwy) rename to LymphNode? (not sure on the biological term ATM)
 #[derive(Component, Clone, Debug)]
@@ -69,6 +66,7 @@ pub struct LeukocyteBundle {
     pub leukocyte: Leukocyte,
     #[bundle]
     pub shape: bevy_smud::ShapeBundle,
+    pub unit: Unit,
 }
 
 impl LeukocyteBundle {
@@ -95,7 +93,11 @@ impl LeukocyteBundle {
             ..Default::default()
         };
 
-        Self { leukocyte, shape }
+        Self {
+            leukocyte,
+            shape,
+            unit: Unit::default(),
+        }
     }
 }
 
@@ -145,16 +147,6 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 ..Default::default()
             })
             .insert(Node);
-    }
-}
-
-pub fn brownian_motion_system(mut query: Query<(&Leukocyte, &mut Transform)>) {
-    let mut rng = thread_rng();
-
-    for (_, mut transform) in query.iter_mut() {
-        transform.translation +=
-            Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0)
-                * 10.0;
     }
 }
 
