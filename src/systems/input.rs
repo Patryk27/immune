@@ -4,83 +4,121 @@ use bevy_prototype_debug_lines::DebugLines;
 
 use super::units::Unit;
 
-#[derive(Component)]
-struct SelectionRect;
-
 pub struct State {
-    _selected_units: Vec<Entity>,
+    selected_units: Vec<Entity>,
 
-    drag_start_pos: Vec3,
-    drag_end_pos: Vec3,
     is_dragging: bool,
+    drag_start_pos: Vec3,
+
+    current_mouse_pos: Vec3,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
-            _selected_units: vec![],
+            selected_units: vec![],
             is_dragging: false,
-            drag_end_pos: Vec3::ZERO,
+            current_mouse_pos: Vec3::ZERO,
             drag_start_pos: Vec3::ZERO,
         }
     }
 }
 
 pub fn initialize(app: &mut App) {
-    app.add_startup_system(setup).add_system(system);
+    app.add_startup_system(setup)
+        .add_system(track_mouse_position)
+        .add_system(selection)
+        .add_system(command);
 }
 
 pub fn setup(mut commands: Commands) {
     commands.insert_resource(State::default());
 }
 
-pub fn system(
+pub fn track_mouse_position(
     mut state: ResMut<State>,
-    mouse_button_input_events: EventReader<MouseButtonInput>,
-    cursor_moved_events: EventReader<CursorMoved>,
-    mut _units: Query<(Entity, &Transform, &Unit)>,
-    mut lines: ResMut<DebugLines>,
     camera: Query<(&OrthographicProjection, &Camera, &Transform)>,
+    mut cursor_moved_events: EventReader<CursorMoved>,
 ) {
-    update_state(&mut state, cursor_moved_events, mouse_button_input_events);
-
-    if !state.is_dragging {
-        return;
-    }
-
     let (ortho, _, camera) = camera.single();
 
-    let start_pos = screen_to_world_point(camera, ortho, state.drag_start_pos);
-    let end_pos = screen_to_world_point(camera, ortho, state.drag_end_pos);
-
-    draw_square(&mut lines, start_pos, end_pos);
+    for event in cursor_moved_events.iter() {
+        let pos = Vec3::new(event.position.x, event.position.y, 0.0);
+        state.current_mouse_pos = screen_to_world_point(camera, ortho, pos);
+    }
 }
 
-fn update_state(
-    state: &mut State,
-    mut cursor_moved_events: EventReader<CursorMoved>,
+pub fn command(
+    state: Res<State>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mut units: Query<&mut Unit>,
 ) {
-    for event in cursor_moved_events.iter() {
-        state.drag_end_pos = Vec3::new(event.position.x, event.position.y, 0.0);
+    for event in mouse_button_input_events.iter() {
+        if event.state.is_pressed() && event.button == MouseButton::Right {
+            for unit in state.selected_units.iter() {
+                units.get_mut(*unit).unwrap().target =
+                    Some(state.current_mouse_pos);
+            }
+        }
     }
+}
 
+pub fn selection(
+    mut state: ResMut<State>,
+    mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    units: Query<(Entity, &Transform, &Unit)>,
+    mut lines: ResMut<DebugLines>,
+) {
     for event in mouse_button_input_events.iter() {
         if event.button == MouseButton::Left {
             match (state.is_dragging, event.state.is_pressed()) {
                 // Drag end
                 (true, false) => {
                     state.is_dragging = false;
+
+                    state.selected_units = units
+                        .iter()
+                        .filter(|(_, transform, _)| {
+                            is_unit_within_selection(
+                                transform,
+                                state.drag_start_pos,
+                                state.current_mouse_pos,
+                            )
+                        })
+                        .map(|(entity, _, _)| entity)
+                        .collect();
                 }
                 // Drag start
                 (false, true) => {
                     state.is_dragging = true;
-                    state.drag_start_pos = state.drag_end_pos;
+                    state.drag_start_pos = state.current_mouse_pos;
                 }
                 _ => (),
             }
         }
     }
+
+    if !state.is_dragging {
+        return;
+    }
+
+    draw_square(&mut lines, state.drag_start_pos, state.current_mouse_pos);
+}
+
+fn is_unit_within_selection(
+    unit: &Transform,
+    start_pos: Vec3,
+    end_pos: Vec3,
+) -> bool {
+    let min_x = start_pos.x.min(end_pos.x);
+    let max_x = start_pos.x.max(end_pos.x);
+    let min_y = start_pos.y.min(end_pos.y);
+    let max_y = start_pos.y.max(end_pos.y);
+
+    unit.translation.x > min_x
+        && unit.translation.x < max_x
+        && unit.translation.y > min_y
+        && unit.translation.y < max_y
 }
 
 fn draw_square(lines: &mut DebugLines, start_point: Vec3, end_point: Vec3) {
