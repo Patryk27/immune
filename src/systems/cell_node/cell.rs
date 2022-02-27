@@ -26,13 +26,13 @@ impl<'a> Cell<'a> {
             .insert_bundle(RigidBodyBundle {
                 position: at.to_array().into(),
                 damping: RigidBodyDampingComponent(RigidBodyDamping {
-                    angular_damping: 10.0,
-                    linear_damping: 0.99999,
+                    angular_damping: 100.0,
+                    linear_damping: 0.0,
                 }),
                 ..Default::default()
             })
             .insert_bundle(ColliderBundle {
-                shape: ColliderShapeComponent(ColliderShape::ball(25.0)),
+                shape: ColliderShapeComponent(ColliderShape::ball(0.25)),
                 ..Default::default()
             })
             .insert(ColliderPositionSync::Discrete)

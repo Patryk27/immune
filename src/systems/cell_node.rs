@@ -3,6 +3,7 @@ use std::str::FromStr;
 use bevy::math::vec2;
 use bevy::prelude::*;
 
+use super::physics::PHYSICS_SCALE;
 use super::units::Unit;
 use crate::compiler::Compiler;
 use crate::map::Map;
@@ -29,7 +30,7 @@ pub use self::protein::*;
 
 pub fn initialize(app: &mut App) {
     app.add_startup_system(setup)
-        .add_system(process)
+        .add_system(spawn_leukocytes)
         .add_system(track_cells_position);
 }
 
@@ -58,10 +59,9 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     }
 
     commands.insert_resource(map);
-    // ---
 
-    let mut x = -300.0;
-    let y = 300.0;
+    let mut x = -3.0;
+    let y = 3.0;
 
     for antigen in [Antigen::Rectangle, Antigen::Semicircle, Antigen::Triangle]
     {
@@ -73,7 +73,7 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             }
             .spawn(&mut commands, &assets, vec2(x, y));
 
-            x += 125.0;
+            x += 1.25;
         }
     }
 }
@@ -88,7 +88,7 @@ pub fn track_cells_position(
         .collect()
 }
 
-pub fn process(
+pub fn spawn_leukocytes(
     mut commands: Commands,
     time: Res<Time>,
     assets: Res<AssetServer>,
@@ -115,7 +115,7 @@ pub fn process(
                     leukocyte.spawn(
                         &mut commands,
                         &assets,
-                        transform.translation.truncate(),
+                        transform.translation.truncate() / PHYSICS_SCALE,
                     );
                 }
             }

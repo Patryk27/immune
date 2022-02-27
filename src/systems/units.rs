@@ -1,11 +1,11 @@
-use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-const MIN_DISTANCE: f32 = 50.0;
-const SPEED: f32 = 5000.0;
-const FORCE_FACTOR: f32 = 1000.0;
-const STOPPING_FORCE_FACTOR: f32 = 10000.0;
+use super::physics::pixel_to_world;
+
+const MAX_SPEED: f32 = 5.0;
+const FORCE_FACTOR: f32 = 1.0;
+const STOPPING_FORCE_FACTOR: f32 = 2.0;
 
 #[derive(Component, Default)]
 pub struct Unit {
@@ -19,31 +19,28 @@ pub fn initialize(app: &mut App) {
 
 pub fn movement(
     mut units: Query<(
-        &Transform,
+        &RigidBodyPositionComponent,
         &RigidBodyVelocityComponent,
         &mut RigidBodyForcesComponent,
-        &mut Unit,
+        &Unit,
     )>,
 ) {
-    for (transform, velocity, mut forces, mut unit) in units.iter_mut() {
+    for (position, velocity, mut forces, unit) in units.iter_mut() {
         if let Some(target) = unit.target {
-            let target = target.xy();
-            let source = transform.translation.xy();
+            let target: Vector<Real> = pixel_to_world(target);
+            let source = position.position.translation.vector;
 
-            let to_target = (target - source).extend(0.0);
+            let to_target = target - source;
+            let desired_linvel: Vector<Real> = if to_target.magnitude() < 1.0 {
+                to_target * MAX_SPEED
+            } else {
+                to_target.normalize() * MAX_SPEED
+            };
 
-            if to_target.length() < MIN_DISTANCE {
-                unit.target = None;
-                continue;
-            }
-
-            let to_target = to_target.normalize();
-
-            let desired_linvel: Vector<Real> =
-                (to_target * SPEED).truncate().to_array().into();
             let current_linvel = velocity.linvel;
 
             let diff = desired_linvel - current_linvel;
+
             forces.force = diff * FORCE_FACTOR;
         } else {
             // Try to stop moving
