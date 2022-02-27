@@ -3,6 +3,9 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
+use crate::map::Map;
+use crate::pathfinding::DiscreteMap;
+
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
 use super::ui::UiEvent;
@@ -55,14 +58,18 @@ pub fn track_mouse_position(
 
 pub fn command(
     state: Res<State>,
+    map: Res<Map>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    mut units: Query<&mut Unit>,
+    mut units: Query<(&mut Unit, &Transform)>,
 ) {
     for event in mouse_button_input_events.iter() {
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
-                units.get_mut(*unit).unwrap().target =
-                    Some(state.current_mouse_pos);
+                let (mut unit, transform) = units.get_mut(*unit).unwrap();
+                unit.target = Some(state.current_mouse_pos);
+                let discrete_map = DiscreteMap::new(&map, transform.translation.truncate(), 10);
+                // TODO (pry)
+                // println!("{}", discrete_map);
             }
         }
     }
