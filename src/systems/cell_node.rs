@@ -345,6 +345,7 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         lymph_node.spawn(&mut commands, &assets, lymph_node_item.pos);
     }
 
+    commands.insert_resource(map);
     // ---
 
     let mut x = -300.0;
@@ -363,6 +364,13 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             x += 125.0;
         }
     }
+}
+
+pub fn track_cells_position(
+    mut map: ResMut<Map>,
+    query: Query<(&Unit, &Transform)>,
+) {
+    map.cell_nodes = query.iter().map(|(_, transform)| transform.translation.into()).collect()
 }
 
 pub fn process(

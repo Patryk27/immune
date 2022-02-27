@@ -1,20 +1,16 @@
 use std::path::Path;
 use std::str::FromStr;
 
-use bevy::math::Vec2;
+use bevy::math::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Map {
     pub lymph_nodes: Vec<LymphNode>,
+    pub cell_nodes: Vec<CellNode>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct LymphNode {
-    pub pos: Vec2,
-}
 
 impl Map {
     pub fn load(p: impl AsRef<Path>) -> anyhow::Result<Self> {
@@ -31,5 +27,25 @@ impl FromStr for Map {
         let map: Map = toml::from_str(s)?;
 
         Ok(map)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct LymphNode {
+    pub pos: Vec2,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct CellNode {
+    pub pos: Vec2,
+}
+
+impl From<Vec3> for CellNode {
+    fn from(v: Vec3) -> Self {
+        Self {
+            pos: v.truncate()
+        }
     }
 }

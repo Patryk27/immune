@@ -13,7 +13,8 @@ fn main() {
         .add_plugin(ui::UiPlugin)
         // Map / Cells / Nodes
         .add_startup_system(cell_node::setup)
-        .add_system(cell_node::process);
+        .add_system(cell_node::process)
+        .add_system(cell_node::track_cells_position);
 
     physics::initialize(&mut app);
     units::initialize(&mut app);
