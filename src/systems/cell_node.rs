@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 use std::str::FromStr;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 use super::units::Unit;
 use crate::map::Map;
@@ -71,7 +72,19 @@ impl Leukocyte {
         commands
             .spawn()
             .insert(transform)
-            .insert(GlobalTransform::default())
+            .insert_bundle(RigidBodyBundle {
+                position: transform.translation.truncate().to_array().into(),
+                damping: RigidBodyDampingComponent(RigidBodyDamping {
+                    angular_damping: 0.0,
+                    linear_damping: 0.99999,
+                }),
+                ..Default::default()
+            })
+            .insert_bundle(ColliderBundle {
+                shape: ColliderShapeComponent(ColliderShape::ball(25.0)),
+                ..Default::default()
+            })
+            .insert(ColliderPositionSync::Discrete)
             .insert(Visibility::default())
             .insert(self)
             .insert(Unit::default())
