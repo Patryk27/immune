@@ -2,7 +2,10 @@ use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+const MIN_DISTANCE: f32 = 50.0;
 const SPEED: f32 = 5000.0;
+const FORCE_FACTOR: f32 = 1000.0;
+const STOPPING_FORCE_FACTOR: f32 = 10000.0;
 
 #[derive(Component, Default)]
 pub struct Unit {
@@ -29,7 +32,7 @@ pub fn movement(
 
             let to_target = (target - source).extend(0.0);
 
-            if to_target.length() < 2.0 {
+            if to_target.length() < MIN_DISTANCE {
                 unit.target = None;
                 continue;
             }
@@ -41,9 +44,14 @@ pub fn movement(
             let current_linvel = velocity.linvel;
 
             let diff = desired_linvel - current_linvel;
-            forces.force = diff * 1000.0;
+            forces.force = diff * FORCE_FACTOR;
         } else {
-            forces.force = [0.0, 0.0].into();
+            // Try to stop moving
+            let desired_linvel: Vector<Real> = [0.0, 0.0].into();
+            let current_linvel = velocity.linvel;
+
+            let diff = desired_linvel - current_linvel;
+            forces.force = diff * STOPPING_FORCE_FACTOR;
         }
     }
 }

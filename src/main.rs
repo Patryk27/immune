@@ -10,12 +10,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
-        .add_plugin(ui::UiPlugin)
-        // Map / Cells / Nodes
-        .add_startup_system(cell_node::setup)
-        .add_system(cell_node::process)
-        .add_system(cell_node::track_cells_position);
+        .add_plugin(ui::UiPlugin);
 
+    cell_node::initialize(&mut app);
     physics::initialize(&mut app);
     units::initialize(&mut app);
     input::initialize(&mut app);

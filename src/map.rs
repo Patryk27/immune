@@ -12,7 +12,6 @@ pub struct Map {
     pub cell_nodes: Vec<CellNode>,
 }
 
-
 impl Map {
     pub fn load(p: impl AsRef<Path>) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(p)?;
@@ -45,8 +44,6 @@ pub struct CellNode {
 
 impl From<Vec3> for CellNode {
     fn from(v: Vec3) -> Self {
-        Self {
-            pos: v.truncate()
-        }
+        Self { pos: v.truncate() }
     }
 }

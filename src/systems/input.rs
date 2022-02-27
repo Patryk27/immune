@@ -77,37 +77,36 @@ pub fn selection(
     mut lines: ResMut<DebugLines>,
     mut ui_events: EventWriter<UiEvent>,
 ) {
-    if !state.is_dragging {
-        if mouse_button_input.just_pressed(MouseButton::Left) {
-            let clicked_entity =
-                lymph_nodes.iter().find_map(|(entity, transform, _)| {
-                    let pos = transform.translation.truncate();
+    if !state.is_dragging && mouse_button_input.just_pressed(MouseButton::Left)
+    {
+        let clicked_entity =
+            lymph_nodes.iter().find_map(|(entity, transform, _)| {
+                let pos = transform.translation.truncate();
 
-                    // TODO(pwy) feels like those shouldn't be hardcoded
-                    let bb = Rect {
-                        left: pos.x - 50.0,
-                        right: pos.x + 50.0,
-                        top: pos.y - 50.0,
-                        bottom: pos.y + 50.0,
-                    };
+                // TODO(pwy) feels like those shouldn't be hardcoded
+                let bb = Rect {
+                    left: pos.x - 50.0,
+                    right: pos.x + 50.0,
+                    top: pos.y - 50.0,
+                    bottom: pos.y + 50.0,
+                };
 
-                    let mouse = state.current_mouse_pos;
+                let mouse = state.current_mouse_pos;
 
-                    let is_clicked = mouse.x >= bb.left
-                        && mouse.x <= bb.right
-                        && mouse.y >= bb.top
-                        && mouse.y <= bb.bottom;
+                let is_clicked = mouse.x >= bb.left
+                    && mouse.x <= bb.right
+                    && mouse.y >= bb.top
+                    && mouse.y <= bb.bottom;
 
-                    if is_clicked {
-                        Some(entity)
-                    } else {
-                        None
-                    }
-                });
+                if is_clicked {
+                    Some(entity)
+                } else {
+                    None
+                }
+            });
 
-            if let Some(entity) = clicked_entity {
-                ui_events.send(UiEvent::OpenLymphNode(entity));
-            }
+        if let Some(entity) = clicked_entity {
+            ui_events.send(UiEvent::OpenLymphNode(entity));
         }
     }
 
