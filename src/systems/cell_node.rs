@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use bevy::prelude::*;
 
+use super::highlight::Highlight;
 use super::units::Unit;
 use crate::map::Map;
 
@@ -265,6 +266,37 @@ impl<'a> Cell<'a> {
             };
 
             (spawn)(antigen, assets, entity, body);
+        });
+
+        entity.with_children(|entity| {
+            let texture = assets.load("selector.png");
+            let color = Color::rgba_u8(0, 220, 0, 50);
+            let size = 50.0;
+            let arrows = vec![
+                (false, false, -1.0, 1.0),
+                (true, false, 1.0, 1.0),
+                (false, true, -1.0, -1.0),
+                (true, true, 1.0, -1.0),
+            ];
+
+            for (flip_x, flip_y, mul_x, mul_y) in arrows {
+                let transform = Transform::from_xyz(size * mul_x, size * mul_y, 0.0);
+
+                entity
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            color,
+                            flip_x,
+                            flip_y,
+                            ..Default::default()
+                        },
+                        texture: texture.clone(),
+                        transform,
+                        visibility: Visibility { is_visible: false },
+                        ..Default::default()
+                    })
+                    .insert(Highlight);
+            }
         });
     }
 }

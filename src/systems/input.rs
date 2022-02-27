@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 
 use super::units::Unit;
+use super::highlight::Highlight;
 
 pub struct State {
     selected_units: Vec<Entity>,
@@ -28,6 +29,7 @@ pub fn initialize(app: &mut App) {
     app.add_startup_system(setup)
         .add_system(track_mouse_position)
         .add_system(selection)
+        .add_system(highlight_selection)
         .add_system(command);
 }
 
@@ -104,6 +106,31 @@ pub fn selection(
 
     draw_square(&mut lines, state.drag_start_pos, state.current_mouse_pos);
 }
+
+
+pub fn highlight_selection(
+    state: ResMut<State>,
+    units: Query<(Entity, &Unit, &Children)>,
+    mut highlights: Query<(Entity, &Highlight, &mut Visibility)>,
+) {
+    let mut selected_children: Vec<Entity> = Vec::new();
+
+    for selected_entity in state.selected_units.iter() {
+        let (_, _, children) = units.get(*selected_entity).unwrap();
+
+        selected_children.extend(children.iter());
+    }
+
+    for (entity, _, mut visibility) in highlights.iter_mut() {
+        if selected_children.contains(&entity) {
+            visibility.is_visible = true;
+        } else {
+            visibility.is_visible = false;
+        }
+    }
+}
+
+
 
 fn is_unit_within_selection(
     unit: &Transform,
