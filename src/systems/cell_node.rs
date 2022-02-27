@@ -7,6 +7,7 @@ use bevy_rapier2d::prelude::*;
 
 use super::highlight::Highlight;
 use super::units::Unit;
+use crate::compiler::Compiler;
 use crate::map::Map;
 
 const MAP: &str = include_str!("./map.toml");
@@ -15,7 +16,8 @@ const MAP: &str = include_str!("./map.toml");
 pub struct LymphNode {
     pub time_to_spawn: f32,
     pub timer: f32,
-    pub product: Option<LymphNodeProduct>,
+    pub lhs: Option<LymphNodeInput>,
+    pub rhs: Option<LymphNodeInput>,
 }
 
 impl LymphNode {
@@ -47,17 +49,67 @@ impl LymphNode {
                 });
             });
     }
+
+    pub fn output(&self, compiler: &Compiler) -> Option<LymphNodeOutput> {
+        compiler.compile(self.lhs, self.rhs)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LymphNodeInput {
+    Binder(AntigenBinder),
+    Body(Body),
+    Protein(Protein),
+    External(Entity),
+}
+
+impl LymphNodeInput {
+    pub fn variants() -> impl Iterator<Item = Self> {
+        let binders = AntigenBinder::variants().map(Self::Binder);
+        let bodies = Body::variants().map(Self::Body);
+        let proteins = Protein::variants().map(Self::Protein);
+
+        binders.chain(bodies).chain(proteins)
+    }
+
+    pub fn asset_path(&self) -> &'static str {
+        match self {
+            Self::Binder(binder) => binder.asset_path(),
+            Self::Body(body) => body.asset_path(),
+            Self::Protein(protein) => protein.asset_path(),
+            Self::External(_) => Body::Circle.asset_path(), // TODO(pwy) needs its own icon
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
-pub enum LymphNodeProduct {
+pub enum LymphNodeOutput {
     Leukocyte(Leukocyte),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Protein {
+    Dumbbell,
+    Star,
+}
+
+impl Protein {
+    pub fn variants() -> impl Iterator<Item = Self> {
+        [Self::Dumbbell, Self::Star].into_iter()
+    }
+
+    pub fn asset_path(&self) -> &'static str {
+        match self {
+            Self::Dumbbell => "protein.dumbbell.png",
+            Self::Star => "protein.star.png",
+        }
+    }
 }
 
 #[derive(Component, Clone, Debug)]
 pub struct Leukocyte {
-    pub antigen: Antigen,
     pub body: Body,
+    pub binder: AntigenBinder,
     pub kind: LeukocyteKind,
 }
 
@@ -101,7 +153,6 @@ pub enum PathogenKind {
     Virus,
 }
 
-// TODO(pwy/post-mvp) allow to configure number of sides?
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Antigen {
     Rectangle,
@@ -110,6 +161,18 @@ pub enum Antigen {
 }
 
 impl Antigen {
+    pub fn variants() -> impl Iterator<Item = Self> {
+        [Self::Rectangle, Self::Semicircle, Self::Triangle].into_iter()
+    }
+
+    pub fn asset_path(&self) -> &'static str {
+        match self {
+            Self::Rectangle => "antigen.rectangle.png",
+            Self::Semicircle => "antigen.semicircle.png",
+            Self::Triangle => "antigen.triangle.png",
+        }
+    }
+
     pub fn spawn(
         self,
         assets: &AssetServer,
@@ -120,23 +183,8 @@ impl Antigen {
             assets,
             entity,
             body,
-            "antigen",
+            self.asset_path(),
             Color::rgb_u8(128, 0, 0),
-        );
-    }
-
-    pub fn spawn_binders(
-        self,
-        assets: &AssetServer,
-        entity: &mut ChildBuilder,
-        body: Body,
-    ) {
-        self.spawn_ex(
-            assets,
-            entity,
-            body,
-            "antigen-binder",
-            Color::rgb_u8(128, 128, 128),
         );
     }
 
@@ -145,10 +193,10 @@ impl Antigen {
         assets: &AssetServer,
         entity: &mut ChildBuilder,
         body: Body,
-        asset_path_prefix: &str,
+        asset_path: &str,
         color: Color,
     ) {
-        let texture = assets.load(&self.asset_path(asset_path_prefix));
+        let texture = assets.load(asset_path);
 
         for transform in Self::transforms(body) {
             let sprite = Sprite {
@@ -165,16 +213,6 @@ impl Antigen {
 
             entity.spawn_bundle(sprite);
         }
-    }
-
-    fn asset_path(self, prefix: &str) -> String {
-        let suffix = match self {
-            Antigen::Rectangle => "rectangle",
-            Antigen::Semicircle => "semicircle",
-            Antigen::Triangle => "triangle",
-        };
-
-        format!("{}.{}.png", prefix, suffix)
     }
 
     fn transforms(body: Body) -> impl Iterator<Item = Transform> {
@@ -200,9 +238,58 @@ impl Antigen {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AntigenBinder(Antigen);
+
+impl AntigenBinder {
+    pub fn new(antigen: Antigen) -> Self {
+        Self(antigen)
+    }
+
+    pub fn variants() -> impl Iterator<Item = Self> {
+        Antigen::variants().map(Self)
+    }
+
+    pub fn spawn(
+        self,
+        assets: &AssetServer,
+        entity: &mut ChildBuilder,
+        body: Body,
+    ) {
+        self.0.spawn_ex(
+            assets,
+            entity,
+            body,
+            self.asset_path(),
+            Color::rgb_u8(128, 128, 128),
+        );
+    }
+
+    pub fn asset_path(self) -> &'static str {
+        match self.0 {
+            Antigen::Rectangle => "antigen-binder.rectangle.png",
+            Antigen::Semicircle => "antigen-binder.semicircle.png",
+            Antigen::Triangle => "antigen-binder.triangle.png",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Body {
     Circle,
     Hexagon,
+}
+
+impl Body {
+    pub fn variants() -> impl Iterator<Item = Self> {
+        [Self::Circle, Self::Hexagon].into_iter()
+    }
+
+    pub fn asset_path(&self) -> &'static str {
+        match self {
+            Self::Circle => "body.circle.png",
+            Self::Hexagon => "body.hexagon.png",
+        }
+    }
 }
 
 pub enum Cell<'a> {
@@ -240,24 +327,21 @@ impl<'a> Cell<'a> {
 
         match self {
             Cell::Leukocyte(cell) => {
-                entity.insert(Unit::default()).insert((*cell).clone());
+                entity.insert((*cell).clone());
             }
             Cell::Pathogen(cell) => {
                 entity.insert((*cell).clone());
             }
         }
 
-        let (antigen, body, color) = match self {
-            Cell::Leukocyte(cell) => (cell.antigen, cell.body, Color::WHITE),
-            Cell::Pathogen(cell) => (cell.antigen, cell.body, Color::RED),
+        let (body, color) = match self {
+            Cell::Leukocyte(cell) => (cell.body, Color::WHITE),
+            Cell::Pathogen(cell) => (cell.body, Color::RED),
         };
 
         // Spawn cell's sprite
         entity.with_children(|entity| {
-            let texture = assets.load(match body {
-                Body::Circle => "body.circle.png",
-                Body::Hexagon => "body.hexagon.png",
-            });
+            let texture = assets.load(body.asset_path());
 
             let sprite = SpriteBundle {
                 sprite: Sprite {
@@ -272,14 +356,10 @@ impl<'a> Cell<'a> {
             entity.spawn_bundle(sprite);
         });
 
-        // Spawn cell's antigens
-        entity.with_children(|entity| {
-            let spawn = match self {
-                Cell::Leukocyte(_) => Antigen::spawn_binders,
-                Cell::Pathogen(_) => Antigen::spawn,
-            };
-
-            (spawn)(antigen, assets, entity, body);
+        // Spawn cell's antigens / antigen binders
+        entity.with_children(|entity| match self {
+            Cell::Leukocyte(cell) => cell.binder.spawn(assets, entity, body),
+            Cell::Pathogen(cell) => cell.antigen.spawn(assets, entity, body),
         });
 
         // Spawn hidden selection highlight
@@ -324,7 +404,6 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
     for (idx, lymph_node_item) in map.lymph_nodes.iter().enumerate() {
         let lymph_node = {
-            // TODO this should be set by the user
             let body = if idx % 2 == 0 {
                 Body::Hexagon
             } else {
@@ -334,11 +413,10 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             LymphNode {
                 time_to_spawn: 1.0,
                 timer: 1.0,
-                product: Some(LymphNodeProduct::Leukocyte(Leukocyte {
-                    antigen: Antigen::Triangle,
-                    body,
-                    kind: LeukocyteKind::Killer,
-                })),
+                lhs: Some(LymphNodeInput::Body(body)),
+                rhs: Some(LymphNodeInput::Binder(AntigenBinder::new(
+                    Antigen::Triangle,
+                ))),
             }
         };
 
@@ -379,10 +457,12 @@ pub fn process(
     assets: Res<AssetServer>,
     mut query: Query<(&mut LymphNode, &Transform)>,
 ) {
+    let compiler = Compiler::new();
+
     for (mut lymph_node, transform) in &mut query.iter_mut() {
         let lymph_node = &mut *lymph_node;
 
-        let product = if let Some(product) = &lymph_node.product {
+        let product = if let Some(product) = lymph_node.output(&compiler) {
             product
         } else {
             continue;
@@ -394,7 +474,7 @@ pub fn process(
             lymph_node.timer = lymph_node.time_to_spawn;
 
             match product {
-                LymphNodeProduct::Leukocyte(leukocyte) => {
+                LymphNodeOutput::Leukocyte(leukocyte) => {
                     leukocyte.spawn(
                         &mut commands,
                         &assets,
