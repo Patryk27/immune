@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct Map {
     pub lymph_nodes: Vec<LymphNode>,
+    #[serde(skip)]
     pub cell_nodes: Vec<CellNode>,
 }
 
