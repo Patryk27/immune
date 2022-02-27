@@ -2,19 +2,22 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="100mm"
+   height="100mm"
+   viewBox="0 0 100 100"
    version="1.1"
-   id="svg529"
+   id="svg5"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
-   sodipodi:docname="body-rectangle.svg"
+   sodipodi:docname="antigen-binder.semicircle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/antigen-binder.semicircle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
-     id="namedview531"
+     id="namedview7"
      pagecolor="#505050"
      bordercolor="#ffffff"
      borderopacity="1"
@@ -23,27 +26,26 @@
      inkscape:pagecheckerboard="1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.77326038"
-     inkscape:cx="396.3736"
-     inkscape:cy="561.90646"
+     inkscape:zoom="0.78377692"
+     inkscape:cx="-320.88212"
+     inkscape:cy="412.74499"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     showguides="false"
+     width="100mm" />
   <defs
-     id="defs526" />
+     id="defs2" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <rect
-       style="fill:#ffffff;stroke-width:0.264583"
-       id="rect555"
-       width="32.305271"
-       height="32.305271"
-       x="62.059002"
-       y="99.623741" />
+    <path
+       id="rect1574"
+       style="fill:#ffffff;stroke-width:0.41207"
+       d="m 100.0001,0 c 0,27.614236 -22.385811,50.000052 -50.000048,50.000052 C 22.385818,50.000052 0,27.614236 0,0 v 100.0001 h 100.0001 z" />
   </g>
 </svg>

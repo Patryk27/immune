@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f32::consts::TAU;
 use std::str::FromStr;
 
 use bevy::prelude::*;
@@ -9,7 +9,7 @@ use crate::map::Map;
 const MAP: &str = include_str!("./map.toml");
 
 // TODO(pwy) rename to LymphNode? (not sure on the biological term ATM)
-#[derive(Component, Copy, Clone, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Factory {
     pub time_to_spawn: f32,
     pub timer: f32,
@@ -18,7 +18,7 @@ pub struct Factory {
 
 impl Factory {
     pub fn spawn(
-        self,
+        &self,
         commands: &mut Commands,
         assets: &AssetServer,
         at: Vec2,
@@ -31,9 +31,9 @@ impl Factory {
             .insert(transform)
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
-            .insert(self)
+            .insert(self.to_owned())
             .with_children(|entity| {
-                let texture = assets.load("body-circle.png");
+                let texture = assets.load("body.circle.png");
 
                 entity.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -47,12 +47,12 @@ impl Factory {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub enum FactoryProduct {
     Leukocyte(Leukocyte),
 }
 
-#[derive(Component, Copy, Clone, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Leukocyte {
     pub antigen: Antigen,
     pub body: Body,
@@ -61,97 +61,12 @@ pub struct Leukocyte {
 
 impl Leukocyte {
     pub fn spawn(
-        self,
+        &self,
         commands: &mut Commands,
         assets: &AssetServer,
         at: Vec2,
     ) {
-        let transform = Transform::from_translation(at.extend(1.0));
-
-        commands
-            .spawn()
-            .insert(transform)
-            .insert(GlobalTransform::default())
-            .insert(Visibility::default())
-            .insert(self)
-            .insert(Unit::default())
-            .with_children(|entity| {
-                let texture = assets.load(match self.body {
-                    Body::Circle => "body-circle.png",
-                    Body::Hexagon => "body-hexagon.png",
-                });
-
-                let sprite = SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::rgb_u8(255, 255, 255),
-                        ..Default::default()
-                    },
-                    transform: Transform::default()
-                        .with_scale(Vec3::splat(0.25)),
-                    texture,
-                    ..Default::default()
-                };
-
-                entity.spawn_bundle(sprite);
-            })
-            .with_children(|entity| {
-                match (self.body, self.antigen) {
-                    (Body::Circle, Antigen::Rectangle) => {
-                        // TODO
-                    }
-
-                    (Body::Circle, Antigen::Semicircle) => {
-                        // TODO
-                    }
-
-                    (Body::Circle, Antigen::Triangle) => {
-                        const SIDES: u8 = 3;
-
-                        let texture = assets.load("antigen-triangle.png");
-
-                        for side in 0..SIDES {
-                            let sprite = Sprite {
-                                color: Color::rgba_u8(255, 255, 255, 100),
-                                ..Default::default()
-                            };
-
-                            let transform_rot = Transform::from_rotation(
-                                Quat::from_rotation_z(
-                                    (side as f32) * 2.0 * PI / (SIDES as f32),
-                                ),
-                            );
-
-                            let transform_pos = Transform::from_translation(
-                                Vec3::new(0.0, 40.0, 0.0),
-                            );
-
-                            let transform = (transform_rot * transform_pos)
-                                .with_scale(Vec3::splat(0.1));
-
-                            let sprite = SpriteBundle {
-                                sprite,
-                                transform,
-                                texture: texture.clone(),
-                                ..Default::default()
-                            };
-
-                            entity.spawn_bundle(sprite);
-                        }
-                    }
-
-                    (Body::Hexagon, Antigen::Rectangle) => {
-                        // TODO
-                    }
-
-                    (Body::Hexagon, Antigen::Semicircle) => {
-                        // TODO
-                    }
-
-                    (Body::Hexagon, Antigen::Triangle) => {
-                        //
-                    }
-                }
-            });
+        Cell::Leukocyte(self).spawn(commands, assets, at);
     }
 }
 
@@ -161,11 +76,22 @@ pub enum LeukocyteKind {
     Killer,
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Pathogen {
     pub antigen: Antigen,
-    pub shape: Body,
+    pub body: Body,
     pub kind: PathogenKind,
+}
+
+impl Pathogen {
+    pub fn spawn(
+        &self,
+        commands: &mut Commands,
+        assets: &AssetServer,
+        at: Vec2,
+    ) {
+        Cell::Pathogen(self).spawn(commands, assets, at);
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -173,7 +99,7 @@ pub enum PathogenKind {
     Virus,
 }
 
-// TODO(pwy/post-mvp) allow to configure number of sides
+// TODO(pwy/post-mvp) allow to configure number of sides?
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Antigen {
     Rectangle,
@@ -181,10 +107,166 @@ pub enum Antigen {
     Triangle,
 }
 
+impl Antigen {
+    pub fn spawn(
+        self,
+        assets: &AssetServer,
+        entity: &mut ChildBuilder<'_, '_, '_>,
+        body: Body,
+    ) {
+        self.spawn_ex(
+            assets,
+            entity,
+            body,
+            "antigen",
+            Color::rgb_u8(128, 0, 0),
+        );
+    }
+
+    pub fn spawn_binders(
+        self,
+        assets: &AssetServer,
+        entity: &mut ChildBuilder<'_, '_, '_>,
+        body: Body,
+    ) {
+        self.spawn_ex(
+            assets,
+            entity,
+            body,
+            "antigen-binder",
+            Color::rgb_u8(128, 128, 128),
+        );
+    }
+
+    fn spawn_ex(
+        self,
+        assets: &AssetServer,
+        entity: &mut ChildBuilder<'_, '_, '_>,
+        body: Body,
+        asset_path_prefix: &str,
+        color: Color,
+    ) {
+        let texture = assets.load(&self.asset_path(asset_path_prefix));
+
+        for transform in Self::transforms(body) {
+            let sprite = Sprite {
+                color,
+                ..Default::default()
+            };
+
+            let sprite = SpriteBundle {
+                sprite,
+                transform,
+                texture: texture.clone(),
+                ..Default::default()
+            };
+
+            entity.spawn_bundle(sprite);
+        }
+    }
+
+    fn asset_path(self, prefix: &str) -> String {
+        let suffix = match self {
+            Antigen::Rectangle => "rectangle",
+            Antigen::Semicircle => "semicircle",
+            Antigen::Triangle => "triangle",
+        };
+
+        format!("{}.{}.png", prefix, suffix)
+    }
+
+    fn transforms(body: Body) -> impl Iterator<Item = Transform> {
+        const DISTANCE: f32 = 40.0;
+
+        let sides = match body {
+            Body::Circle => 3,
+            Body::Hexagon => 2,
+        };
+
+        (0..sides).map(move |side| {
+            let angle = (side as f32) * TAU / (sides as f32);
+
+            let transform_rot =
+                Transform::from_rotation(Quat::from_rotation_z(angle));
+
+            let transform_pos =
+                Transform::from_translation(Vec3::new(0.0, DISTANCE, -0.01));
+
+            (transform_rot * transform_pos).with_scale(Vec3::splat(0.1))
+        })
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Body {
     Circle,
     Hexagon,
+}
+
+pub enum Cell<'a> {
+    Leukocyte(&'a Leukocyte),
+    Pathogen(&'a Pathogen),
+}
+
+impl<'a> Cell<'a> {
+    pub fn spawn(
+        &self,
+        commands: &mut Commands,
+        assets: &AssetServer,
+        at: Vec2,
+    ) {
+        let mut entity = commands.spawn();
+
+        entity
+            .insert(Transform::from_translation(at.extend(1.0)))
+            .insert(GlobalTransform::default())
+            .insert(Visibility::default())
+            .insert(Unit::default());
+
+        match self {
+            Cell::Leukocyte(cell) => {
+                entity.insert((*cell).clone());
+            }
+            Cell::Pathogen(cell) => {
+                entity.insert((*cell).clone());
+            }
+        }
+
+        let (antigen, body, color) = match self {
+            Cell::Leukocyte(cell) => (cell.antigen, cell.body, Color::WHITE),
+            Cell::Pathogen(cell) => (cell.antigen, cell.body, Color::RED),
+        };
+
+        // Spawn cell's sprite
+        entity.with_children(|entity| {
+            let texture = assets.load(match body {
+                Body::Circle => "body.circle.png",
+                Body::Hexagon => "body.hexagon.png",
+            });
+
+            let sprite = SpriteBundle {
+                sprite: Sprite {
+                    color,
+                    ..Default::default()
+                },
+                transform: Transform::default().with_scale(Vec3::splat(0.25)),
+                texture,
+                ..Default::default()
+            };
+
+            entity.spawn_bundle(sprite);
+        });
+
+        // Spawn cell's antigens
+        entity.with_children(|entity| {
+            let spawn = match self {
+                Cell::Leukocyte(_) => Antigen::spawn_binders,
+                Cell::Pathogen(_) => Antigen::spawn,
+            };
+
+            (spawn)(antigen, assets, entity, body);
+        });
+    }
 }
 
 // ---
@@ -213,6 +295,25 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         };
 
         factory.spawn(&mut commands, &assets, map_factory.pos);
+    }
+
+    // ---
+
+    let mut x = -300.0;
+    let y = 300.0;
+
+    for antigen in [Antigen::Rectangle, Antigen::Semicircle, Antigen::Triangle]
+    {
+        for body in [Body::Circle, Body::Hexagon] {
+            Pathogen {
+                antigen,
+                body,
+                kind: PathogenKind::Virus,
+            }
+            .spawn(&mut commands, &assets, Vec2::new(x, y));
+
+            x += 125.0;
+        }
     }
 }
 
