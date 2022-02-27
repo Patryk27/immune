@@ -113,7 +113,7 @@ pub fn selection(
             });
 
         if let Some(entity) = clicked_entity {
-            ui_events.send(UiEvent::OpenLymphNode(entity));
+            ui_events.send(UiEvent::OpenLymphNodeEditor(entity));
         }
     }
 
