@@ -10,7 +10,7 @@ pub struct State {
     is_dragging: bool,
     drag_start_pos: Vec3,
 
-    current_mouse_pos: Vec3,
+    pub current_mouse_pos: Vec3,
 }
 
 impl Default for State {

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
-use unfair_advantage::systems::{camera, cell_node, input, units};
+use unfair_advantage::systems::{camera, cell_node, input, physics, units};
 
 fn main() {
     let mut app = App::new();
@@ -12,6 +12,7 @@ fn main() {
         .add_startup_system(cell_node::setup)
         .add_system(cell_node::factory_node_system);
 
+    physics::initialize(&mut app);
     units::initialize(&mut app);
     input::initialize(&mut app);
     camera::initialize(&mut app);
