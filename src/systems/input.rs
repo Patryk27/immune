@@ -3,8 +3,10 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
-use super::units::Unit;
+use super::cell_node::LymphNode;
 use super::highlight::Highlight;
+use super::ui::UiEvent;
+use super::units::Unit;
 
 pub struct State {
     selected_units: Vec<Entity>,
@@ -71,17 +73,59 @@ pub fn selection(
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mouse_button_input: Res<Input<MouseButton>>,
     units: Query<(Entity, &Transform, &Unit)>,
+    lymph_nodes: Query<(Entity, &Transform, &LymphNode)>,
     mut lines: ResMut<DebugLines>,
+    mut ui_events: EventWriter<UiEvent>,
 ) {
+    if !state.is_dragging {
+        if mouse_button_input.just_pressed(MouseButton::Left) {
+            let clicked_entity =
+                lymph_nodes.iter().find_map(|(entity, transform, _)| {
+                    let pos = transform.translation.truncate();
+
+                    // TODO(pwy) feels like those shouldn't be hardcoded
+                    let bb = Rect {
+                        left: pos.x - 50.0,
+                        right: pos.x + 50.0,
+                        top: pos.y - 50.0,
+                        bottom: pos.y + 50.0,
+                    };
+
+                    let mouse = state.current_mouse_pos;
+
+                    let is_clicked = mouse.x >= bb.left
+                        && mouse.x <= bb.right
+                        && mouse.y >= bb.top
+                        && mouse.y <= bb.bottom;
+
+                    if is_clicked {
+                        Some(entity)
+                    } else {
+                        None
+                    }
+                });
+
+            if let Some(entity) = clicked_entity {
+                ui_events.send(UiEvent::OpenLymphNode(entity));
+            }
+        }
+    }
+
     for event in mouse_button_input_events.iter() {
         if event.button == MouseButton::Left {
             match (state.is_dragging, event.state.is_pressed()) {
                 // Drag end
-                (true, false) if mouse_button_input.just_released(MouseButton::Left) => {
+                (true, false)
+                    if mouse_button_input.just_released(MouseButton::Left) =>
+                {
                     state.is_dragging = false;
 
-                    let drag_x = (state.current_mouse_pos.x - state.drag_start_pos.x).abs();
-                    let drag_y = (state.current_mouse_pos.y - state.drag_start_pos.y).abs();
+                    let drag_x = (state.current_mouse_pos.x
+                        - state.drag_start_pos.x)
+                        .abs();
+                    let drag_y = (state.current_mouse_pos.y
+                        - state.drag_start_pos.y)
+                        .abs();
                     let size = 50.0; // TODO(pry): this info should be within unit struct
                     let offset = Vec3::new(size, size, 0.0);
 
@@ -105,14 +149,20 @@ pub fn selection(
                             .iter()
                             .filter(|(_, transform, _)| {
                                 is_unit_within_selection(
-                                    transform,
-                                    start_pos,
-                                    end_pos,
+                                    transform, start_pos, end_pos,
                                 )
                             })
                             .sorted_by(|(_, one, _), (_, other, _)| {
-                                let one_distance = (one.translation.distance(state.current_mouse_pos) * 100.0) as u64;
-                                let other_distance = (other.translation.distance(state.current_mouse_pos) * 100.0) as u64;
+                                let one_distance = (one
+                                    .translation
+                                    .distance(state.current_mouse_pos)
+                                    * 100.0)
+                                    as u64;
+                                let other_distance = (other
+                                    .translation
+                                    .distance(state.current_mouse_pos)
+                                    * 100.0)
+                                    as u64;
 
                                 one_distance.cmp(&other_distance)
                             })
@@ -126,7 +176,7 @@ pub fn selection(
                 (false, true) => {
                     state.is_dragging = true;
                     state.drag_start_pos = state.current_mouse_pos;
-                },
+                }
                 _ => (),
             }
         }
@@ -138,7 +188,6 @@ pub fn selection(
 
     draw_square(&mut lines, state.drag_start_pos, state.current_mouse_pos);
 }
-
 
 pub fn highlight_selection(
     state: ResMut<State>,

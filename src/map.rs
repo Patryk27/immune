@@ -5,18 +5,14 @@ use bevy::math::Vec2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct Map {
-    pub factory_nodes: Vec<FactoryNode>,
-    pub nodes: Vec<Node>,
+    pub lymph_nodes: Vec<LymphNode>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FactoryNode {
-    pub pos: Vec2,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Node {
+#[serde(deny_unknown_fields)]
+pub struct LymphNode {
     pub pos: Vec2,
 }
 

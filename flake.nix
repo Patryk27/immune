@@ -24,6 +24,7 @@
             udev
             vulkan-loader
             wayland
+            xlibs.libxcb
           ];
 
           shellHook = ''
@@ -33,6 +34,7 @@
               udev
               vulkan-loader
               wayland
+              xlibs.libxcb
             ]}"
           '';
         };

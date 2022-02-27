@@ -1,6 +1,7 @@
 use std::f32::consts::TAU;
 use std::str::FromStr;
 
+use bevy::math::vec2;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -10,15 +11,14 @@ use crate::map::Map;
 
 const MAP: &str = include_str!("./map.toml");
 
-// TODO(pwy) rename to LymphNode? (not sure on the biological term ATM)
 #[derive(Component, Clone, Debug)]
-pub struct Factory {
+pub struct LymphNode {
     pub time_to_spawn: f32,
     pub timer: f32,
-    pub product: Option<FactoryProduct>,
+    pub product: Option<LymphNodeProduct>,
 }
 
-impl Factory {
+impl LymphNode {
     pub fn spawn(
         &self,
         commands: &mut Commands,
@@ -50,7 +50,7 @@ impl Factory {
 }
 
 #[derive(Clone, Debug)]
-pub enum FactoryProduct {
+pub enum LymphNodeProduct {
     Leukocyte(Leukocyte),
 }
 
@@ -113,7 +113,7 @@ impl Antigen {
     pub fn spawn(
         self,
         assets: &AssetServer,
-        entity: &mut ChildBuilder<'_, '_, '_>,
+        entity: &mut ChildBuilder,
         body: Body,
     ) {
         self.spawn_ex(
@@ -128,7 +128,7 @@ impl Antigen {
     pub fn spawn_binders(
         self,
         assets: &AssetServer,
-        entity: &mut ChildBuilder<'_, '_, '_>,
+        entity: &mut ChildBuilder,
         body: Body,
     ) {
         self.spawn_ex(
@@ -143,7 +143,7 @@ impl Antigen {
     fn spawn_ex(
         self,
         assets: &AssetServer,
-        entity: &mut ChildBuilder<'_, '_, '_>,
+        entity: &mut ChildBuilder,
         body: Body,
         asset_path_prefix: &str,
         color: Color,
@@ -240,7 +240,7 @@ impl<'a> Cell<'a> {
 
         match self {
             Cell::Leukocyte(cell) => {
-                entity.insert((*cell).clone());
+                entity.insert(Unit::default()).insert((*cell).clone());
             }
             Cell::Pathogen(cell) => {
                 entity.insert((*cell).clone());
@@ -322,8 +322,8 @@ impl<'a> Cell<'a> {
 pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let map = Map::from_str(MAP).unwrap();
 
-    for (idx, map_factory) in map.factory_nodes.iter().enumerate() {
-        let factory = {
+    for (idx, lymph_node_item) in map.lymph_nodes.iter().enumerate() {
+        let lymph_node = {
             // TODO this should be set by the user
             let body = if idx % 2 == 0 {
                 Body::Hexagon
@@ -331,10 +331,10 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 Body::Circle
             };
 
-            Factory {
+            LymphNode {
                 time_to_spawn: 1.0,
                 timer: 1.0,
-                product: Some(FactoryProduct::Leukocyte(Leukocyte {
+                product: Some(LymphNodeProduct::Leukocyte(Leukocyte {
                     antigen: Antigen::Triangle,
                     body,
                     kind: LeukocyteKind::Killer,
@@ -342,7 +342,7 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             }
         };
 
-        factory.spawn(&mut commands, &assets, map_factory.pos);
+        lymph_node.spawn(&mut commands, &assets, lymph_node_item.pos);
     }
 
     // ---
@@ -358,35 +358,35 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 body,
                 kind: PathogenKind::Virus,
             }
-            .spawn(&mut commands, &assets, Vec2::new(x, y));
+            .spawn(&mut commands, &assets, vec2(x, y));
 
             x += 125.0;
         }
     }
 }
 
-pub fn factory_node_system(
+pub fn process(
     mut commands: Commands,
     time: Res<Time>,
     assets: Res<AssetServer>,
-    mut query: Query<(&mut Factory, &Transform)>,
+    mut query: Query<(&mut LymphNode, &Transform)>,
 ) {
-    for (mut factory_node, transform) in &mut query.iter_mut() {
-        let factory_node = &mut *factory_node;
+    for (mut lymph_node, transform) in &mut query.iter_mut() {
+        let lymph_node = &mut *lymph_node;
 
-        let product = if let Some(product) = &factory_node.product {
+        let product = if let Some(product) = &lymph_node.product {
             product
         } else {
             continue;
         };
 
-        factory_node.timer -= time.delta_seconds();
+        lymph_node.timer -= time.delta_seconds();
 
-        if factory_node.timer <= 0.0 {
-            factory_node.timer = factory_node.time_to_spawn;
+        if lymph_node.timer <= 0.0 {
+            lymph_node.timer = lymph_node.time_to_spawn;
 
             match product {
-                FactoryProduct::Leukocyte(leukocyte) => {
+                LymphNodeProduct::Leukocyte(leukocyte) => {
                     leukocyte.spawn(
                         &mut commands,
                         &assets,
