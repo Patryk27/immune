@@ -1,6 +1,7 @@
 use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
+use itertools::Itertools;
 
 use super::units::Unit;
 use super::highlight::Highlight;
@@ -68,6 +69,7 @@ pub fn command(
 pub fn selection(
     mut state: ResMut<State>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mouse_button_input: Res<Input<MouseButton>>,
     units: Query<(Entity, &Transform, &Unit)>,
     mut lines: ResMut<DebugLines>,
 ) {
@@ -75,26 +77,56 @@ pub fn selection(
         if event.button == MouseButton::Left {
             match (state.is_dragging, event.state.is_pressed()) {
                 // Drag end
-                (true, false) => {
+                (true, false) if mouse_button_input.just_released(MouseButton::Left) => {
                     state.is_dragging = false;
 
-                    state.selected_units = units
-                        .iter()
-                        .filter(|(_, transform, _)| {
-                            is_unit_within_selection(
-                                transform,
-                                state.drag_start_pos,
-                                state.current_mouse_pos,
-                            )
-                        })
-                        .map(|(entity, _, _)| entity)
-                        .collect();
+                    let drag_x = (state.current_mouse_pos.x - state.drag_start_pos.x).abs();
+                    let drag_y = (state.current_mouse_pos.y - state.drag_start_pos.y).abs();
+                    let size = 50.0; // TODO(pry): this info should be within unit struct
+                    let offset = Vec3::new(size, size, 0.0);
+
+                    if drag_x > offset.x && drag_y > offset.y {
+                        state.selected_units = units
+                            .iter()
+                            .filter(|(_, transform, _)| {
+                                is_unit_within_selection(
+                                    transform,
+                                    state.drag_start_pos,
+                                    state.current_mouse_pos,
+                                )
+                            })
+                            .map(|(entity, _, _)| entity)
+                            .collect();
+                    } else {
+                        let start_pos = state.current_mouse_pos + offset;
+                        let end_pos = state.current_mouse_pos - offset;
+
+                        state.selected_units = units
+                            .iter()
+                            .filter(|(_, transform, _)| {
+                                is_unit_within_selection(
+                                    transform,
+                                    start_pos,
+                                    end_pos,
+                                )
+                            })
+                            .sorted_by(|(_, one, _), (_, other, _)| {
+                                let one_distance = (one.translation.distance(state.current_mouse_pos) * 100.0) as u64;
+                                let other_distance = (other.translation.distance(state.current_mouse_pos) * 100.0) as u64;
+
+                                one_distance.cmp(&other_distance)
+                            })
+                            .map(|(entity, _, _)| entity)
+                            .next()
+                            .into_iter()
+                            .collect();
+                    }
                 }
                 // Drag start
                 (false, true) => {
                     state.is_dragging = true;
                     state.drag_start_pos = state.current_mouse_pos;
-                }
+                },
                 _ => (),
             }
         }
@@ -113,7 +145,10 @@ pub fn highlight_selection(
     units: Query<(Entity, &Unit, &Children)>,
     mut highlights: Query<(Entity, &Highlight, &mut Visibility)>,
 ) {
-    let mut selected_children: Vec<Entity> = Vec::new();
+    // Has to be greater than max number of children of Unit to allocate only once
+    let unit_children = 10;
+    let capacity = state.selected_units.len() * unit_children;
+    let mut selected_children: Vec<Entity> = Vec::with_capacity(capacity);
 
     for selected_entity in state.selected_units.iter() {
         let (_, _, children) = units.get(*selected_entity).unwrap();
@@ -129,8 +164,6 @@ pub fn highlight_selection(
         }
     }
 }
-
-
 
 fn is_unit_within_selection(
     unit: &Transform,

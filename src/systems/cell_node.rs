@@ -268,10 +268,11 @@ impl<'a> Cell<'a> {
             (spawn)(antigen, assets, entity, body);
         });
 
+        // Spawn hidden selection highlight
         entity.with_children(|entity| {
             let texture = assets.load("selector.png");
             let color = Color::rgba_u8(0, 220, 0, 50);
-            let size = 50.0;
+            let size = 50.0; // TODO(pry): this info should be within unit struct
             let arrows = vec![
                 (false, false, -1.0, 1.0),
                 (true, false, 1.0, 1.0),
