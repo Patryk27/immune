@@ -2,6 +2,7 @@ use std::f32::consts::TAU;
 use std::str::FromStr;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 use super::highlight::Highlight;
 use super::units::Unit;
@@ -222,6 +223,19 @@ impl<'a> Cell<'a> {
             .insert(Transform::from_translation(at.extend(1.0)))
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
+            .insert_bundle(RigidBodyBundle {
+                position: at.to_array().into(),
+                damping: RigidBodyDampingComponent(RigidBodyDamping {
+                    angular_damping: 0.0,
+                    linear_damping: 0.99999,
+                }),
+                ..Default::default()
+            })
+            .insert_bundle(ColliderBundle {
+                shape: ColliderShapeComponent(ColliderShape::ball(25.0)),
+                ..Default::default()
+            })
+            .insert(ColliderPositionSync::Discrete)
             .insert(Unit::default());
 
         match self {
@@ -281,7 +295,8 @@ impl<'a> Cell<'a> {
             ];
 
             for (flip_x, flip_y, mul_x, mul_y) in arrows {
-                let transform = Transform::from_xyz(size * mul_x, size * mul_y, 0.0);
+                let transform =
+                    Transform::from_xyz(size * mul_x, size * mul_y, 0.0);
 
                 entity
                     .spawn_bundle(SpriteBundle {
