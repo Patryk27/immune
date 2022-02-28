@@ -535,8 +535,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d92479c7574af9ceada22305b1b0114f56ffa951b7a2e55fdb12f0da68e2629e"
 dependencies = [
  "bevy",
- "nalgebra 0.30.1",
- "rapier2d 0.12.0-alpha.1",
+ "nalgebra",
+ "rapier2d",
 ]
 
 [[package]]
@@ -2145,22 +2145,6 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d506eb7e08d6329505faa8a3a00a5dcc6de9f76e0c77e4b75763ae3c770831ff"
-dependencies = [
- "approx",
- "matrixmultiply",
- "nalgebra-macros",
- "num-complex",
- "num-rational 0.4.0",
- "num-traits",
- "simba 0.6.0",
- "typenum",
-]
-
-[[package]]
-name = "nalgebra"
 version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fb2d0de08694bed883320212c18ee3008576bfe8c306f4c3c4a58b4876998be"
@@ -2172,7 +2156,7 @@ dependencies = [
  "num-complex",
  "num-rational 0.4.0",
  "num-traits",
- "simba 0.7.1",
+ "simba",
  "typenum",
 ]
 
@@ -2581,26 +2565,6 @@ dependencies = [
 
 [[package]]
 name = "parry2d"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e03714e76fd6708c1fa3fc4f58a66dabd723bb87865548657a037beaf9a8eea"
-dependencies = [
- "approx",
- "arrayvec",
- "bitflags",
- "downcast-rs",
- "either",
- "nalgebra 0.29.0",
- "num-derive",
- "num-traits",
- "rustc-hash",
- "simba 0.6.0",
- "slab",
- "smallvec",
-]
-
-[[package]]
-name = "parry2d"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65289d4e196cfaca6643766c0d7288997f3b4cee99eba4cdcc28c1dcb8bf2450"
@@ -2610,11 +2574,11 @@ dependencies = [
  "bitflags",
  "downcast-rs",
  "either",
- "nalgebra 0.30.1",
+ "nalgebra",
  "num-derive",
  "num-traits",
  "rustc-hash",
- "simba 0.7.1",
+ "simba",
  "slab",
  "smallvec",
 ]
@@ -2758,27 +2722,6 @@ checksum = "63e935c45e09cc6dcf00d2f0b2d630a58f4095320223d47fc68918722f0538b6"
 
 [[package]]
 name = "rapier2d"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c45d2910dbd279941b71ef9d20da877a0eada21f8117fcac70941e458100ea86"
-dependencies = [
- "approx",
- "arrayvec",
- "bit-vec",
- "bitflags",
- "crossbeam",
- "downcast-rs",
- "instant",
- "nalgebra 0.29.0",
- "num-derive",
- "num-traits",
- "parry2d 0.7.1",
- "rustc-hash",
- "simba 0.6.0",
-]
-
-[[package]]
-name = "rapier2d"
 version = "0.12.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54993fcf878665e49dc36cacff0eb9021b7789462e6bb197698191fa17ef5bd8"
@@ -2790,12 +2733,12 @@ dependencies = [
  "crossbeam",
  "downcast-rs",
  "instant",
- "nalgebra 0.30.1",
+ "nalgebra",
  "num-derive",
  "num-traits",
- "parry2d 0.8.0",
+ "parry2d",
  "rustc-hash",
- "simba 0.7.1",
+ "simba",
 ]
 
 [[package]]
@@ -3024,19 +2967,6 @@ name = "shlex"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
-
-[[package]]
-name = "simba"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0b7840f121a46d63066ee7a99fc81dcabbc6105e437cae43528cea199b5a05f"
-dependencies = [
- "approx",
- "num-complex",
- "num-traits",
- "paste",
- "wide",
-]
 
 [[package]]
 name = "simba"
@@ -3353,9 +3283,8 @@ dependencies = [
  "bevy_rapier2d",
  "indoc",
  "itertools",
- "nalgebra 0.30.1",
+ "nalgebra",
  "rand",
- "rapier2d 0.11.1",
  "serde",
  "toml",
 ]
