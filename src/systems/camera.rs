@@ -1,7 +1,10 @@
 use bevy::input::keyboard::KeyboardInput;
+use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 
 const SPEED: f32 = 500.0;
+const ZOOM_SPEED: f32 = 0.1;
+const MAX_ZOOM: f32 = 20.0;
 
 #[derive(Default)]
 pub struct State {
@@ -14,7 +17,8 @@ pub struct State {
 pub fn initialize(app: &mut App) {
     app.add_startup_system(setup)
         .add_system(keyboard_input)
-        .add_system(movement);
+        .add_system(movement)
+        .add_system(mouse);
 }
 
 pub fn setup(mut commands: Commands) {
@@ -24,6 +28,29 @@ pub fn setup(mut commands: Commands) {
         .spawn()
         .insert_bundle(OrthographicCameraBundle::new_2d())
         .insert(Transform::from_xyz(0.0, 0.0, 1000.0));
+}
+
+pub fn mouse(
+    mut query: Query<(&mut Transform, &Camera, &mut OrthographicProjection)>,
+    mouse: Res<Input<MouseButton>>,
+    mut cursor: EventReader<MouseMotion>,
+    mut wheel: EventReader<MouseWheel>,
+) {
+    let (mut transform, _, mut ortho) = query.single_mut();
+
+    if mouse.pressed(MouseButton::Right) {
+        for event in cursor.iter() {
+            let mut delta = event.delta.extend(0.0);
+            delta.x *= -1.0;
+
+            transform.translation += delta;
+        }
+    }
+
+    for event in wheel.iter() {
+        ortho.scale =
+            f32::clamp(ortho.scale - event.y * ZOOM_SPEED, 1.0, MAX_ZOOM);
+    }
 }
 
 pub fn movement(
