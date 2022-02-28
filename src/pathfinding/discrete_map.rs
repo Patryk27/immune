@@ -12,22 +12,25 @@ pub struct DiscreteMap {
     map_size: usize,
     field_size: usize,
     current: usize,
+    target: usize,
 }
 
 impl DiscreteMap {
-    pub fn new(map: &Map, mid: Vec2, map_size: usize) -> Self {
+    pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
+        let field_size = 30; // should be in config
+        let map_size = (mid.distance(target) / field_size as f32) as usize + 2;
         let map_size = if map_size % 2 == 0 {
             map_size + 1
         } else {
             map_size
         };
+        dbg!(map_size);
         let capacity = map_size.pow(2);
-        let field_size = 30; // should be in config
         let distance_to_edge = (field_size * map_size / 2) as f32;
         let top_left_field_x = mid.x - distance_to_edge;
         let top_left_field_y = mid.y + distance_to_edge;
 
-        let fields = (0..capacity)
+        let mut fields = (0..capacity)
             .map(|idx| {
                 let (row, col) = Self::idx_to_coordinates(idx, map_size);
                 let pos = Vec2::new(
@@ -44,12 +47,16 @@ impl DiscreteMap {
             .collect();
 
         let current = capacity / 2;
+        let target = Self::pos_to_idx(&fields, target);
+
+        fields[target].kind = FieldKinds::Target;
 
         let mut this = Self {
             fields,
             map_size,
             field_size,
             current,
+            target
         };
 
         this.mark_obstacles(map);
@@ -84,11 +91,11 @@ impl DiscreteMap {
         }
     }
 
-    fn pos_to_idx(&self, pos: Vec2) -> usize {
+    fn pos_to_idx(fields: &Vec<Field>, pos: Vec2) -> usize {
         let mut idx = 0;
         let mut min_distance = f32::INFINITY;
 
-        for (i, field) in self.fields.iter().enumerate() {
+        for (i, field) in fields.iter().enumerate() {
             let distance = field.pos.distance(pos);
 
             if distance < min_distance {
@@ -139,6 +146,7 @@ pub struct Field {
 pub enum FieldKinds {
     Empty,
     Occupied,
+    Target,
 }
 
 impl fmt::Display for FieldKinds {
@@ -146,6 +154,7 @@ impl fmt::Display for FieldKinds {
         match self {
             Self::Empty => write!(f, " "),
             Self::Occupied => write!(f, "x"),
+            Self::Target => write!(f, "$"),
         }
     }
 }

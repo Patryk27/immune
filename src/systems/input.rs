@@ -69,7 +69,7 @@ pub fn command(
                 let discrete_map = DiscreteMap::new(
                     &map,
                     transform.translation.truncate(),
-                    10,
+                    state.current_mouse_pos.truncate(),
                 );
                 // TODO (pry)
                 // println!("{}", discrete_map);
