@@ -11,7 +11,7 @@ pub struct DiscreteMap {
     fields: Vec<Field>,
     map_size: usize,
     field_size: usize,
-    current: usize,
+    pathseeker: usize,
     target: usize,
 }
 
@@ -45,16 +45,17 @@ impl DiscreteMap {
             })
             .collect();
 
-        let current = capacity / 2;
+        let pathseeker = capacity / 2;
         let target = Self::pos_to_idx(&fields, target);
 
         fields[target].kind = FieldKinds::Target;
+        fields[pathseeker].kind = FieldKinds::Pathseeker;
 
         let mut this = Self {
             fields,
             map_size,
             field_size,
-            current,
+            pathseeker,
             target,
         };
 
@@ -64,7 +65,7 @@ impl DiscreteMap {
     }
 
     fn mark_obstacles(&mut self, map: &Map) {
-        let current_pos = self.fields[self.current].pos;
+        let current_pos = self.fields[self.pathseeker].pos;
 
         for node in map.lymph_nodes.iter() {
             for mut field in self.fields.iter_mut() {
@@ -123,11 +124,8 @@ impl fmt::Display for DiscreteMap {
                 current_row = row;
             }
 
-            if field.idx == self.current {
-                write!(f, "[o]")?;
-            } else {
-                write!(f, "[{}]", field.kind)?;
-            }
+
+            write!(f, "[{}]", field.kind)?;
         }
 
         write!(f, "\n")
@@ -144,6 +142,7 @@ pub enum FieldKinds {
     Empty,
     Occupied,
     Target,
+    Pathseeker
 }
 
 impl fmt::Display for FieldKinds {
@@ -152,6 +151,7 @@ impl fmt::Display for FieldKinds {
             Self::Empty => write!(f, " "),
             Self::Occupied => write!(f, "x"),
             Self::Target => write!(f, "$"),
+            Self::Pathseeker => write!(f, "o"),
         }
     }
 }
