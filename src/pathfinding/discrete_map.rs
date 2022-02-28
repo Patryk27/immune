@@ -16,7 +16,11 @@ pub struct DiscreteMap {
 
 impl DiscreteMap {
     pub fn new(map: &Map, mid: Vec2, map_size: usize) -> Self {
-        let map_size = if map_size % 2 == 0 { map_size + 1 } else { map_size };
+        let map_size = if map_size % 2 == 0 {
+            map_size + 1
+        } else {
+            map_size
+        };
         let capacity = map_size.pow(2);
         let field_size = 30; // should be in config
         let distance_to_edge = (field_size * map_size / 2) as f32;
@@ -25,7 +29,7 @@ impl DiscreteMap {
 
         let fields = (0..capacity)
             .map(|idx| {
-                let(row, col) = Self::idx_to_coordinates(idx, map_size);
+                let (row, col) = Self::idx_to_coordinates(idx, map_size);
                 let pos = Vec2::new(
                     top_left_field_x + (col * field_size) as f32,
                     top_left_field_y - (row * field_size) as f32,
@@ -45,7 +49,7 @@ impl DiscreteMap {
             fields,
             map_size,
             field_size,
-            current
+            current,
         };
 
         this.mark_obstacles(map);
@@ -141,7 +145,7 @@ impl fmt::Display for FieldKinds {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Empty => write!(f, " "),
-            Self::Occupied => write!(f, "x")
+            Self::Occupied => write!(f, "x"),
         }
     }
 }
@@ -150,7 +154,12 @@ impl fmt::Display for FieldKinds {
 mod tests {
     use super::*;
 
-    fn assert_coords(idx: usize, map_size: usize, expected_row: usize, expected_col: usize) {
+    fn assert_coords(
+        idx: usize,
+        map_size: usize,
+        expected_row: usize,
+        expected_col: usize,
+    ) {
         let (row, col) = DiscreteMap::idx_to_coordinates(idx, map_size);
 
         assert_eq!(row, expected_row);

@@ -17,3 +17,7 @@ pub fn setup(mut rapier_config: ResMut<RapierConfiguration>) {
 pub fn pixel_to_world(vec: Vec3) -> Vector<Real> {
     (vec / PHYSICS_SCALE).truncate().to_array().into()
 }
+
+pub fn world_to_pixel(vec: Vector<Real>) -> Vec3 {
+    Vec2::from(vec.data.0[0]).extend(0.0) * PHYSICS_SCALE
+}

@@ -1,3 +1,4 @@
+mod debug_window;
 mod lymph_node_editor;
 mod textures;
 
@@ -16,7 +17,10 @@ impl Plugin for UiPlugin {
             .insert_resource(UiTextures::default())
             .add_event::<UiEvent>()
             .add_system(process_events)
-            .add_system(process_lymph_node_editor);
+            .add_system(process_lymph_node_editor)
+            // Debug
+            .insert_resource(crate::systems::debug::DebugState::default())
+            .add_system(debug_window::system);
     }
 }
 

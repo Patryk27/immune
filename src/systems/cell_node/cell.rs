@@ -26,8 +26,8 @@ impl<'a> Cell<'a> {
             .insert_bundle(RigidBodyBundle {
                 position: at.to_array().into(),
                 damping: RigidBodyDampingComponent(RigidBodyDamping {
-                    angular_damping: 100.0,
-                    linear_damping: 0.0,
+                    angular_damping: 1.0,
+                    linear_damping: 1.0,
                 }),
                 ..Default::default()
             })

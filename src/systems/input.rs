@@ -3,13 +3,12 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
-use crate::map::Map;
-use crate::pathfinding::DiscreteMap;
-
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
 use super::ui::UiEvent;
 use super::units::Unit;
+use crate::map::Map;
+use crate::pathfinding::DiscreteMap;
 
 pub struct State {
     selected_units: Vec<Entity>,
@@ -67,7 +66,11 @@ pub fn command(
             for unit in state.selected_units.iter() {
                 let (mut unit, transform) = units.get_mut(*unit).unwrap();
                 unit.target = Some(state.current_mouse_pos);
-                let discrete_map = DiscreteMap::new(&map, transform.translation.truncate(), 10);
+                let discrete_map = DiscreteMap::new(
+                    &map,
+                    transform.translation.truncate(),
+                    10,
+                );
                 // TODO (pry)
                 // println!("{}", discrete_map);
             }
