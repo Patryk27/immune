@@ -1,8 +1,3 @@
-use bevy::prelude::*;
-
-use super::physics::PHYSICS_SCALE;
-use crate::level::Level;
-
 mod antigen;
 mod antigen_binder;
 mod body;
@@ -12,6 +7,8 @@ mod lymph_node;
 mod pathogen;
 mod protein;
 
+use bevy::prelude::*;
+
 pub use self::antigen::*;
 pub use self::antigen_binder::*;
 pub use self::body::*;
@@ -20,27 +17,10 @@ pub use self::leukocyte::*;
 pub use self::lymph_node::*;
 pub use self::pathogen::*;
 pub use self::protein::*;
+use super::physics::PHYSICS_SCALE;
 
 pub fn initialize(app: &mut App) {
-    app.add_startup_system(setup)
-        .add_system(progress_lymph_nodes);
-}
-
-fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    let level = Level::l1();
-
-    for lymph_node in &level.setup.lymph_nodes {
-        LymphNode {
-            time_to_spawn: 3.0,
-            timer: 1.0,
-            lhs: None,
-            rhs: None,
-            output: None,
-        }
-        .spawn(&mut commands, &assets, lymph_node.pos);
-    }
-
-    commands.insert_resource(level);
+    app.add_system(progress_lymph_nodes);
 }
 
 fn progress_lymph_nodes(

@@ -30,8 +30,8 @@ pub struct LevelSetup {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LevelWave {
-    #[serde(rename = "StartsAfterSecs")]
-    pub starts_after_secs: u64,
+    #[serde(rename = "StartsAt")]
+    pub starts_at: u64,
     #[serde(rename = "Virus")]
     pub viruses: Vec<LevelVirus>,
 }

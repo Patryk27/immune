@@ -4,7 +4,7 @@ use bevy_prototype_debug_lines::DebugLinesPlugin;
 use unfair_advantage::systems::{
     camera, cell_node, debug, input, physics, units,
 };
-use unfair_advantage::{compiling, pathfinding, ui};
+use unfair_advantage::{compiling, game, pathfinding, ui};
 
 fn main() {
     let mut app = App::new();
@@ -16,7 +16,8 @@ fn main() {
         .add_plugin(input::InputPlugin)
         .add_plugin(ui::UiPlugin)
         .add_plugin(compiling::CompilingPlugin)
-        .add_plugin(pathfinding::PathfindingPlugin);
+        .add_plugin(pathfinding::PathfindingPlugin)
+        .add_plugin(game::GamePlugin);
 
     debug::initialize(&mut app);
     cell_node::initialize(&mut app);
