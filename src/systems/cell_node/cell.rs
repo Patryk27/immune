@@ -40,10 +40,10 @@ impl<'a> Cell<'a> {
 
         match self {
             Cell::Leukocyte(cell) => {
-                entity.insert((*cell).clone());
+                entity.insert(**cell);
             }
             Cell::Pathogen(cell) => {
-                entity.insert((*cell).clone());
+                entity.insert(**cell);
             }
         }
 

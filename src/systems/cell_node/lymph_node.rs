@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
-use crate::compiler::Compiler;
+use crate::compiling::{CompilationWarning, NeedsRecompiling};
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
@@ -9,19 +9,7 @@ pub struct LymphNode {
     pub timer: f32,
     pub lhs: Option<LymphNodeInput>,
     pub rhs: Option<LymphNodeInput>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LymphNodeInput {
-    Binder(AntigenBinder),
-    Body(Body),
-    Protein(Protein),
-    External(Entity),
-}
-
-#[derive(Clone, Debug)]
-pub enum LymphNodeOutput {
-    Leukocyte(Leukocyte),
+    pub output: Option<LymphNodeOutput>,
 }
 
 impl LymphNode {
@@ -34,46 +22,72 @@ impl LymphNode {
         let transform = Transform::from_translation(at.extend(0.9))
             .with_scale(Vec3::splat(0.5));
 
-        commands
-            .spawn()
+        let mut entity = commands.spawn();
+
+        entity
             .insert(transform)
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert(self.to_owned())
-            .with_children(|entity| {
-                let texture = assets.load("body.circle.png");
+            .insert(NeedsRecompiling);
 
-                entity.spawn_bundle(SpriteBundle {
+        // Spawn lymph node's sprite
+        entity.with_children(|entity| {
+            entity.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb_u8(195, 160, 229),
+                    ..Default::default()
+                },
+                texture: assets.load("body.circle.png"),
+                ..Default::default()
+            });
+        });
+
+        // Spawn lymph node's compilation warning
+        entity.with_children(|entity| {
+            entity
+                .spawn_bundle(SpriteBundle {
                     sprite: Sprite {
-                        color: Color::rgb_u8(195, 160, 229),
+                        color: Color::rgb_u8(255, 0, 0),
                         ..Default::default()
                     },
-                    texture,
+                    transform: Transform::from_xyz(0.0, 0.0, 0.1),
+                    texture: assets.load("warning.png"),
                     ..Default::default()
-                });
-            });
+                })
+                .insert(CompilationWarning);
+        });
     }
+}
 
-    pub fn output(&self, compiler: &Compiler) -> Option<LymphNodeOutput> {
-        compiler.compile(self.lhs, self.rhs)
-    }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LymphNodeInput {
+    Body(Body),
+    Binder(AntigenBinder),
+    Protein(Protein),
+    External(Entity),
 }
 
 impl LymphNodeInput {
     pub fn variants() -> impl Iterator<Item = Self> {
-        let binders = AntigenBinder::variants().map(Self::Binder);
         let bodies = Body::variants().map(Self::Body);
+        let binders = AntigenBinder::variants().map(Self::Binder);
         let proteins = Protein::variants().map(Self::Protein);
 
-        binders.chain(bodies).chain(proteins)
+        bodies.chain(binders).chain(proteins)
     }
 
     pub fn asset_path(&self) -> &'static str {
         match self {
-            Self::Binder(binder) => binder.asset_path(),
             Self::Body(body) => body.asset_path(),
+            Self::Binder(binder) => binder.asset_path(),
             Self::Protein(protein) => protein.asset_path(),
             Self::External(_) => Body::Circle.asset_path(), // TODO(pwy) needs its own icon
         }
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum LymphNodeOutput {
+    Leukocyte(Leukocyte),
 }

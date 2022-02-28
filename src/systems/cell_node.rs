@@ -5,7 +5,6 @@ use bevy::prelude::*;
 
 use super::physics::PHYSICS_SCALE;
 use super::units::Unit;
-use crate::compiler::Compiler;
 use crate::map::Map;
 
 const MAP: &str = include_str!("./map.toml");
@@ -46,12 +45,13 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             };
 
             LymphNode {
-                time_to_spawn: 1.0,
+                time_to_spawn: 3.0,
                 timer: 1.0,
                 lhs: Some(LymphNodeInput::Body(body)),
                 rhs: Some(LymphNodeInput::Binder(AntigenBinder::new(
                     Antigen::Triangle,
                 ))),
+                output: None,
             }
         };
 
@@ -92,15 +92,13 @@ pub fn spawn_leukocytes(
     mut commands: Commands,
     time: Res<Time>,
     assets: Res<AssetServer>,
-    mut query: Query<(&mut LymphNode, &Transform)>,
+    mut query: Query<(Entity, &mut LymphNode, &Transform)>,
 ) {
-    let compiler = Compiler::new();
-
-    for (mut lymph_node, transform) in &mut query.iter_mut() {
+    for (_, mut lymph_node, transform) in &mut query.iter_mut() {
         let lymph_node = &mut *lymph_node;
 
-        let product = if let Some(product) = lymph_node.output(&compiler) {
-            product
+        let output = if let Some(output) = &lymph_node.output {
+            output
         } else {
             continue;
         };
@@ -110,7 +108,7 @@ pub fn spawn_leukocytes(
         if lymph_node.timer <= 0.0 {
             lymph_node.timer = lymph_node.time_to_spawn;
 
-            match product {
+            match output {
                 LymphNodeOutput::Leukocyte(leukocyte) => {
                     leukocyte.spawn(
                         &mut commands,

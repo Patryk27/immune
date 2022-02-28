@@ -2,8 +2,9 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use unfair_advantage::systems::{
-    camera, cell_node, debug, input, physics, ui, units,
+    camera, cell_node, debug, input, physics, units,
 };
+use unfair_advantage::{compiling, ui};
 
 fn main() {
     let mut app = App::new();
@@ -12,7 +13,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
-        .add_plugin(ui::UiPlugin);
+        .add_plugin(ui::UiPlugin)
+        .add_plugin(compiling::CompilingPlugin);
 
     debug::initialize(&mut app);
     cell_node::initialize(&mut app);

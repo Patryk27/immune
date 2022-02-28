@@ -2,16 +2,11 @@ use bevy::prelude::*;
 
 use super::{Antigen, Body, Cell};
 
-#[derive(Component, Clone, Debug)]
+#[derive(Component, Clone, Copy, Debug)]
 pub struct Pathogen {
-    pub antigen: Antigen,
     pub body: Body,
+    pub antigen: Antigen,
     pub kind: PathogenKind,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PathogenKind {
-    Virus,
 }
 
 impl Pathogen {
@@ -23,4 +18,9 @@ impl Pathogen {
     ) {
         Cell::Pathogen(self).spawn(commands, assets, at);
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PathogenKind {
+    Virus,
 }

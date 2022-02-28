@@ -5,10 +5,10 @@ use itertools::Itertools;
 
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
-use super::ui::UiEvent;
 use super::units::Unit;
 use crate::map::Map;
 use crate::pathfinding::DiscreteMap;
+use crate::ui::UiEvent;
 
 pub struct State {
     selected_units: Vec<Entity>,

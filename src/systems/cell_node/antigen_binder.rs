@@ -14,6 +14,14 @@ impl AntigenBinder {
         Antigen::variants().map(Self)
     }
 
+    pub fn asset_path(&self) -> &'static str {
+        match self.0 {
+            Antigen::Rectangle => "antigen-binder.rectangle.png",
+            Antigen::Semicircle => "antigen-binder.semicircle.png",
+            Antigen::Triangle => "antigen-binder.triangle.png",
+        }
+    }
+
     pub fn spawn(
         self,
         assets: &AssetServer,
@@ -27,13 +35,5 @@ impl AntigenBinder {
             self.asset_path(),
             Color::rgb_u8(128, 128, 128),
         );
-    }
-
-    pub fn asset_path(self) -> &'static str {
-        match self.0 {
-            Antigen::Rectangle => "antigen-binder.rectangle.png",
-            Antigen::Semicircle => "antigen-binder.semicircle.png",
-            Antigen::Triangle => "antigen-binder.triangle.png",
-        }
     }
 }

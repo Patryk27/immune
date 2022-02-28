@@ -4,5 +4,4 @@ pub mod debug;
 pub mod highlight;
 pub mod input;
 pub mod physics;
-pub mod ui;
 pub mod units;

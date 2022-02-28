@@ -1,13 +1,15 @@
 mod debug_window;
 mod lymph_node_editor;
+mod radio_image_button;
 mod textures;
 
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
-use self::lymph_node_editor::*;
-use self::textures::*;
-use super::cell_node::*;
+pub(self) use self::lymph_node_editor::*;
+pub(self) use self::radio_image_button::*;
+pub(self) use self::textures::*;
+use crate::systems::cell_node::*;
 
 pub struct UiPlugin;
 
@@ -55,13 +57,17 @@ fn process_events(
 }
 
 fn process_lymph_node_editor(
+    commands: Commands,
     egui: ResMut<EguiContext>,
     textures: Res<UiTextures>,
     mut state: ResMut<UiState>,
-    lymph_nodes: Query<&mut LymphNode>,
+    lymph_nodes: Query<(Entity, &mut LymphNode)>,
 ) {
     if let Some(editor) = &mut state.lymph_node_editor {
-        if editor.process(egui, &textures, lymph_nodes).is_err() {
+        if editor
+            .process(commands, egui, &textures, lymph_nodes)
+            .is_err()
+        {
             // The lymph node must've been destroyed (e.g. map got reloaded)
             state.lymph_node_editor = None;
         }
