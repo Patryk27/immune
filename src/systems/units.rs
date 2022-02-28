@@ -10,7 +10,7 @@ const STOPPING_FORCE_FACTOR: f32 = 2.0;
 #[derive(Component, Default)]
 pub struct Unit {
     // TODO(dzejkop): Should be enum, target can be unit, etc.
-    pub target: Option<Vec3>,
+    pub target: Option<Vec2>,
 }
 
 pub fn initialize(app: &mut App) {

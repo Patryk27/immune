@@ -10,53 +10,51 @@ use crate::map::Map;
 use crate::pathfinding::DiscreteMap;
 use crate::ui::UiEvent;
 
-pub struct State {
-    selected_units: Vec<Entity>,
+pub struct InputPlugin;
 
-    is_dragging: bool,
-    drag_start_pos: Vec3,
-
-    pub current_mouse_pos: Vec3,
+impl Plugin for InputPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(InputState::default())
+            .add_system(track_mouse_position)
+            .add_system(process_mouse_selection)
+            .add_system(highlight_selection)
+            .add_system(process_mouse_command);
+    }
 }
 
-impl Default for State {
+struct InputState {
+    mouse_pos: Vec2,
+    is_dragging: bool,
+    drag_start_pos: Vec2,
+    selected_units: Vec<Entity>,
+}
+
+impl Default for InputState {
     fn default() -> Self {
         Self {
-            selected_units: vec![],
+            mouse_pos: Vec2::ZERO,
             is_dragging: false,
-            current_mouse_pos: Vec3::ZERO,
-            drag_start_pos: Vec3::ZERO,
+            drag_start_pos: Vec2::ZERO,
+            selected_units: vec![],
         }
     }
 }
 
-pub fn initialize(app: &mut App) {
-    app.add_startup_system(setup)
-        .add_system(track_mouse_position)
-        .add_system(selection)
-        .add_system(highlight_selection)
-        .add_system(command);
-}
-
-pub fn setup(mut commands: Commands) {
-    commands.insert_resource(State::default());
-}
-
-pub fn track_mouse_position(
-    mut state: ResMut<State>,
-    camera: Query<(&OrthographicProjection, &Camera, &Transform)>,
+fn track_mouse_position(
+    mut state: ResMut<InputState>,
+    camera: Query<(&OrthographicProjection, &Transform), With<Camera>>,
     mut cursor_moved_events: EventReader<CursorMoved>,
 ) {
-    let (ortho, _, camera) = camera.single();
+    let (ortho, camera) = camera.single();
 
     for event in cursor_moved_events.iter() {
         let pos = Vec3::new(event.position.x, event.position.y, 0.0);
-        state.current_mouse_pos = screen_to_world_point(camera, ortho, pos);
+        state.mouse_pos = screen_to_world_point(camera, ortho, pos).truncate();
     }
 }
 
-pub fn command(
-    state: Res<State>,
+fn process_mouse_command(
+    state: Res<InputState>,
     map: Res<Map>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mut units: Query<(&mut Unit, &Transform)>,
@@ -65,11 +63,11 @@ pub fn command(
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
                 let (mut unit, transform) = units.get_mut(*unit).unwrap();
-                unit.target = Some(state.current_mouse_pos);
+                unit.target = Some(state.mouse_pos);
                 let discrete_map = DiscreteMap::new(
                     &map,
                     transform.translation.truncate(),
-                    state.current_mouse_pos.truncate(),
+                    state.mouse_pos,
                 );
                 // TODO (pry)
                 // println!("{}", discrete_map);
@@ -78,8 +76,8 @@ pub fn command(
     }
 }
 
-pub fn selection(
-    mut state: ResMut<State>,
+fn process_mouse_selection(
+    mut state: ResMut<InputState>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mouse_button_input: Res<Input<MouseButton>>,
     units: Query<(Entity, &Transform, &Unit)>,
@@ -91,24 +89,11 @@ pub fn selection(
     {
         let clicked_entity =
             lymph_nodes.iter().find_map(|(entity, transform, _)| {
-                let pos = transform.translation.truncate();
-
-                // TODO(pwy) feels like those shouldn't be hardcoded
-                let bb = Rect {
-                    left: pos.x - 50.0,
-                    right: pos.x + 50.0,
-                    top: pos.y - 50.0,
-                    bottom: pos.y + 50.0,
-                };
-
-                let mouse = state.current_mouse_pos;
-
-                let is_clicked = mouse.x >= bb.left
-                    && mouse.x <= bb.right
-                    && mouse.y >= bb.top
-                    && mouse.y <= bb.bottom;
-
-                if is_clicked {
+                if point_in_circle(
+                    state.mouse_pos,
+                    transform.translation.truncate(),
+                    70.0,
+                ) {
                     Some(entity)
                 } else {
                     None
@@ -117,6 +102,7 @@ pub fn selection(
 
         if let Some(entity) = clicked_entity {
             ui_events.send(UiEvent::OpenLymphNodeEditor(entity));
+            return;
         }
     }
 
@@ -129,47 +115,50 @@ pub fn selection(
                 {
                     state.is_dragging = false;
 
-                    let drag_x = (state.current_mouse_pos.x
-                        - state.drag_start_pos.x)
-                        .abs();
-                    let drag_y = (state.current_mouse_pos.y
-                        - state.drag_start_pos.y)
-                        .abs();
+                    let drag_x =
+                        (state.mouse_pos.x - state.drag_start_pos.x).abs();
+                    let drag_y =
+                        (state.mouse_pos.y - state.drag_start_pos.y).abs();
                     let size = 50.0; // TODO(pry): this info should be within unit struct
-                    let offset = Vec3::new(size, size, 0.0);
+                    let offset = Vec2::new(size, size);
 
                     if drag_x > offset.x && drag_y > offset.y {
                         state.selected_units = units
                             .iter()
                             .filter(|(_, transform, _)| {
-                                is_unit_within_selection(
-                                    transform,
+                                point_in_rect(
+                                    transform.translation.truncate(),
                                     state.drag_start_pos,
-                                    state.current_mouse_pos,
+                                    state.mouse_pos,
                                 )
                             })
                             .map(|(entity, _, _)| entity)
                             .collect();
                     } else {
-                        let start_pos = state.current_mouse_pos + offset;
-                        let end_pos = state.current_mouse_pos - offset;
+                        let start_pos = state.mouse_pos + offset;
+                        let end_pos = state.mouse_pos - offset;
 
                         state.selected_units = units
                             .iter()
                             .filter(|(_, transform, _)| {
-                                is_unit_within_selection(
-                                    transform, start_pos, end_pos,
+                                point_in_rect(
+                                    transform.translation.truncate(),
+                                    start_pos,
+                                    end_pos,
                                 )
                             })
                             .sorted_by(|(_, one, _), (_, other, _)| {
                                 let one_distance = (one
                                     .translation
-                                    .distance(state.current_mouse_pos)
+                                    .truncate()
+                                    .distance(state.mouse_pos)
                                     * 100.0)
                                     as u64;
+
                                 let other_distance = (other
                                     .translation
-                                    .distance(state.current_mouse_pos)
+                                    .truncate()
+                                    .distance(state.mouse_pos)
                                     * 100.0)
                                     as u64;
 
@@ -184,7 +173,7 @@ pub fn selection(
                 // Drag start
                 (false, true) => {
                     state.is_dragging = true;
-                    state.drag_start_pos = state.current_mouse_pos;
+                    state.drag_start_pos = state.mouse_pos;
                 }
                 _ => (),
             }
@@ -195,11 +184,11 @@ pub fn selection(
         return;
     }
 
-    draw_square(&mut lines, state.drag_start_pos, state.current_mouse_pos);
+    draw_square(&mut lines, state.drag_start_pos, state.mouse_pos);
 }
 
-pub fn highlight_selection(
-    state: ResMut<State>,
+fn highlight_selection(
+    state: ResMut<InputState>,
     units: Query<(Entity, &Unit, &Children)>,
     mut highlights: Query<(Entity, &Highlight, &mut Visibility)>,
 ) {
@@ -215,31 +204,34 @@ pub fn highlight_selection(
     }
 
     for (entity, _, mut visibility) in highlights.iter_mut() {
-        if selected_children.contains(&entity) {
-            visibility.is_visible = true;
-        } else {
-            visibility.is_visible = false;
-        }
+        visibility.is_visible = selected_children.contains(&entity);
     }
 }
 
-fn is_unit_within_selection(
-    unit: &Transform,
-    start_pos: Vec3,
-    end_pos: Vec3,
+fn point_in_rect(
+    point: Vec2,
+    rect_top_left: Vec2,
+    rect_bottom_right: Vec2,
 ) -> bool {
-    let min_x = start_pos.x.min(end_pos.x);
-    let max_x = start_pos.x.max(end_pos.x);
-    let min_y = start_pos.y.min(end_pos.y);
-    let max_y = start_pos.y.max(end_pos.y);
+    let min_x = rect_top_left.x.min(rect_bottom_right.x);
+    let max_x = rect_top_left.x.max(rect_bottom_right.x);
+    let min_y = rect_top_left.y.min(rect_bottom_right.y);
+    let max_y = rect_top_left.y.max(rect_bottom_right.y);
 
-    unit.translation.x > min_x
-        && unit.translation.x < max_x
-        && unit.translation.y > min_y
-        && unit.translation.y < max_y
+    point.x > min_x && point.x < max_x && point.y > min_y && point.y < max_y
 }
 
-fn draw_square(lines: &mut DebugLines, start_point: Vec3, end_point: Vec3) {
+fn point_in_circle(
+    point: Vec2,
+    circle_center: Vec2,
+    circle_radius: f32,
+) -> bool {
+    point.distance(circle_center) <= circle_radius
+}
+
+fn draw_square(lines: &mut DebugLines, start_point: Vec2, end_point: Vec2) {
+    let start_point = start_point.extend(0.0);
+    let end_point = end_point.extend(0.0);
     let right = Vec3::new(end_point.x - start_point.x, 0.0, 0.0);
     let up = Vec3::new(0.0, end_point.y - start_point.y, 0.0);
 

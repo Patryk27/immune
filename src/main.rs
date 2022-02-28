@@ -13,6 +13,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
+        .add_plugin(input::InputPlugin)
         .add_plugin(ui::UiPlugin)
         .add_plugin(compiling::CompilingPlugin);
 
@@ -20,7 +21,6 @@ fn main() {
     cell_node::initialize(&mut app);
     physics::initialize(&mut app);
     units::initialize(&mut app);
-    input::initialize(&mut app);
     camera::initialize(&mut app);
 
     app.run();

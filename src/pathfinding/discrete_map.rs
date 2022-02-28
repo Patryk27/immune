@@ -55,7 +55,7 @@ impl DiscreteMap {
             map_size,
             field_size,
             current,
-            target
+            target,
         };
 
         this.mark_obstacles(map);
