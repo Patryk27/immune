@@ -64,6 +64,14 @@ impl DiscreteMap {
         this
     }
 
+    // pub fn successors(&self) -> Vec<Self> {
+
+    // }
+
+    // fn neighbours(&self, idx: usize) -> Vec<usize> {
+
+    // }
+
     fn mark_obstacles(&mut self, map: &Map) {
         let current_pos = self.fields[self.pathseeker].pos;
 
@@ -110,6 +118,16 @@ impl DiscreteMap {
         let col = idx % map_size;
 
         (row, col)
+    }
+
+    fn coordinates_to_idx(row: Row, col: Col, map_size: usize) -> Option<usize> {
+        let idx = col * (row + 1);
+
+        if idx <= map_size.pow(2) {
+            Some(idx)
+        } else {
+            None
+        }
     }
 }
 
@@ -182,5 +200,24 @@ mod tests {
         assert_coords(10, map_size, 0, 10);
         assert_coords(11, map_size, 1, 0);
         assert_coords(12, map_size, 1, 1);
+    }
+
+    fn assert_index(
+        row: usize,
+        col: usize,
+        map_size: usize,
+        expected_idx: Option<usize>,
+    ) {
+        let idx = DiscreteMap::coordinates_to_idx(row, col, map_size);
+
+        assert_eq!(idx, expected_idx);
+    }
+
+    #[test]
+    fn test_idx() {
+        let map_size = 11;
+        assert_index(0, 0, map_size, Some(0));
+        assert_index(0, 1, map_size, Some(1));
+        assert_index(1, 0, map_size, Some(11));
     }
 }

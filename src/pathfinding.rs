@@ -37,3 +37,7 @@ fn refresh_map(
         })
         .collect();
 }
+
+pub struct Pathfinder {
+    map: DiscreteMap,
+}
