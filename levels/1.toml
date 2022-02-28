@@ -1,0 +1,20 @@
+[[Setup.LymphNode]]
+Pos = [-400.0, 0.0]
+
+[[Setup.LymphNode]]
+Pos = [400.0, 0.0]
+
+[[Wave]]
+StartsAfterSecs = 60
+
+[[Wave.Virus]]
+Pos = [400.0, -100.0]
+Vel = [-1.0, 0.0]
+
+[[Wave.Virus]]
+Pos = [400.0, 0.0]
+Vel = [-1.0, 0.0]
+
+[[Wave.Virus]]
+Pos = [400.0, 100.0]
+Vel = [-1.0, 0.0]

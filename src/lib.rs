@@ -1,5 +1,5 @@
 pub mod compiling;
-pub mod map;
+pub mod level;
 pub mod pathfinding;
 pub mod systems;
 pub mod ui;

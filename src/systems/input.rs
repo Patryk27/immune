@@ -7,8 +7,7 @@ use super::camera::screen_to_pixel;
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
 use super::units::Unit;
-use crate::map::Map;
-use crate::pathfinding::DiscreteMap;
+use crate::pathfinding::{DiscreteMap, Map};
 use crate::ui::UiEvent;
 
 pub struct InputPlugin;

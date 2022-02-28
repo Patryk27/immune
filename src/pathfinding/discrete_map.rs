@@ -2,7 +2,7 @@ use std::fmt;
 
 use bevy::prelude::*;
 
-use crate::map::Map;
+use super::Map;
 
 type Row = usize;
 type Col = usize;
@@ -64,27 +64,25 @@ impl DiscreteMap {
     }
 
     fn mark_obstacles(&mut self, map: &Map) {
-        let cell_node_size = 60.0; // should be in CellNode
-        let lymph_node_size = 100.0; // should be in LymphNode
         let current_pos = self.fields[self.current].pos;
 
-        for cell in map.cell_nodes.iter() {
+        for node in map.lymph_nodes.iter() {
             for mut field in self.fields.iter_mut() {
-                if field.pos.distance(cell.pos) < cell_node_size / 2f32 {
+                if field.pos.distance(node.pos) < node.size {
                     field.kind = FieldKinds::Occupied
-                }
-
-                if field.pos.distance(current_pos) < cell_node_size {
-                    // treat pathseeker pointlike
-                    field.kind = FieldKinds::Empty
                 }
             }
         }
 
-        for lymph in map.lymph_nodes.iter() {
+        for cell in map.units.iter() {
             for mut field in self.fields.iter_mut() {
-                if field.pos.distance(lymph.pos) < lymph_node_size {
+                if field.pos.distance(cell.pos) < cell.size {
                     field.kind = FieldKinds::Occupied
+                }
+
+                if field.pos.distance(current_pos) < cell.size {
+                    // treat pathseeker pointlike
+                    field.kind = FieldKinds::Empty
                 }
             }
         }
