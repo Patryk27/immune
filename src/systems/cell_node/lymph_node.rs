@@ -2,6 +2,8 @@ use bevy::prelude::*;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
 use crate::compiling::{CompilationWarning, NeedsRecompiling};
+use crate::systems::physics::PHYSICS_SCALE;
+use crate::z_index;
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
@@ -19,8 +21,10 @@ impl LymphNode {
         assets: &AssetServer,
         at: Vec2,
     ) {
-        let transform = Transform::from_translation(at.extend(0.9))
-            .with_scale(Vec3::splat(0.5));
+        let transform = Transform::from_translation(
+            (at * PHYSICS_SCALE).extend(z_index::LYMPH_NODE),
+        )
+        .with_scale(Vec3::splat(0.5));
 
         let mut entity = commands.spawn();
 
@@ -45,13 +49,19 @@ impl LymphNode {
 
         // Spawn lymph node's compilation warning
         entity.with_children(|entity| {
+            let transform = Transform::from_xyz(
+                0.0,
+                0.0,
+                z_index::LYMPH_NODE_COMPILATION_WARNING - z_index::LYMPH_NODE,
+            );
+
             entity
                 .spawn_bundle(SpriteBundle {
                     sprite: Sprite {
                         color: Color::rgb_u8(255, 0, 0),
                         ..Default::default()
                     },
-                    transform: Transform::from_xyz(0.0, 0.0, 0.1),
+                    transform,
                     texture: assets.load("warning.png"),
                     ..Default::default()
                 })

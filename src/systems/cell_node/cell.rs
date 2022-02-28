@@ -3,7 +3,9 @@ use bevy_rapier2d::prelude::*;
 
 use super::{Leukocyte, Pathogen};
 use crate::systems::highlight::Highlight;
+use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
+use crate::z_index;
 
 pub enum Cell<'a> {
     Leukocyte(&'a Leukocyte),
@@ -20,7 +22,9 @@ impl<'a> Cell<'a> {
         let mut entity = commands.spawn();
 
         entity
-            .insert(Transform::from_translation(at.extend(1.0)))
+            .insert(Transform::from_translation(
+                (at * PHYSICS_SCALE).extend(z_index::CELL),
+            ))
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
@@ -35,7 +39,7 @@ impl<'a> Cell<'a> {
                 shape: ColliderShapeComponent(ColliderShape::ball(0.25)),
                 ..Default::default()
             })
-            .insert(ColliderPositionSync::Discrete)
+            .insert(RigidBodyPositionSync::Discrete)
             .insert(Unit::default());
 
         match self {

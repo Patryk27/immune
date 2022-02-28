@@ -120,7 +120,11 @@ impl DiscreteMap {
         (row, col)
     }
 
-    fn coordinates_to_idx(row: Row, col: Col, map_size: usize) -> Option<usize> {
+    fn coordinates_to_idx(
+        row: Row,
+        col: Col,
+        map_size: usize,
+    ) -> Option<usize> {
         let idx = col * (row + 1);
 
         if idx <= map_size.pow(2) {
@@ -142,7 +146,6 @@ impl fmt::Display for DiscreteMap {
                 current_row = row;
             }
 
-
             write!(f, "[{}]", field.kind)?;
         }
 
@@ -160,7 +163,7 @@ pub enum FieldKinds {
     Empty,
     Occupied,
     Target,
-    Pathseeker
+    Pathseeker,
 }
 
 impl fmt::Display for FieldKinds {

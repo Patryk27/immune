@@ -23,7 +23,12 @@ struct GameState {
     next_wave_at: f32,
 }
 
-fn setup(mut commands: Commands, assets: Res<AssetServer>, level: Res<Level>) {
+fn setup(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut state: ResMut<GameState>,
+    level: Res<Level>,
+) {
     for lymph_node in &level.setup.lymph_nodes {
         LymphNode {
             time_to_spawn: 3.0,
@@ -34,6 +39,8 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>, level: Res<Level>) {
         }
         .spawn(&mut commands, &assets, lymph_node.pos);
     }
+
+    state.next_wave_at = level.waves[0].starts_at as _;
 }
 
 fn progress(

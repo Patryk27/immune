@@ -1,25 +1,25 @@
 [[Setup.LymphNode]]
-Pos = [-150.0, -300.0]
+Pos = [-2.0, -2.0]
 
 [[Setup.LymphNode]]
-Pos = [150.0, -300.0]
+Pos = [2.0, -2.0]
 
 [[Wave]]
-StartsAt = 0
+StartsAt = 1
 
 [[Wave.Virus]]
 Pos = [-3.0, 2.0]
 Vel = [0.0, 0.0]
 
 [[Wave]]
-StartsAt = 3
+StartsAt = 2
 
 [[Wave.Virus]]
 Pos = [0.0, 2.0]
 Vel = [0.0, 0.0]
 
 [[Wave]]
-StartsAt = 6
+StartsAt = 3
 
 [[Wave.Virus]]
 Pos = [3.0, 2.0]
