@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
+use super::camera::screen_to_pixel;
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
 use super::units::Unit;
@@ -49,7 +50,7 @@ fn track_mouse_position(
 
     for event in cursor_moved_events.iter() {
         let pos = Vec3::new(event.position.x, event.position.y, 0.0);
-        state.mouse_pos = screen_to_world_point(camera, ortho, pos).truncate();
+        state.mouse_pos = screen_to_pixel(camera, ortho, pos).truncate();
     }
 }
 
@@ -239,15 +240,4 @@ fn draw_square(lines: &mut DebugLines, start_point: Vec2, end_point: Vec2) {
     lines.line(start_point, start_point + up, 0.0);
     lines.line(end_point, end_point - right, 0.0);
     lines.line(end_point, end_point - up, 0.0);
-}
-
-// Probably not compatible with zooming or other projections
-fn screen_to_world_point(
-    camera: &Transform,
-    ortho: &OrthographicProjection,
-    point: Vec3,
-) -> Vec3 {
-    let ortho_offset = Vec3::new(ortho.left, ortho.bottom, 0.0);
-
-    point + camera.translation + ortho_offset
 }

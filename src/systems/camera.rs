@@ -43,7 +43,7 @@ pub fn mouse(
             let mut delta = event.delta.extend(0.0);
             delta.x *= -1.0;
 
-            transform.translation += delta;
+            transform.translation += delta * ortho.scale;
         }
     }
 
@@ -56,11 +56,11 @@ pub fn mouse(
 pub fn movement(
     state: Res<State>,
     time: Res<Time>,
-    mut query: Query<(&mut Transform, &Camera)>,
+    mut query: Query<(&mut Transform, &Camera, &OrthographicProjection)>,
 ) {
-    let (mut transform, _) = query.single_mut();
+    let (mut transform, _, ortho) = query.single_mut();
 
-    let speed = SPEED * time.delta_seconds();
+    let speed = SPEED * time.delta_seconds() * ortho.scale;
 
     if state.is_moving_up {
         transform.translation.y += speed;
@@ -102,4 +102,14 @@ pub fn keyboard_input(
             };
         }
     }
+}
+
+pub fn screen_to_pixel(
+    camera: &Transform,
+    ortho: &OrthographicProjection,
+    point: Vec3,
+) -> Vec3 {
+    let ortho_offset = Vec3::new(ortho.left, ortho.bottom, 0.0);
+
+    (point * ortho.scale) + camera.translation + (ortho_offset * ortho.scale)
 }
