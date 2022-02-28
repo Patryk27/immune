@@ -7,7 +7,7 @@ use super::camera::screen_to_pixel;
 use super::cell_node::LymphNode;
 use super::highlight::Highlight;
 use super::units::Unit;
-use crate::pathfinding::{DiscreteMap, Map};
+use crate::pathfinding::{Map, Pathfinder};
 use crate::ui::UiEvent;
 
 pub struct InputPlugin;
@@ -64,13 +64,12 @@ fn process_mouse_command(
             for unit in state.selected_units.iter() {
                 let (mut unit, transform) = units.get_mut(*unit).unwrap();
                 unit.target = Some(state.mouse_pos);
-                let discrete_map = DiscreteMap::new(
+                let pathfinder = Pathfinder::new(
                     &map,
                     transform.translation.truncate(),
                     state.mouse_pos,
                 );
-                // TODO (pry)
-                // println!("{}", discrete_map);
+                let _path = pathfinder.path();
             }
         }
     }

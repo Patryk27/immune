@@ -1,4 +1,5 @@
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 use bevy::prelude::*;
 
@@ -7,12 +8,26 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
+#[derive(Debug, Clone)]
 pub struct DiscreteMap {
     fields: Vec<Field>,
     map_size: usize,
-    field_size: usize,
     pathseeker: usize,
     target: usize,
+}
+
+impl PartialEq for DiscreteMap {
+    fn eq(&self, other: &DiscreteMap) -> bool {
+        self.pathseeker == other.pathseeker
+    }
+}
+
+impl Eq for DiscreteMap {}
+
+impl Hash for DiscreteMap {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.pathseeker.hash(state);
+    }
 }
 
 impl DiscreteMap {
@@ -54,7 +69,6 @@ impl DiscreteMap {
         let mut this = Self {
             fields,
             map_size,
-            field_size,
             pathseeker,
             target,
         };
@@ -64,13 +78,71 @@ impl DiscreteMap {
         this
     }
 
-    // pub fn successors(&self) -> Vec<Self> {
+    pub fn arrived(&self) -> bool {
+        self.fields[self.pathseeker].kind == FieldKinds::Target
+    }
 
-    // }
+    pub fn successors(&self) -> Vec<Self> {
+        self.neighbours(self.pathseeker)
+            .into_iter()
+            .filter(|neigbour| self.fields[*neigbour].is_walkable())
+            .map(|neighbour| {
+                let mut new = self.clone();
 
-    // fn neighbours(&self, idx: usize) -> Vec<usize> {
+                new.fields[self.pathseeker].kind = FieldKinds::Empty;
 
-    // }
+                if new.fields[neighbour].kind != FieldKinds::Target {
+                    new.fields[neighbour].kind = FieldKinds::Pathseeker;
+                }
+
+                new.pathseeker = neighbour;
+
+                new
+            })
+            .collect()
+    }
+
+    pub fn mark(&mut self, idx: usize, kind: FieldKinds) {
+        let (row, col) = Self::idx_to_coordinates(idx, self.map_size);
+        let idx = Self::coordinates_to_idx(row, col, self.map_size);
+
+        if let Some(idx) = idx {
+            self.fields[idx].kind = kind;
+        }
+    }
+
+    pub fn pathseeker(&self) -> usize {
+        self.pathseeker
+    }
+
+    pub fn target(&self) -> usize {
+        self.target
+    }
+
+    pub fn pathseeker_pos(&self) -> Vec2 {
+        self.fields[self.pathseeker].pos
+    }
+
+    fn neighbours(&self, idx: usize) -> Vec<usize> {
+        let (row, col) = Self::idx_to_coordinates(idx, self.map_size);
+        let neighbours = vec![
+            (row + 1, col - 1),
+            (row + 1, col),
+            (row + 1, col + 1),
+            (row, col - 1),
+            (row, col + 1),
+            (row - 1, col - 1),
+            (row - 1, col),
+            (row - 1, col + 1),
+        ];
+
+        neighbours
+            .into_iter()
+            .flat_map(|(row, col)| {
+                Self::coordinates_to_idx(row, col, self.map_size)
+            })
+            .collect()
+    }
 
     fn mark_obstacles(&mut self, map: &Map) {
         let current_pos = self.fields[self.pathseeker].pos;
@@ -89,7 +161,7 @@ impl DiscreteMap {
                     field.kind = FieldKinds::Occupied
                 }
 
-                if field.pos.distance(current_pos) < cell.size {
+                if field.pos.distance(current_pos) < cell.size * 1.2 {
                     // treat pathseeker pointlike
                     field.kind = FieldKinds::Empty
                 }
@@ -125,12 +197,10 @@ impl DiscreteMap {
         col: Col,
         map_size: usize,
     ) -> Option<usize> {
-        let idx = col * (row + 1);
-
-        if idx <= map_size.pow(2) {
-            Some(idx)
-        } else {
+        if col >= map_size || row >= map_size {
             None
+        } else {
+            Some(col + (row * map_size))
         }
     }
 }
@@ -153,17 +223,29 @@ impl fmt::Display for DiscreteMap {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Field {
     kind: FieldKinds,
     pos: Vec2,
     idx: usize,
 }
 
+impl Field {
+    pub fn is_walkable(&self) -> bool {
+        match self.kind {
+            FieldKinds::Empty | FieldKinds::Target | FieldKinds::Path => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FieldKinds {
     Empty,
     Occupied,
-    Target,
     Pathseeker,
+    Target,
+    Path,
 }
 
 impl fmt::Display for FieldKinds {
@@ -171,8 +253,9 @@ impl fmt::Display for FieldKinds {
         match self {
             Self::Empty => write!(f, " "),
             Self::Occupied => write!(f, "x"),
-            Self::Target => write!(f, "$"),
             Self::Pathseeker => write!(f, "o"),
+            Self::Target => write!(f, "$"),
+            Self::Path => write!(f, "-"),
         }
     }
 }
@@ -221,6 +304,16 @@ mod tests {
         let map_size = 11;
         assert_index(0, 0, map_size, Some(0));
         assert_index(0, 1, map_size, Some(1));
+        assert_index(0, 9, map_size, Some(9));
         assert_index(1, 0, map_size, Some(11));
+        assert_index(1, 1, map_size, Some(12));
+        assert_index(1, 2, map_size, Some(13));
+        assert_index(1, 3, map_size, Some(14));
+        assert_index(1, 9, map_size, Some(20));
+        assert_index(10, 10, map_size, Some(120));
+        assert_index(11, 0, map_size, None);
+        assert_index(11, 1, map_size, None);
+        assert_index(10, 11, map_size, None);
+        assert_index(0, 11, map_size, None);
     }
 }
