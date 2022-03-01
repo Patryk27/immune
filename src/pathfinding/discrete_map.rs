@@ -139,10 +139,7 @@ impl DiscreteMap {
         }
 
         if col > 0 {
-            neighbours.extend(vec![
-                (row + 1, col - 1),
-                (row, col - 1),
-            ]);
+            neighbours.extend(vec![(row + 1, col - 1), (row, col - 1)]);
         }
 
         if row > 0 && col > 0 {
@@ -152,7 +149,11 @@ impl DiscreteMap {
         neighbours
             .into_iter()
             .flat_map(|(row, col)| {
-                Self::coordinates_to_idx(row as usize, col as usize, self.map_size)
+                Self::coordinates_to_idx(
+                    row as usize,
+                    col as usize,
+                    self.map_size,
+                )
             })
             .collect()
     }

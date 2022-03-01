@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+use super::cell_node::CellBody;
 use super::physics::pixel_to_world;
 
 const MAX_SPEED: f32 = 5.0;
@@ -24,7 +25,7 @@ impl Unit {
 }
 
 pub fn initialize(app: &mut App) {
-    app.add_system(movement);
+    app.add_system(movement).add_system(animate);
 }
 
 pub fn movement(
@@ -32,7 +33,7 @@ pub fn movement(
         &RigidBodyVelocityComponent,
         &mut RigidBodyForcesComponent,
         &mut Unit,
-        &Transform
+        &Transform,
     )>,
 ) {
     for (velocity, mut forces, mut unit, transform) in units.iter_mut() {
@@ -40,7 +41,9 @@ pub fn movement(
             let current_pos = transform.translation.truncate();
             let default_force_direction = target - current_pos;
 
-            let force_direction = if let Some(_) = unit.path.get(unit.step).copied() {
+            let force_direction = if let Some(_) =
+                unit.path.get(unit.step).copied()
+            {
                 let mut min_distance_from_node = f32::INFINITY;
                 let mut new_step = unit.step;
 
@@ -70,11 +73,12 @@ pub fn movement(
             };
 
             let force_direction = pixel_to_world(force_direction);
-            let desired_linvel: Vector<Real> = if force_direction.magnitude() < 1.0 {
-                force_direction * MAX_SPEED
-            } else {
-                force_direction.normalize() * MAX_SPEED
-            };
+            let desired_linvel: Vector<Real> =
+                if force_direction.magnitude() < 1.0 {
+                    force_direction * MAX_SPEED
+                } else {
+                    force_direction.normalize() * MAX_SPEED
+                };
 
             let current_linvel = velocity.linvel;
 
@@ -98,4 +102,32 @@ fn rotate(v: Vec2, to: Vec2) -> Vec2 {
     let y = v.x * angle.sin() + v.y * angle.cos();
 
     Vec2::new(x, y)
+}
+
+fn animate(
+    units: Query<(&Children, &RigidBodyVelocityComponent)>,
+    mut child_sprites: Query<(&CellBody, &Sprite, &mut Transform)>,
+) {
+    for (children, velocity) in units.iter() {
+        if velocity.linvel.magnitude() < 1.0 {
+            continue;
+        }
+
+        let direction = velocity.linvel.normalize();
+
+        let up: Vector<Real> = [0.0, 1.0].into();
+        let angle = direction.angle(&up);
+
+        let angle = if direction.x < 0.0 {
+            angle
+        } else {
+            std::f32::consts::PI - angle
+        };
+
+        for child in children.iter() {
+            if let Ok((_, _, mut transform)) = child_sprites.get_mut(*child) {
+                transform.rotation = Quat::from_rotation_z(angle);
+            }
+        }
+    }
 }

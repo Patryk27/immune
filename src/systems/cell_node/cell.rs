@@ -7,6 +7,9 @@ use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
 use crate::z_index;
 
+#[derive(Component)]
+pub struct CellBody;
+
 pub enum Cell<'a> {
     Leukocyte(&'a Leukocyte),
     Pathogen(&'a Pathogen),
@@ -30,6 +33,12 @@ impl<'a> Cell<'a> {
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
                 position: pos.to_array().into(),
+                mass_properties: RigidBodyMassPropsComponent(
+                    RigidBodyMassProps {
+                        flags: RigidBodyMassPropsFlags::ROTATION_LOCKED,
+                        ..Default::default()
+                    },
+                ),
                 velocity: RigidBodyVelocityComponent(RigidBodyVelocity {
                     linvel: vel.to_array().into(),
                     ..Default::default()
@@ -79,6 +88,7 @@ impl<'a> Cell<'a> {
                     texture,
                     ..Default::default()
                 })
+                .insert(CellBody)
                 .insert(CellFadeIn::default());
         });
 
