@@ -63,13 +63,13 @@ fn process_mouse_command(
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
                 let (mut unit, transform) = units.get_mut(*unit).unwrap();
-                unit.target = Some(state.mouse_pos);
                 let pathfinder = Pathfinder::new(
                     &map,
                     transform.translation.truncate(),
                     state.mouse_pos,
                 );
-                let _path = pathfinder.path();
+                let path = pathfinder.path();
+                unit.set_path(path, Some(state.mouse_pos));
             }
         }
     }

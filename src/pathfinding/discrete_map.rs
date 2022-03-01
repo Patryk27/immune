@@ -8,6 +8,8 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
+pub const FIELD_SIZE: usize = 30;
+
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
     fields: Vec<Field>,
@@ -32,15 +34,14 @@ impl Hash for DiscreteMap {
 
 impl DiscreteMap {
     pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
-        let field_size = 30; // should be in config
-        let map_size = (mid.distance(target) / field_size as f32) as usize + 4;
+        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize + 4;
         let map_size = if map_size % 2 == 0 {
             map_size + 1
         } else {
             map_size
         };
         let capacity = map_size.pow(2);
-        let distance_to_edge = (field_size * map_size / 2) as f32;
+        let distance_to_edge = (FIELD_SIZE * map_size / 2) as f32;
         let top_left_field_x = mid.x - distance_to_edge;
         let top_left_field_y = mid.y + distance_to_edge;
 
@@ -48,8 +49,8 @@ impl DiscreteMap {
             .map(|idx| {
                 let (row, col) = Self::idx_to_coordinates(idx, map_size);
                 let pos = Vec2::new(
-                    top_left_field_x + (col * field_size) as f32,
-                    top_left_field_y - (row * field_size) as f32,
+                    top_left_field_x + (col * FIELD_SIZE) as f32,
+                    top_left_field_y - (row * FIELD_SIZE) as f32,
                 );
 
                 Field {

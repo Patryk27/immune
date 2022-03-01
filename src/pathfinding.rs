@@ -4,7 +4,7 @@ mod map;
 use bevy::prelude::*;
 use pathfinding::prelude::bfs;
 
-pub use self::discrete_map::DiscreteMap;
+pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::pathfinding::discrete_map::FieldKinds;
 use crate::systems::cell_node::LymphNode;
@@ -27,7 +27,7 @@ fn refresh_map(
         .iter()
         .map(|transform| MapLymphNode {
             pos: transform.translation.truncate(),
-            size: 100.0, // TODO shouldn't be hard-coded
+            size: 80.0, // TODO shouldn't be hard-coded
         })
         .collect();
 
@@ -35,7 +35,7 @@ fn refresh_map(
         .iter()
         .map(|transform| MapUnit {
             pos: transform.translation.truncate(),
-            size: 60.0, // TODO shouldn't be hard-coded
+            size: 50.0, // TODO shouldn't be hard-coded
         })
         .collect();
 }
