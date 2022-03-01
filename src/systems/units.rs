@@ -106,7 +106,8 @@ fn rotate(v: Vec2, to: Vec2) -> Vec2 {
 
 fn animate(
     units: Query<(&Children, &RigidBodyVelocityComponent)>,
-    mut child_sprites: Query<(&CellBody, &Sprite, &mut Transform)>,
+    mut child_body: Query<(&Children, &mut Transform), With<CellBody>>,
+    mut child_sprite: Query<(&Sprite, &mut Transform), Without<CellBody>>,
 ) {
     for (children, velocity) in units.iter() {
         if velocity.linvel.magnitude() < 1.0 {
@@ -124,10 +125,28 @@ fn animate(
             std::f32::consts::PI - angle
         };
 
+        let stretch_x =
+            1.0 * remap(velocity.linvel.magnitude(), 0.0, MAX_SPEED, 1.0, 2.0);
+
+        let stretch_y =
+            1.0 * remap(velocity.linvel.magnitude(), 0.0, MAX_SPEED, 1.0, 0.8);
+
         for child in children.iter() {
-            if let Ok((_, _, mut transform)) = child_sprites.get_mut(*child) {
+            if let Ok((children, mut transform)) = child_body.get_mut(*child) {
                 transform.rotation = Quat::from_rotation_z(angle);
+
+                for child in children.iter() {
+                    if let Ok((_, mut transform)) = child_sprite.get_mut(*child)
+                    {
+                        transform.scale =
+                            Vec3::new(stretch_x, stretch_y, 1.0) * 0.25;
+                    }
+                }
             }
         }
     }
+}
+
+fn remap(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 }

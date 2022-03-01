@@ -73,23 +73,29 @@ impl<'a> Cell<'a> {
             Cell::Pathogen(cell) => (cell.body, Color::rgba_u8(255, 0, 0, 0)),
         };
 
-        // Spawn cell's sprite
         entity.with_children(|entity| {
-            let texture = assets.load(body.asset_path());
-
             entity
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color,
-                        ..Default::default()
-                    },
-                    transform: Transform::default()
-                        .with_scale(Vec3::splat(0.25)),
-                    texture,
-                    ..Default::default()
-                })
+                .spawn()
+                .insert(Transform::default())
+                .insert(GlobalTransform::default())
                 .insert(CellBody)
-                .insert(CellFadeIn::default());
+                .with_children(|entity| {
+                    // Spawn cell's sprite
+                    let texture = assets.load(body.asset_path());
+
+                    entity
+                        .spawn_bundle(SpriteBundle {
+                            sprite: Sprite {
+                                color,
+                                ..Default::default()
+                            },
+                            transform: Transform::default()
+                                .with_scale(Vec3::splat(0.25)),
+                            texture,
+                            ..Default::default()
+                        })
+                        .insert(CellFadeIn::default());
+                });
         });
 
         // Spawn cell's antigens / antigen binders
