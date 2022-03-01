@@ -1,23 +1,27 @@
+use bevy::math::vec2;
 use bevy::prelude::*;
+use bevy::sprite::MaterialMesh2dBundle;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
-use crate::compiling::{CompilationWarning, NeedsRecompiling};
+use crate::compiling::CompilationWarning;
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::z_index;
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
-    pub time_to_spawn: f32,
-    pub timer: f32,
     pub lhs: Option<LymphNodeInput>,
     pub rhs: Option<LymphNodeInput>,
     pub output: Option<LymphNodeOutput>,
+    pub production_tt: f32,
+    pub production_duration: f32,
 }
 
 impl LymphNode {
     pub fn spawn(
         &self,
         commands: &mut Commands,
+        meshes: &mut Assets<Mesh>,
+        materials: &mut Assets<ColorMaterial>,
         assets: &AssetServer,
         at: Vec2,
     ) {
@@ -32,8 +36,7 @@ impl LymphNode {
             .insert(transform)
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
-            .insert(self.to_owned())
-            .insert(NeedsRecompiling);
+            .insert(self.to_owned());
 
         // Spawn lymph node's sprite
         entity.with_children(|entity| {
@@ -49,23 +52,12 @@ impl LymphNode {
 
         // Spawn lymph node's compilation warning
         entity.with_children(|entity| {
-            let transform = Transform::from_xyz(
-                0.0,
-                0.0,
-                z_index::LYMPH_NODE_COMPILATION_WARNING - z_index::LYMPH_NODE,
-            );
+            CompilationWarning::spawn(assets, entity);
+        });
 
-            entity
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::rgb_u8(255, 0, 0),
-                        ..Default::default()
-                    },
-                    transform,
-                    texture: assets.load("warning.png"),
-                    ..Default::default()
-                })
-                .insert(CompilationWarning);
+        // Spawn lymph node's progress bar
+        entity.with_children(|entity| {
+            LymphNodeProgressBar::spawn(meshes, materials, entity);
         });
     }
 }
@@ -100,4 +92,28 @@ impl LymphNodeInput {
 #[derive(Clone, Copy, Debug)]
 pub enum LymphNodeOutput {
     Leukocyte(Leukocyte),
+}
+
+#[derive(Component, Debug)]
+pub struct LymphNodeProgressBar;
+
+impl LymphNodeProgressBar {
+    pub fn spawn(
+        meshes: &mut Assets<Mesh>,
+        materials: &mut Assets<ColorMaterial>,
+        entity: &mut ChildBuilder,
+    ) {
+        entity
+            .spawn_bundle(MaterialMesh2dBundle {
+                mesh: meshes
+                    .add(Mesh::from(shape::Quad {
+                        size: vec2(250.0, 15.0),
+                        ..Default::default()
+                    }))
+                    .into(),
+                material: materials.add(ColorMaterial::from(Color::GREEN)),
+                ..Default::default()
+            })
+            .insert(Self);
+    }
 }

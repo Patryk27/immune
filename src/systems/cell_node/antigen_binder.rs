@@ -33,7 +33,7 @@ impl AntigenBinder {
             entity,
             body,
             self.asset_path(),
-            Color::rgb_u8(128, 128, 128),
+            Color::rgba_u8(128, 128, 128, 0),
         );
     }
 }

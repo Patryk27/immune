@@ -14,9 +14,10 @@ impl Pathogen {
         &self,
         commands: &mut Commands,
         assets: &AssetServer,
-        at: Vec2,
+        pos: Vec2,
+        vel: Vec2,
     ) {
-        Cell::Pathogen(self).spawn(commands, assets, at);
+        Cell::Pathogen(self).spawn(commands, assets, pos, vel);
     }
 }
 

@@ -17,18 +17,23 @@ impl<'a> Cell<'a> {
         &self,
         commands: &mut Commands,
         assets: &AssetServer,
-        at: Vec2,
+        pos: Vec2,
+        vel: Vec2,
     ) {
         let mut entity = commands.spawn();
 
         entity
             .insert(Transform::from_translation(
-                (at * PHYSICS_SCALE).extend(z_index::CELL),
+                (pos * PHYSICS_SCALE).extend(z_index::CELL),
             ))
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
-                position: at.to_array().into(),
+                position: pos.to_array().into(),
+                velocity: RigidBodyVelocityComponent(RigidBodyVelocity {
+                    linvel: vel.to_array().into(),
+                    ..Default::default()
+                }),
                 damping: RigidBodyDampingComponent(RigidBodyDamping {
                     angular_damping: 1.0,
                     linear_damping: 1.0,
@@ -40,7 +45,8 @@ impl<'a> Cell<'a> {
                 ..Default::default()
             })
             .insert(RigidBodyPositionSync::Discrete)
-            .insert(Unit::default());
+            .insert(Unit::default())
+            .insert(CellFadeIn::default());
 
         match self {
             Cell::Leukocyte(cell) => {
@@ -52,25 +58,28 @@ impl<'a> Cell<'a> {
         }
 
         let (body, color) = match self {
-            Cell::Leukocyte(cell) => (cell.body, Color::WHITE),
-            Cell::Pathogen(cell) => (cell.body, Color::RED),
+            Cell::Leukocyte(cell) => {
+                (cell.body, Color::rgba_u8(255, 255, 255, 0))
+            }
+            Cell::Pathogen(cell) => (cell.body, Color::rgba_u8(255, 0, 0, 0)),
         };
 
         // Spawn cell's sprite
         entity.with_children(|entity| {
             let texture = assets.load(body.asset_path());
 
-            let sprite = SpriteBundle {
-                sprite: Sprite {
-                    color,
+            entity
+                .spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        color,
+                        ..Default::default()
+                    },
+                    transform: Transform::default()
+                        .with_scale(Vec3::splat(0.25)),
+                    texture,
                     ..Default::default()
-                },
-                transform: Transform::default().with_scale(Vec3::splat(0.25)),
-                texture,
-                ..Default::default()
-            };
-
-            entity.spawn_bundle(sprite);
+                })
+                .insert(CellFadeIn::default());
         });
 
         // Spawn cell's antigens / antigen binders
@@ -112,4 +121,11 @@ impl<'a> Cell<'a> {
             }
         });
     }
+}
+
+// TODO(pwy) currently we set this for each of cell's sprites - I'd rather have
+//           just one `FreshCell` tag per entity instead, for clarity
+#[derive(Component, Debug, Default)]
+pub struct CellFadeIn {
+    pub tt: f32,
 }

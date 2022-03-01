@@ -15,9 +15,10 @@ impl Leukocyte {
         &self,
         commands: &mut Commands,
         assets: &AssetServer,
-        at: Vec2,
+        pos: Vec2,
+        vel: Vec2,
     ) {
-        Cell::Leukocyte(self).spawn(commands, assets, at);
+        Cell::Leukocyte(self).spawn(commands, assets, pos, vel);
     }
 }
 

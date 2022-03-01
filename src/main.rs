@@ -13,6 +13,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
+        //
         .add_plugin(input::InputPlugin)
         .add_plugin(ui::UiPlugin)
         .add_plugin(compiling::CompilingPlugin)

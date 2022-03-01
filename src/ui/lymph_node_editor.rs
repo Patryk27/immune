@@ -8,7 +8,7 @@ use bevy_egui::EguiContext;
 use self::lymph_node_input_radio::*;
 use self::lymph_node_input_radios::*;
 use super::*;
-use crate::compiling::NeedsRecompiling;
+use crate::compiling::RecompileEvent;
 use crate::systems::cell_node::*;
 
 pub struct UiLymphNodeEditor {
@@ -31,43 +31,49 @@ impl UiLymphNodeEditor {
 
     pub fn process(
         &mut self,
-        mut commands: Commands,
         mut egui: ResMut<EguiContext>,
         textures: &UiTextures,
         mut lymph_nodes: Query<(Entity, &mut LymphNode)>,
+        mut recompile_event_tx: EventWriter<RecompileEvent>,
     ) -> Result<(), ()> {
-        // TODO(pwy) ideally we'd do it only when the node was actually modified
-        commands.entity(self.lymph_node).insert(NeedsRecompiling);
-
         let (_, mut lymph_node) =
             lymph_nodes.get_mut(self.lymph_node).map_err(drop)?;
 
-        let mut open = true;
+        let mut keep_opened = true;
+        let mut changed = false;
 
         egui::Window::new("Lymph Node")
             .anchor(Align2::CENTER_CENTER, (0.0, 0.0))
             .resizable(false)
             .collapsible(false)
-            .open(&mut open)
+            .open(&mut keep_opened)
             .show(egui.ctx_mut(), |ui| {
                 egui::Grid::new("lymph-node-editor.recipe").show(ui, |ui| {
-                    ui.add(UiLymphNodeInputRadios::new(
-                        textures,
-                        &mut lymph_node.lhs,
-                    ));
+                    changed |= ui
+                        .add(UiLymphNodeInputRadios::new(
+                            textures,
+                            &mut lymph_node.lhs,
+                        ))
+                        .changed();
 
                     ui.centered_and_justified(|ui| {
                         ui.label("+");
                     });
 
-                    ui.add(UiLymphNodeInputRadios::new(
-                        textures,
-                        &mut lymph_node.rhs,
-                    ));
+                    changed |= ui
+                        .add(UiLymphNodeInputRadios::new(
+                            textures,
+                            &mut lymph_node.rhs,
+                        ))
+                        .changed();
                 });
             });
 
-        if open {
+        if changed {
+            recompile_event_tx.send(RecompileEvent);
+        }
+
+        if keep_opened {
             Ok(())
         } else {
             Err(())

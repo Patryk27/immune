@@ -2,7 +2,7 @@ use std::f32::consts::TAU;
 
 use bevy::prelude::*;
 
-use super::Body;
+use super::{Body, CellFadeIn};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Antigen {
@@ -35,7 +35,7 @@ impl Antigen {
             entity,
             body,
             self.asset_path(),
-            Color::rgb_u8(128, 0, 0),
+            Color::rgba_u8(128, 0, 0, 0),
         );
     }
 
@@ -62,7 +62,7 @@ impl Antigen {
                 ..Default::default()
             };
 
-            entity.spawn_bundle(sprite);
+            entity.spawn_bundle(sprite).insert(CellFadeIn::default());
         }
     }
 

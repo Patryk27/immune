@@ -23,18 +23,28 @@ impl<'a> UiLymphNodeInputRadios<'a> {
 
 impl Widget for UiLymphNodeInputRadios<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        ui.vertical(|ui| {
-            let radios = UiLymphNodeInputRadio::variants(
-                self.textures,
-                *self.selected_value,
-            );
+        let mut changed = false;
 
-            for radio in radios {
-                if ui.add(radio).clicked() {
-                    *self.selected_value = radio.value();
+        let mut response = ui
+            .vertical(|ui| {
+                let radios = UiLymphNodeInputRadio::variants(
+                    self.textures,
+                    *self.selected_value,
+                );
+
+                for radio in radios {
+                    if ui.add(radio).clicked() {
+                        *self.selected_value = radio.value();
+                        changed = true;
+                    }
                 }
-            }
-        })
-        .response
+            })
+            .response;
+
+        if changed {
+            response.mark_changed();
+        }
+
+        response
     }
 }

@@ -25,19 +25,27 @@ struct GameState {
 
 fn setup(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     assets: Res<AssetServer>,
     mut state: ResMut<GameState>,
     level: Res<Level>,
 ) {
     for lymph_node in &level.setup.lymph_nodes {
         LymphNode {
-            time_to_spawn: 3.0,
-            timer: 1.0,
             lhs: None,
             rhs: None,
             output: None,
+            production_tt: 0.0,
+            production_duration: 1.5,
         }
-        .spawn(&mut commands, &assets, lymph_node.pos);
+        .spawn(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &assets,
+            lymph_node.pos,
+        );
     }
 
     state.next_wave_at = level.waves[0].starts_at as _;
@@ -72,13 +80,11 @@ fn progress(
 
 fn spawn_wave(commands: &mut Commands, assets: &AssetServer, wave: &LevelWave) {
     for virus in &wave.viruses {
-        // TODO(pwy) apply velocity
-
         Pathogen {
             body: Body::Hexagon,
             antigen: Antigen::Semicircle,
             kind: PathogenKind::Virus,
         }
-        .spawn(commands, assets, virus.pos);
+        .spawn(commands, assets, virus.pos, virus.vel);
     }
 }

@@ -5,21 +5,21 @@ Pos = [-2.0, -2.0]
 Pos = [2.0, -2.0]
 
 [[Wave]]
-StartsAt = 1
+StartsAt = 0
 
 [[Wave.Virus]]
 Pos = [-3.0, 2.0]
 Vel = [0.0, 0.0]
 
 [[Wave]]
-StartsAt = 2
+StartsAt = 1
 
 [[Wave.Virus]]
 Pos = [0.0, 2.0]
 Vel = [0.0, 0.0]
 
 [[Wave]]
-StartsAt = 3
+StartsAt = 2
 
 [[Wave.Virus]]
 Pos = [3.0, 2.0]

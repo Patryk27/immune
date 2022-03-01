@@ -1885,6 +1885,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyframe"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3c02b74c96768920b2c0d7fc723963dcbc2fc165c9db9eb64889635496c4a0b"
+dependencies = [
+ "mint",
+ "num-traits",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3307,6 +3317,7 @@ dependencies = [
  "bevy_rapier2d",
  "indoc",
  "itertools",
+ "keyframe",
  "nalgebra",
  "pathfinding",
  "rand",
