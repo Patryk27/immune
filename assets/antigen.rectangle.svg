@@ -9,6 +9,9 @@
    id="svg719"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="antigen.rectangle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/antigen.rectangle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,9 +26,9 @@
      inkscape:pagecheckerboard="1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.77326038"
-     inkscape:cx="-35.5637"
-     inkscape:cy="211.44236"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="193.04015"
+     inkscape:cy="163.69522"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
      inkscape:window-x="0"
@@ -34,17 +37,38 @@
      inkscape:current-layer="layer1"
      width="100mm" />
   <defs
-     id="defs716" />
+     id="defs716">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect17896"
+       is_visible="true"
+       lpeversion="1"
+       satellites_param="F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="100"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <rect
+    <path
        style="fill:#ffffff;stroke-width:0.494873"
        id="rect745"
        width="80"
-       height="90"
+       height="120"
        x="10"
-       y="10" />
+       y="10"
+       inkscape:path-effect="#path-effect17896"
+       d="M 36.458333,10 H 63.541667 A 26.458333,26.458333 45 0 1 90,36.458333 V 103.54167 A 26.458333,26.458333 135 0 1 63.541667,130 H 36.458333 A 26.458333,26.458333 45 0 1 10,103.54167 V 36.458333 A 26.458333,26.458333 135 0 1 36.458333,10 Z"
+       sodipodi:type="rect" />
   </g>
 </svg>

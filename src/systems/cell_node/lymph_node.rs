@@ -5,7 +5,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use super::{AntigenBinder, Body, Leukocyte, Protein};
 use crate::compiling::CompilationWarning;
 use crate::systems::physics::PHYSICS_SCALE;
-use crate::z_index;
+use crate::theme;
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
@@ -26,7 +26,7 @@ impl LymphNode {
         at: Vec2,
     ) {
         let transform = Transform::from_translation(
-            (at * PHYSICS_SCALE).extend(z_index::LYMPH_NODE),
+            (at * PHYSICS_SCALE).extend(theme::z_index::LYMPH_NODE),
         )
         .with_scale(Vec3::splat(0.5));
 
@@ -42,10 +42,10 @@ impl LymphNode {
         entity.with_children(|entity| {
             entity.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
-                    color: Color::rgb_u8(195, 160, 229),
+                    color: Color::rgb_u8(222, 0, 222),
                     ..Default::default()
                 },
-                texture: assets.load("body.circle.png"),
+                texture: assets.load("lymph-node.png"),
                 ..Default::default()
             });
         });
@@ -107,7 +107,7 @@ impl LymphNodeProgressBar {
             .spawn_bundle(MaterialMesh2dBundle {
                 mesh: meshes
                     .add(Mesh::from(shape::Quad {
-                        size: vec2(250.0, 15.0),
+                        size: vec2(220.0, 15.0),
                         ..Default::default()
                     }))
                     .into(),

@@ -5,7 +5,7 @@ use super::{Leukocyte, Pathogen};
 use crate::systems::highlight::Highlight;
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
-use crate::z_index;
+use crate::theme;
 
 #[derive(Component)]
 pub struct CellBody;
@@ -27,7 +27,7 @@ impl<'a> Cell<'a> {
 
         entity
             .insert(Transform::from_translation(
-                (pos * PHYSICS_SCALE).extend(z_index::CELL),
+                (pos * PHYSICS_SCALE).extend(theme::z_index::CELL),
             ))
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
@@ -67,10 +67,8 @@ impl<'a> Cell<'a> {
         }
 
         let (body, color) = match self {
-            Cell::Leukocyte(cell) => {
-                (cell.body, Color::rgba_u8(255, 255, 255, 0))
-            }
-            Cell::Pathogen(cell) => (cell.body, Color::rgba_u8(255, 0, 0, 0)),
+            Cell::Leukocyte(cell) => (cell.body, Leukocyte::color(0)),
+            Cell::Pathogen(cell) => (cell.body, Pathogen::color(0)),
         };
 
         // Spawn cell's sprite
@@ -94,8 +92,12 @@ impl<'a> Cell<'a> {
 
         // Spawn cell's antigens / antigen binders
         entity.with_children(|entity| match self {
-            Cell::Leukocyte(cell) => cell.binder.spawn(assets, entity, body),
-            Cell::Pathogen(cell) => cell.antigen.spawn(assets, entity, body),
+            Cell::Leukocyte(cell) => {
+                cell.binder.spawn(assets, entity, body, color)
+            }
+            Cell::Pathogen(cell) => {
+                cell.antigen.spawn(assets, entity, body, color)
+            }
         });
 
         // Spawn hidden selection highlight

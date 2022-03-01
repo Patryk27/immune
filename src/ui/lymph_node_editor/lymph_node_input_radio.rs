@@ -2,7 +2,8 @@ use std::iter;
 
 use bevy_egui::egui::{vec2, Color32, RadioButton, Response, Ui, Vec2, Widget};
 
-use crate::systems::cell_node::LymphNodeInput;
+use crate::systems::cell_node::{Antigen, Leukocyte, LymphNodeInput, Protein};
+use crate::theme;
 use crate::ui::{UiRadioImageButton, UiTextures};
 
 #[derive(Clone, Copy)]
@@ -36,16 +37,23 @@ impl<'a> UiLymphNodeInputRadio<'a> {
 
     fn size(&self) -> Vec2 {
         match self.value {
-            Some(LymphNodeInput::Binder(_)) => vec2(30.0, 30.0),
-            Some(LymphNodeInput::Protein(_)) => vec2(18.0, 18.0),
+            Some(LymphNodeInput::Binder(_)) => vec2(36.0, 36.0),
+            Some(LymphNodeInput::Protein(_)) => vec2(26.0, 26.0),
             _ => vec2(50.0, 50.0),
         }
     }
 
     fn tint(&self) -> Color32 {
         match self.value {
-            Some(LymphNodeInput::Binder(_)) => Color32::GREEN,
-            Some(LymphNodeInput::Protein(_)) => Color32::GOLD,
+            Some(LymphNodeInput::Body(_)) => {
+                theme::to_egui(Leukocyte::color(255))
+            }
+            Some(LymphNodeInput::Binder(_)) => {
+                theme::to_egui(Antigen::color(Leukocyte::color(255), 255))
+            }
+            Some(LymphNodeInput::Protein(_)) => {
+                theme::to_egui(Protein::color())
+            }
             _ => Color32::WHITE,
         }
     }

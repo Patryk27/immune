@@ -1,7 +1,7 @@
 use bevy::math::vec3;
 use bevy::prelude::*;
 
-use crate::z_index;
+use crate::theme;
 
 #[derive(Component, Clone, Debug, Default)]
 pub struct CompilationWarning {
@@ -14,14 +14,15 @@ impl CompilationWarning {
             .with_translation(vec3(
                 0.0,
                 0.0,
-                z_index::LYMPH_NODE_COMPILATION_WARNING - z_index::LYMPH_NODE,
+                theme::z_index::LYMPH_NODE_COMPILATION_WARNING
+                    - theme::z_index::LYMPH_NODE,
             ))
             .with_scale(vec3(0.8, 0.8, 1.0));
 
         entity
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
-                    color: Color::rgb_u8(255, 0, 0),
+                    color: Color::rgb_u8(255, 190, 17),
                     ..Default::default()
                 },
                 transform,
@@ -37,9 +38,7 @@ pub(super) fn blink(
     mut warnings: Query<(&mut CompilationWarning, &mut Sprite)>,
 ) {
     for (mut warn, mut warn_sprite) in warnings.iter_mut() {
-        warn_sprite.color =
-            Color::rgba_linear(1.0, 0.0, 0.0, warn.tt.sin().abs());
-
         warn.tt += 5.0 * time.delta_seconds();
+        warn_sprite.color.set_a(warn.tt.sin().abs());
     }
 }

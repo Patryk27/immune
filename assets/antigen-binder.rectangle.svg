@@ -9,6 +9,9 @@
    id="svg719"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="antigen-binder.rectangle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/antigen-binder.rectangle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +27,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.77326038"
-     inkscape:cx="-299.38169"
+     inkscape:cx="-68.540949"
      inkscape:cy="211.44236"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
@@ -34,15 +37,52 @@
      inkscape:current-layer="layer1"
      width="100mm" />
   <defs
-     id="defs716" />
+     id="defs716">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect18727"
+       is_visible="true"
+       lpeversion="1"
+       satellites_param="F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="100"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect17896"
+       is_visible="true"
+       lpeversion="1"
+       satellites_param="F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1 @ F,0,0,1,0,26.458333,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="100"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       id="rect1950"
-       style="fill:#ffffff;stroke-width:2.55618"
-       d="M 0,0 V 377.95312 H 377.95312 V 0 H 340.1582 V 340.1582 H 37.794922 V 0 Z"
-       transform="scale(0.26458333)" />
+       id="rect18146"
+       style="fill:#ffffff;stroke-width:1.68925"
+       d="M 0,26.458333 V 351.49479 a 26.458333,26.458333 45 0 0 26.458333,26.45833 H 351.49479 a 26.458333,26.458333 135 0 0 26.45833,-26.45833 V 26.458333 A 26.458333,26.458333 45 0 0 351.49479,0 20.353889,20.353889 113.19365 0 0 340.1582,26.458333 l 0,187.241537 c 0,14.61253 0.34623,38.54708 -3.45493,52.61258 -9.24437,34.20708 -36.18374,61.14645 -70.39082,70.39082 -14.0655,3.80116 -38.00005,3.45493 -52.61258,3.45493 h -49.44662 c -14.61253,0 -38.54708,0.34623 -52.61258,-3.45493 C 77.433589,327.4589 50.494217,300.51953 41.249855,266.31245 37.448695,252.24695 37.794922,228.3124 37.794922,213.69987 V 26.458333 A 26.458333,26.458333 45 0 0 11.336589,0 20.353889,20.353889 113.19366 0 0 0,26.458333 Z"
+       transform="scale(0.26458333)"
+       inkscape:path-effect="#path-effect18727"
+       inkscape:original-d="M 0 0 L 0 377.95312 L 377.95312 377.95312 L 377.95312 0 L 340.1582 0 L 340.1582 240.1582 A 99.999999 99.999999 0 0 1 240.1582 340.1582 L 137.79492 340.1582 A 99.999999 99.999999 0 0 1 37.794922 240.1582 L 37.794922 0 L 0 0 z " />
   </g>
 </svg>

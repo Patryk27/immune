@@ -9,6 +9,9 @@
    id="svg771"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="antigen.triangle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/antigen.triangle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +27,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.0935553"
-     inkscape:cx="136.71005"
+     inkscape:cx="-49.380219"
      inkscape:cy="299.48188"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
@@ -34,7 +37,25 @@
      inkscape:current-layer="layer1"
      width="100mm" />
   <defs
-     id="defs768" />
+     id="defs768">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect18345"
+       is_visible="true"
+       lpeversion="1"
+       satellites_param="F,0,0,1,0,39.6875,0,1 @ F,0,0,1,0,39.6875,0,1 @ F,0,0,1,0,39.6875,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="150"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
@@ -53,9 +74,10 @@
        sodipodi:arg2="1.5707963"
        inkscape:rounded="0"
        inkscape:randomized="0"
-       d="m 436.41259,565.93245 -216.95781,0 108.47891,-187.89098 z"
-       transform="matrix(0.4609191,0,0,0.53222354,-101.1509,-201.20256)"
-       inkscape:transform-center-x="3.7694277e-06"
-       inkscape:transform-center-y="-16.666661" />
+       d="m 396.72509,565.93245 -137.58281,0 a 22.913589,22.913589 60 0 1 -19.84375,-34.37038 l 68.79141,-119.15021 a 22.913589,22.913589 2.5219888e-7 0 1 39.6875,0 l 68.7914,119.15021 a 22.913589,22.913589 120 0 1 -19.84375,34.37038 z"
+       transform="matrix(0.43618126,0,0,0.72737241,-93.038528,-281.64365)"
+       inkscape:transform-center-x="6.6064633e-06"
+       inkscape:transform-center-y="-22.777768"
+       inkscape:path-effect="#path-effect18345" />
   </g>
 </svg>

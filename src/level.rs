@@ -1,6 +1,8 @@
 use bevy::math::Vec2;
 use serde::{Deserialize, Serialize};
 
+use crate::systems::cell_node::{Antigen, Body};
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Level {
@@ -43,6 +45,10 @@ pub struct LevelVirus {
     pub pos: Vec2,
     #[serde(rename = "Vel")]
     pub vel: Vec2,
+    #[serde(rename = "Body")]
+    pub body: Body,
+    #[serde(rename = "Antigen")]
+    pub antigen: Antigen,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

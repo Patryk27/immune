@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 
 use crate::level::{Level, LevelWave};
-use crate::systems::cell_node::{
-    Antigen, Body, LymphNode, Pathogen, PathogenKind,
-};
+use crate::systems::cell_node::{LymphNode, Pathogen, PathogenKind};
 
 pub struct GamePlugin;
 
@@ -81,8 +79,8 @@ fn progress(
 fn spawn_wave(commands: &mut Commands, assets: &AssetServer, wave: &LevelWave) {
     for virus in &wave.viruses {
         Pathogen {
-            body: Body::Hexagon,
-            antigen: Antigen::Semicircle,
+            body: virus.body,
+            antigen: virus.antigen,
             kind: PathogenKind::Virus,
         }
         .spawn(commands, assets, virus.pos, virus.vel);

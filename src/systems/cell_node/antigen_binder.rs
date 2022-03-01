@@ -26,14 +26,15 @@ impl AntigenBinder {
         self,
         assets: &AssetServer,
         entity: &mut ChildBuilder,
-        body: Body,
+        parent_body: Body,
+        parent_color: Color,
     ) {
         self.0.spawn_ex(
             assets,
             entity,
-            body,
+            parent_body,
+            parent_color,
             self.asset_path(),
-            Color::rgba_u8(128, 128, 128, 0),
         );
     }
 }

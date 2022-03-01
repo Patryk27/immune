@@ -9,6 +9,9 @@
    id="svg823"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="body.circle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/body.circle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,8 +27,8 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.77326038"
-     inkscape:cx="-35.5637"
-     inkscape:cy="561.90646"
+     inkscape:cx="-124.14964"
+     inkscape:cy="405.42618"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
      inkscape:window-x="0"
@@ -39,10 +42,16 @@
      inkscape:groupmode="layer"
      id="layer1">
     <circle
-       style="fill:#ffffff;stroke-width:0.638291"
+       style="fill:#b3b3b3;stroke-width:0.638291"
        id="path849"
        cx="50"
        cy="50"
        r="50" />
+    <circle
+       style="fill:#ffffff;stroke-width:0.664934"
+       id="path17024"
+       cx="50"
+       cy="50"
+       r="40" />
   </g>
 </svg>

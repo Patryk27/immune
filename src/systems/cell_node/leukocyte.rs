@@ -11,6 +11,10 @@ pub struct Leukocyte {
 }
 
 impl Leukocyte {
+    pub fn color(a: u8) -> Color {
+        Color::rgba_u8(255, 255, 255, a)
+    }
+
     pub fn spawn(
         &self,
         commands: &mut Commands,

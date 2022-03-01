@@ -9,6 +9,9 @@
    id="svg5"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="antigen.semicircle.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/antigen.semicircle.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,9 +26,9 @@
      inkscape:pagecheckerboard="1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.78377692"
-     inkscape:cx="-60.603979"
-     inkscape:cy="412.745"
+     inkscape:zoom="0.64361063"
+     inkscape:cx="-161.58838"
+     inkscape:cy="409.40903"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
      inkscape:window-x="0"
@@ -41,8 +44,8 @@
      id="layer1">
     <path
        id="path47"
-       style="fill:#ffffff;fill-rule:evenodd;stroke-width:0.50279"
-       d="M 50.00001,50 C 77.614245,50 100,72.385768 100,100 0,100 100,100 0,100 0,72.385768 22.385772,50 50.00001,50 Z"
+       style="fill:#ffffff;fill-rule:evenodd;stroke-width:0.550778"
+       d="M 50.000008,25 C 72.091396,25 90,58.578652 90,100 c -80,0 0,0 -80,0 0,-41.421348 17.908618,-75 40.000008,-75 z"
        sodipodi:nodetypes="sccs" />
   </g>
 </svg>

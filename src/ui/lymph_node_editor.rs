@@ -10,6 +10,7 @@ use self::lymph_node_input_radios::*;
 use super::*;
 use crate::compiling::RecompileEvent;
 use crate::systems::cell_node::*;
+use crate::theme;
 
 pub struct UiLymphNodeEditor {
     lymph_node: Entity,
@@ -53,6 +54,7 @@ impl UiLymphNodeEditor {
                         .add(UiLymphNodeInputRadios::new(
                             textures,
                             &mut lymph_node.lhs,
+                            "Input A:",
                         ))
                         .changed();
 
@@ -64,9 +66,18 @@ impl UiLymphNodeEditor {
                         .add(UiLymphNodeInputRadios::new(
                             textures,
                             &mut lymph_node.rhs,
+                            "Input B:",
                         ))
                         .changed();
                 });
+
+                ui.shrink_width_to_current();
+
+                if lymph_node.output.is_none() {
+                    ui.separator();
+                    ui.add_space(3.0);
+                    ui.colored_label(theme::ui::text_danger_egui(), "[!] This lymph node has invalid configuration and does not produce any cells.");
+                }
             });
 
         if changed {

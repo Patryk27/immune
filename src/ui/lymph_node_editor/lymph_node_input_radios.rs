@@ -7,16 +7,19 @@ use crate::ui::UiTextures;
 pub struct UiLymphNodeInputRadios<'a> {
     textures: &'a UiTextures,
     selected_value: &'a mut Option<LymphNodeInput>,
+    label: &'a str,
 }
 
 impl<'a> UiLymphNodeInputRadios<'a> {
     pub fn new(
         textures: &'a UiTextures,
         selected_value: &'a mut Option<LymphNodeInput>,
+        label: &'a str,
     ) -> Self {
         Self {
             textures,
             selected_value,
+            label,
         }
     }
 }
@@ -27,6 +30,9 @@ impl Widget for UiLymphNodeInputRadios<'_> {
 
         let mut response = ui
             .vertical(|ui| {
+                ui.label(self.label);
+                ui.add_space(3.0);
+
                 let radios = UiLymphNodeInputRadio::variants(
                     self.textures,
                     *self.selected_value,

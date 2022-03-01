@@ -9,6 +9,9 @@
    id="svg661"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
    sodipodi:docname="body.hexagon.svg"
+   inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/body.hexagon.png"
+   inkscape:export-xdpi="65.019997"
+   inkscape:export-ydpi="65.019997"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +27,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.77326038"
-     inkscape:cx="-32.977249"
+     inkscape:cx="-296.14863"
      inkscape:cy="375.68199"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
@@ -41,7 +44,7 @@
      id="layer1">
     <path
        sodipodi:type="star"
-       style="fill:#ffffff"
+       style="fill:#cccccc"
        id="path693"
        inkscape:flatsided="true"
        sodipodi:sides="6"
@@ -56,6 +59,26 @@
        d="m 465.70869,521.97308 -53.81082,93.20309 H 304.27621 l -53.81083,-93.20309 53.81083,-93.20309 107.62166,0 z"
        transform="matrix(0.4645905,0,0,0.5364629,-116.36384,-230.01919)"
        inkscape:transform-center-x="6.6455085e-06"
-       inkscape:transform-center-y="-2.0885011e-06" />
+       inkscape:transform-center-y="-2.0885011e-06"
+       inkscape:export-filename="/home/pwy/Projects/unfair-advantage/assets/body.hexagon.png"
+       inkscape:export-xdpi="65.019997"
+       inkscape:export-ydpi="65.019997" />
+    <path
+       sodipodi:type="star"
+       style="fill:#ffffff"
+       id="path693-7"
+       inkscape:flatsided="true"
+       sodipodi:sides="6"
+       sodipodi:cx="358.08704"
+       sodipodi:cy="521.97308"
+       sodipodi:r1="107.62166"
+       sodipodi:r2="93.203094"
+       sodipodi:arg1="0"
+       sodipodi:arg2="0.52359878"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       transform="matrix(0.32521335,0,0,0.37552403,-66.454685,-146.01343)"
+       inkscape:transform-center-x="7.7751603e-06"
+       d="m 465.70869,521.97308 -53.81082,93.20309 H 304.27621 l -53.81083,-93.20309 53.81083,-93.20309 107.62166,0 z" />
   </g>
 </svg>

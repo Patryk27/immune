@@ -1,10 +1,11 @@
 use std::f32::consts::TAU;
 
 use bevy::prelude::*;
+use serde::Deserialize;
 
 use super::{Body, CellFadeIn};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 pub enum Antigen {
     Rectangle,
     Semicircle,
@@ -14,6 +15,17 @@ pub enum Antigen {
 impl Antigen {
     pub fn variants() -> impl Iterator<Item = Self> {
         [Self::Rectangle, Self::Semicircle, Self::Triangle].into_iter()
+    }
+
+    pub fn color(parent: Color, a: u8) -> Color {
+        let [r, g, b, _] = parent.as_rgba_f32();
+
+        Color::rgba_u8(
+            (255.0 * r / 2.0) as _,
+            (255.0 * g / 2.0) as _,
+            (255.0 * b / 2.0) as _,
+            a,
+        )
     }
 
     pub fn asset_path(&self) -> &'static str {
@@ -28,14 +40,15 @@ impl Antigen {
         self,
         assets: &AssetServer,
         entity: &mut ChildBuilder,
-        body: Body,
+        parent_body: Body,
+        parent_color: Color,
     ) {
         self.spawn_ex(
             assets,
             entity,
-            body,
+            parent_body,
+            parent_color,
             self.asset_path(),
-            Color::rgba_u8(128, 0, 0, 0),
         );
     }
 
@@ -43,15 +56,15 @@ impl Antigen {
         self,
         assets: &AssetServer,
         entity: &mut ChildBuilder,
-        body: Body,
+        parent_body: Body,
+        parent_color: Color,
         asset_path: &str,
-        color: Color,
     ) {
         let texture = assets.load(asset_path);
 
-        for transform in Self::transforms(body) {
+        for transform in Self::transforms(parent_body) {
             let sprite = Sprite {
-                color,
+                color: Self::color(parent_color, 0),
                 ..Default::default()
             };
 
@@ -70,8 +83,8 @@ impl Antigen {
         const DISTANCE: f32 = 40.0;
 
         let sides = match body {
-            Body::Circle => 3,
-            Body::Hexagon => 2,
+            Body::Circle => 4,
+            Body::Hexagon => 3,
         };
 
         (0..sides).map(move |side| {
