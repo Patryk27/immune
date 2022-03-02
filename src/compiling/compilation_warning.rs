@@ -13,7 +13,7 @@ impl CompilationWarning {
         let transform = Transform::default()
             .with_translation(vec3(
                 0.0,
-                0.0,
+                25.0,
                 theme::z_index::LYMPH_NODE_COMPILATION_WARNING
                     - theme::z_index::LYMPH_NODE,
             ))

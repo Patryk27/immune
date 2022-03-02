@@ -1,83 +1,107 @@
-use std::iter;
-
-use bevy_egui::egui::{vec2, Color32, RadioButton, Response, Ui, Vec2, Widget};
+use bevy_egui::egui::{vec2, Response, Ui, Widget};
 
 use crate::systems::cell_node::{Antigen, Leukocyte, LymphNodeInput, Protein};
 use crate::theme;
 use crate::ui::{UiRadioImageButton, UiTextures};
 
-#[derive(Clone, Copy)]
 pub struct UiLymphNodeInputRadio<'a> {
     textures: &'a UiTextures,
-    checked: bool,
-    value: Option<LymphNodeInput>,
+    current_value: Option<LymphNodeInput>,
+    selected_value: Option<LymphNodeInput>,
+    needs_node_picker: &'a mut bool,
 }
 
 impl<'a> UiLymphNodeInputRadio<'a> {
-    pub fn variants(
+    pub fn new(
         textures: &'a UiTextures,
+        current_value: Option<LymphNodeInput>,
         selected_value: Option<LymphNodeInput>,
-    ) -> impl Iterator<Item = UiLymphNodeInputRadio<'a>> {
-        iter::once(None)
-            .chain(LymphNodeInput::variants().map(Some))
-            .map(move |value| Self {
-                textures,
-                checked: value == selected_value,
-                value,
-            })
-    }
-
-    pub fn value(&self) -> Option<LymphNodeInput> {
-        self.value
-    }
-
-    fn asset_path(&self) -> Option<&'static str> {
-        self.value.map(|value| value.asset_path())
-    }
-
-    fn size(&self) -> Vec2 {
-        match self.value {
-            Some(LymphNodeInput::Binder(_)) => vec2(36.0, 36.0),
-            Some(LymphNodeInput::Protein(_)) => vec2(26.0, 26.0),
-            _ => vec2(50.0, 50.0),
+        needs_node_picker: &'a mut bool,
+    ) -> Self {
+        Self {
+            textures,
+            current_value,
+            selected_value,
+            needs_node_picker,
         }
     }
 
-    fn tint(&self) -> Color32 {
-        match self.value {
-            Some(LymphNodeInput::Body(_)) => {
-                theme::to_egui(Leukocyte::color(255))
-            }
-            Some(LymphNodeInput::Binder(_)) => {
-                theme::to_egui(Antigen::color(Leukocyte::color(255), 255))
-            }
-            Some(LymphNodeInput::Protein(_)) => {
-                theme::to_egui(Protein::color())
-            }
-            _ => Color32::WHITE,
+    fn checked(&self) -> bool {
+        if self.current_value == self.selected_value {
+            return true;
         }
+
+        if let (
+            Some(LymphNodeInput::External(_)),
+            Some(LymphNodeInput::External(_)),
+        ) = (self.current_value, self.selected_value)
+        {
+            return true;
+        }
+
+        false
     }
 }
 
 impl Widget for UiLymphNodeInputRadio<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        ui.horizontal(|ui| {
-            if let Some(asset_path) = self.asset_path() {
-                let size = self.size();
+        let checked = self.checked();
+
+        ui.horizontal(|ui| match self.current_value {
+            Some(
+                value @ (LymphNodeInput::Body(_)
+                | LymphNodeInput::Binder(_)
+                | LymphNodeInput::Protein(_)),
+            ) => {
+                let size = match value {
+                    LymphNodeInput::Binder(_) => vec2(36.0, 36.0),
+                    LymphNodeInput::Protein(_) => vec2(26.0, 26.0),
+                    _ => vec2(50.0, 50.0),
+                };
+
+                let tint = match value {
+                    LymphNodeInput::Body(_) => {
+                        theme::to_egui(Leukocyte::color(255))
+                    }
+                    LymphNodeInput::Binder(_) => theme::to_egui(
+                        Antigen::color(Leukocyte::color(255), 255),
+                    ),
+                    LymphNodeInput::Protein(_) => {
+                        theme::to_egui(Protein::color())
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                };
+
                 let padding = vec2(50.0 - size.x, 5.0);
+                let asset_path = value.asset_path().unwrap();
 
                 ui.add(
                     UiRadioImageButton::new(
-                        self.checked,
+                        checked,
                         self.textures.get(asset_path),
                         size,
                     )
                     .with_image_padding(padding)
-                    .with_image_tint(self.tint()),
+                    .with_image_tint(tint),
                 )
-            } else {
-                ui.add(RadioButton::new(self.checked, "  (nothing)"))
             }
+
+            Some(LymphNodeInput::External(node)) => {
+                let radio = ui.radio(checked, "  Another node");
+
+                let button =
+                    ui.button(if node.is_some() { "Change" } else { "Pick" });
+
+                if button.clicked() {
+                    *self.needs_node_picker = true;
+                }
+
+                radio
+            }
+
+            None => ui.radio(checked, "  Nothing"),
         })
         .inner
     }

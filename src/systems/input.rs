@@ -1,11 +1,11 @@
 use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
+use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
-use super::camera::screen_to_pixel;
 use super::cell_node::LymphNode;
-use super::highlight::Highlight;
+use super::highlight::SelectorHighlight;
 use super::units::Unit;
 use crate::pathfinding::{Map, Pathfinder};
 use crate::ui::UiEvent;
@@ -15,15 +15,15 @@ pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(InputState::default())
-            .add_system(track_mouse_position)
+            .add_system(update_mouse_position)
             .add_system(process_mouse_selection)
-            .add_system(highlight_selection)
+            .add_system(highlight_selected_units)
             .add_system(process_mouse_command);
     }
 }
 
-struct InputState {
-    mouse_pos: Vec2,
+pub struct InputState {
+    pub mouse_pos: Vec2,
     is_dragging: bool,
     drag_start_pos: Vec2,
     selected_units: Vec<Entity>,
@@ -40,25 +40,41 @@ impl Default for InputState {
     }
 }
 
-fn track_mouse_position(
+fn update_mouse_position(
+    mut egui: ResMut<EguiContext>,
     mut state: ResMut<InputState>,
-    camera: Query<(&OrthographicProjection, &Transform), With<Camera>>,
-    mut cursor_moved_events: EventReader<CursorMoved>,
+    wnds: Res<Windows>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera>>,
 ) {
-    let (ortho, camera) = camera.single();
+    if egui.ctx_mut().is_pointer_over_area() {
+        return;
+    }
 
-    for event in cursor_moved_events.iter() {
-        let pos = Vec3::new(event.position.x, event.position.y, 0.0);
-        state.mouse_pos = screen_to_pixel(camera, ortho, pos).truncate();
+    let (camera, camera_transform) = camera.single();
+    let wnd = wnds.get(camera.window).unwrap();
+
+    if let Some(screen_pos) = wnd.cursor_position() {
+        let window_size = Vec2::new(wnd.width() as f32, wnd.height() as f32);
+        let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
+        let ndc_to_world = camera_transform.compute_matrix()
+            * camera.projection_matrix.inverse();
+
+        state.mouse_pos =
+            ndc_to_world.project_point3(ndc.extend(-1.0)).truncate();
     }
 }
 
 fn process_mouse_command(
+    mut egui: ResMut<EguiContext>,
     state: Res<InputState>,
     map: Res<Map>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mut units: Query<(&mut Unit, &Transform)>,
 ) {
+    if egui.ctx_mut().is_pointer_over_area() {
+        return;
+    }
+
     for event in mouse_button_input_events.iter() {
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
@@ -76,6 +92,7 @@ fn process_mouse_command(
 }
 
 fn process_mouse_selection(
+    mut egui: ResMut<EguiContext>,
     mut state: ResMut<InputState>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mouse_button_input: Res<Input<MouseButton>>,
@@ -84,6 +101,10 @@ fn process_mouse_selection(
     mut lines: ResMut<DebugLines>,
     mut ui_events: EventWriter<UiEvent>,
 ) {
+    if egui.ctx_mut().is_pointer_over_area() {
+        return;
+    }
+
     if !state.is_dragging && mouse_button_input.just_pressed(MouseButton::Left)
     {
         let clicked_entity =
@@ -100,7 +121,7 @@ fn process_mouse_selection(
             });
 
         if let Some(entity) = clicked_entity {
-            ui_events.send(UiEvent::OpenLymphNodeEditor(entity));
+            ui_events.send(UiEvent::LymphNodeClicked(entity));
             return;
         }
     }
@@ -186,11 +207,19 @@ fn process_mouse_selection(
     draw_square(&mut lines, state.drag_start_pos, state.mouse_pos);
 }
 
-fn highlight_selection(
+fn highlight_selected_units(
+    mut egui: ResMut<EguiContext>,
     state: ResMut<InputState>,
     units: Query<(Entity, &Unit, &Children)>,
-    mut highlights: Query<(Entity, &Highlight, &mut Visibility)>,
+    mut highlights: Query<
+        (Entity, &Parent, &mut Visibility),
+        With<SelectorHighlight>,
+    >,
 ) {
+    if egui.ctx_mut().is_pointer_over_area() {
+        return;
+    }
+
     // Has to be greater than max number of children of Unit to allocate only once
     let unit_children = 10;
     let capacity = state.selected_units.len() * unit_children;
@@ -202,7 +231,16 @@ fn highlight_selection(
         selected_children.extend(children.iter());
     }
 
-    for (entity, _, mut visibility) in highlights.iter_mut() {
+    for (entity, parent, mut visibility) in highlights.iter_mut() {
+        let is_parent_unit = units
+            .iter()
+            .any(|(unit_entity, _, _)| unit_entity == **parent);
+
+        if !is_parent_unit {
+            // We don't want to manage e.g. lymph nodes' selectors
+            continue;
+        }
+
         visibility.is_visible = selected_children.contains(&entity);
     }
 }

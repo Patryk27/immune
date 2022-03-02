@@ -1,5 +1,6 @@
 mod lymph_node_input_radio;
 mod lymph_node_input_radios;
+mod lymph_node_picker;
 
 use bevy::prelude::*;
 use bevy_egui::egui::{self, Align2};
@@ -7,13 +8,26 @@ use bevy_egui::EguiContext;
 
 use self::lymph_node_input_radio::*;
 use self::lymph_node_input_radios::*;
+use self::lymph_node_picker::*;
 use super::*;
 use crate::compiling::RecompileEvent;
 use crate::systems::cell_node::*;
 use crate::theme;
 
 pub struct UiLymphNodeEditor {
+    alive: bool,
     lymph_node: Entity,
+    lymph_node_picker: Option<UiLymphNodePicker>,
+}
+
+pub enum UiLymphNodeEditorEvent {
+    EscapePressed,
+    LymphNodeClicked(Entity),
+}
+
+pub enum UiLymphNodeEditorOutcome {
+    Awaiting,
+    Completed,
 }
 
 impl UiLymphNodeEditor {
@@ -23,25 +37,66 @@ impl UiLymphNodeEditor {
         textures: &mut UiTextures,
         lymph_node: Entity,
     ) -> Self {
-        for input in LymphNodeInput::variants() {
-            textures.load(assets, egui, input.asset_path());
+        let asset_paths =
+            LymphNodeInput::variants().flat_map(|input| input.asset_path());
+
+        for asset_path in asset_paths {
+            textures.load(assets, egui, asset_path);
         }
 
-        Self { lymph_node }
+        Self {
+            alive: true,
+            lymph_node,
+            lymph_node_picker: None,
+        }
+    }
+
+    pub fn lymph_node(&self) -> Entity {
+        self.lymph_node
     }
 
     pub fn process(
         &mut self,
+        lines: ResMut<DebugLines>,
         mut egui: ResMut<EguiContext>,
         textures: &UiTextures,
-        mut lymph_nodes: Query<(Entity, &mut LymphNode)>,
+        mouse_pos: Vec2,
+        mut lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
         mut recompile_event_tx: EventWriter<RecompileEvent>,
-    ) -> Result<(), ()> {
-        let (_, mut lymph_node) =
-            lymph_nodes.get_mut(self.lymph_node).map_err(drop)?;
+    ) -> UiLymphNodeEditorOutcome {
+        if !self.alive {
+            return UiLymphNodeEditorOutcome::Completed;
+        }
+
+        let (mut lymph_node, lymph_node_transform, _, lymph_node_entity) =
+            if let Ok(val) = lymph_nodes.get_mut(self.lymph_node) {
+                val
+            } else {
+                return UiLymphNodeEditorOutcome::Completed;
+            };
+
+        let mut changed = false;
+
+        if let Some(picker) = &mut self.lymph_node_picker {
+            match picker.process(
+                lines,
+                mouse_pos,
+                &mut lymph_node,
+                lymph_node_entity,
+                *lymph_node_transform,
+            ) {
+                UiLymphNodePickerOutcome::Awaiting => {
+                    return UiLymphNodeEditorOutcome::Awaiting;
+                }
+
+                UiLymphNodePickerOutcome::Completed => {
+                    self.lymph_node_picker = None;
+                    changed |= true;
+                }
+            }
+        }
 
         let mut keep_opened = true;
-        let mut changed = false;
 
         egui::Window::new("Lymph Node")
             .anchor(Align2::CENTER_CENTER, (0.0, 0.0))
@@ -50,25 +105,43 @@ impl UiLymphNodeEditor {
             .open(&mut keep_opened)
             .show(egui.ctx_mut(), |ui| {
                 egui::Grid::new("lymph-node-editor.recipe").show(ui, |ui| {
+                    let mut needs_node_picker = false;
+
                     changed |= ui
                         .add(UiLymphNodeInputRadios::new(
                             textures,
-                            &mut lymph_node.lhs,
                             "Input A:",
+                            &mut lymph_node.lhs,
+                            &mut needs_node_picker,
                         ))
                         .changed();
+
+                    if needs_node_picker {
+                        self.lymph_node_picker = Some(UiLymphNodePicker::lhs());
+                    }
+
+                    // ---
 
                     ui.centered_and_justified(|ui| {
                         ui.label("+");
                     });
 
+                    // ---
+
+                    let mut needs_node_picker = false;
+
                     changed |= ui
                         .add(UiLymphNodeInputRadios::new(
                             textures,
-                            &mut lymph_node.rhs,
                             "Input B:",
+                            &mut lymph_node.rhs,
+                            &mut needs_node_picker,
                         ))
                         .changed();
+
+                    if needs_node_picker {
+                        self.lymph_node_picker = Some(UiLymphNodePicker::rhs());
+                    }
                 });
 
                 ui.shrink_width_to_current();
@@ -85,9 +158,30 @@ impl UiLymphNodeEditor {
         }
 
         if keep_opened {
-            Ok(())
+            UiLymphNodeEditorOutcome::Awaiting
         } else {
-            Err(())
+            UiLymphNodeEditorOutcome::Completed
+        }
+    }
+
+    pub fn notify(&mut self, event: UiLymphNodeEditorEvent) {
+        match event {
+            UiLymphNodeEditorEvent::EscapePressed => {
+                if let Some(picker) = &mut self.lymph_node_picker {
+                    picker.notify(UiLymphNodePickerEvent::EscapePressed);
+                } else {
+                    self.alive = false;
+                }
+            }
+
+            UiLymphNodeEditorEvent::LymphNodeClicked(node) => {
+                if let Some(picker) = &mut self.lymph_node_picker {
+                    picker
+                        .notify(UiLymphNodePickerEvent::LymphNodeClicked(node));
+                } else {
+                    self.lymph_node = node;
+                }
+            }
         }
     }
 }

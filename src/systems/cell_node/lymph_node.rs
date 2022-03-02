@@ -1,9 +1,13 @@
+use std::iter;
+
 use bevy::math::vec2;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
+use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
 use crate::compiling::CompilationWarning;
+use crate::systems::highlight::Selector;
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::theme;
 
@@ -59,6 +63,16 @@ impl LymphNode {
         entity.with_children(|entity| {
             LymphNodeProgressBar::spawn(meshes, materials, entity);
         });
+
+        // Spawn lymph node's selector
+        entity.with_children(|entity| {
+            Selector::spawn(
+                assets,
+                entity,
+                140.0,
+                Color::rgba_u8(242, 185, 56, 50),
+            );
+        });
     }
 }
 
@@ -67,7 +81,7 @@ pub enum LymphNodeInput {
     Body(Body),
     Binder(AntigenBinder),
     Protein(Protein),
-    External(Entity),
+    External(Option<Entity>),
 }
 
 impl LymphNodeInput {
@@ -76,15 +90,18 @@ impl LymphNodeInput {
         let binders = AntigenBinder::variants().map(Self::Binder);
         let proteins = Protein::variants().map(Self::Protein);
 
-        bodies.chain(binders).chain(proteins)
+        bodies
+            .chain(binders)
+            .chain(proteins)
+            .chain(iter::once(Self::External(None)))
     }
 
-    pub fn asset_path(&self) -> &'static str {
+    pub fn asset_path(&self) -> Option<&'static str> {
         match self {
-            Self::Body(body) => body.asset_path(),
-            Self::Binder(binder) => binder.asset_path(),
-            Self::Protein(protein) => protein.asset_path(),
-            Self::External(_) => Body::Circle.asset_path(), // TODO(pwy) needs its own icon
+            Self::Body(body) => Some(body.asset_path()),
+            Self::Binder(binder) => Some(binder.asset_path()),
+            Self::Protein(protein) => Some(protein.asset_path()),
+            Self::External(_) => None,
         }
     }
 }
@@ -116,4 +133,68 @@ impl LymphNodeProgressBar {
             })
             .insert(Self);
     }
+}
+
+#[derive(Component, Debug)]
+pub struct LymphNodeConnection {
+    pub source: Vec2,
+    pub source_entity: Entity,
+    pub target: Vec2,
+    pub target_entity: Entity,
+    pub points: Vec<LymphNodeConnectionPoint>,
+    pub tint_r: f32,
+    pub tint_g: f32,
+    pub tint_b: f32,
+    pub tt: f32,
+}
+
+impl LymphNodeConnection {
+    pub fn new(
+        source: Vec2,
+        source_entity: Entity,
+        target: Vec2,
+        target_entity: Entity,
+    ) -> Self {
+        const SEGMENT_LEN: f32 = 4.0;
+
+        let mut rng = rand::thread_rng();
+        let points_count = (source.distance(target) / SEGMENT_LEN) as i32;
+
+        let points = (0..points_count).map(|idx| {
+            let mut pos = source
+                + (target - source) / (points_count as f32) * (idx as f32);
+
+            pos.x += rng.gen_range(-3.0..3.0);
+            pos.y += rng.gen_range(-3.0..3.0);
+
+            LymphNodeConnectionPoint {
+                pos,
+                vel: Default::default(),
+            }
+        });
+
+        Self {
+            source,
+            source_entity,
+            target,
+            target_entity,
+            points: points.collect(),
+            tint_r: rng.gen_range(-0.02..0.1),
+            tint_g: rng.gen_range(-0.2..0.2),
+            tint_b: rng.gen_range(-0.2..0.2),
+            tt: 0.0,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct LymphNodeConnectionPoint {
+    pub pos: Vec2,
+    pub vel: Vec2,
+}
+
+#[derive(Component, Default)]
+pub struct DeadLymphNodeConnection {
+    pub tt: f32,
+    pub in_progress: bool,
 }

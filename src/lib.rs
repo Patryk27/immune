@@ -1,3 +1,5 @@
+#![feature(array_windows)]
+
 pub mod compiling;
 pub mod game;
 pub mod level;

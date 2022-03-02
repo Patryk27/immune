@@ -1,8 +1,11 @@
 [[Setup.LymphNode]]
-Pos = [-2.0, -2.0]
+Pos = [-4.0, 0.0]
 
 [[Setup.LymphNode]]
-Pos = [2.0, -2.0]
+Pos = [-1.0, -4.0]
+
+[[Setup.LymphNode]]
+Pos = [2.0, 0.0]
 
 [[Wave]]
 StartsAt = 0

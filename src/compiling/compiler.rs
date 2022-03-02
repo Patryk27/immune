@@ -91,8 +91,8 @@ impl Compiler {
             }
 
             // (External + Protein) | (Protein + External) => Extra
-            (Some(I::External(source)), Some(I::Protein(protein)))
-            | (Some(I::Protein(protein)), Some(I::External(source))) => {
+            (Some(I::External(Some(source))), Some(I::Protein(protein)))
+            | (Some(I::Protein(protein)), Some(I::External(Some(source)))) => {
                 let LymphNodeOutput::Leukocyte(mut leukocyte) =
                     self.resolve(depth + 1, source)?;
 
@@ -110,7 +110,7 @@ impl Compiler {
             }
 
             // (External + External) | (External + External) => Extra
-            (Some(I::External(lhs)), Some(I::External(rhs))) => {
+            (Some(I::External(Some(lhs))), Some(I::External(Some(rhs)))) => {
                 let LymphNodeOutput::Leukocyte(lhs) =
                     self.resolve(depth + 1, lhs)?;
 
@@ -136,8 +136,8 @@ impl Compiler {
             }
 
             // (None + External) | (External + None) => Pass-through
-            (Some(I::External(source)), None)
-            | (None, Some(I::External(source))) => {
+            (Some(I::External(Some(source))), None)
+            | (None, Some(I::External(Some(source)))) => {
                 self.resolve(depth + 1, source)
             }
 

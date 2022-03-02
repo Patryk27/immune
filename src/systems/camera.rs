@@ -103,13 +103,3 @@ pub fn keyboard_input(
         }
     }
 }
-
-pub fn screen_to_pixel(
-    camera: &Transform,
-    ortho: &OrthographicProjection,
-    point: Vec3,
-) -> Vec3 {
-    let ortho_offset = Vec3::new(ortho.left, ortho.bottom, 0.0);
-
-    (point * ortho.scale) + camera.translation + (ortho_offset * ortho.scale)
-}

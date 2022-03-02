@@ -13,7 +13,8 @@ pub struct CompilingPlugin;
 impl Plugin for CompilingPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<RecompileEvent>()
-            .add_system(recompile_event::handle)
+            .add_system(recompile_event::compile)
+            .add_system(recompile_event::link)
             .add_system(compilation_warning::blink);
     }
 }

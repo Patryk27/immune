@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use super::{Leukocyte, Pathogen};
-use crate::systems::highlight::Highlight;
+use crate::systems::highlight::Selector;
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
 use crate::theme;
@@ -100,37 +100,14 @@ impl<'a> Cell<'a> {
             }
         });
 
-        // Spawn hidden selection highlight
+        // Spawn cell's selector
         entity.with_children(|entity| {
-            let texture = assets.load("selector.png");
-            let color = Color::rgba_u8(0, 220, 0, 50);
-            let size = 50.0; // TODO(pry): this info should be within unit struct
-            let arrows = vec![
-                (false, false, -1.0, 1.0),
-                (true, false, 1.0, 1.0),
-                (false, true, -1.0, -1.0),
-                (true, true, 1.0, -1.0),
-            ];
-
-            for (flip_x, flip_y, mul_x, mul_y) in arrows {
-                let transform =
-                    Transform::from_xyz(size * mul_x, size * mul_y, 0.0);
-
-                entity
-                    .spawn_bundle(SpriteBundle {
-                        sprite: Sprite {
-                            color,
-                            flip_x,
-                            flip_y,
-                            ..Default::default()
-                        },
-                        texture: texture.clone(),
-                        transform,
-                        visibility: Visibility { is_visible: false },
-                        ..Default::default()
-                    })
-                    .insert(Highlight);
-            }
+            Selector::spawn(
+                assets,
+                entity,
+                50.0,
+                Color::rgba_u8(0, 220, 0, 50),
+            );
         });
     }
 }
