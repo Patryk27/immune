@@ -5,7 +5,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
 use super::cell_node::LymphNode;
-use super::highlight::SelectorHighlight;
+use super::highlight::HighlightPlugin;
 use super::units::Unit;
 use crate::pathfinding::{Map, Pathfinder};
 use crate::ui::UiEvent;
@@ -17,8 +17,8 @@ impl Plugin for InputPlugin {
         app.insert_resource(InputState::default())
             .add_system(update_mouse_position)
             .add_system(process_mouse_selection)
-            .add_system(highlight_selected_units)
-            .add_system(process_mouse_command);
+            .add_system(process_mouse_command)
+            .add_plugin(HighlightPlugin);
     }
 }
 
@@ -26,7 +26,7 @@ pub struct InputState {
     pub mouse_pos: Vec2,
     is_dragging: bool,
     drag_start_pos: Vec2,
-    selected_units: Vec<Entity>,
+    pub selected_units: Vec<Entity>,
 }
 
 impl Default for InputState {
@@ -205,44 +205,6 @@ fn process_mouse_selection(
     }
 
     draw_square(&mut lines, state.drag_start_pos, state.mouse_pos);
-}
-
-fn highlight_selected_units(
-    mut egui: ResMut<EguiContext>,
-    state: ResMut<InputState>,
-    units: Query<(Entity, &Unit, &Children)>,
-    mut highlights: Query<
-        (Entity, &Parent, &mut Visibility),
-        With<SelectorHighlight>,
-    >,
-) {
-    if egui.ctx_mut().is_pointer_over_area() {
-        return;
-    }
-
-    // Has to be greater than max number of children of Unit to allocate only once
-    let unit_children = 10;
-    let capacity = state.selected_units.len() * unit_children;
-    let mut selected_children: Vec<Entity> = Vec::with_capacity(capacity);
-
-    for selected_entity in state.selected_units.iter() {
-        let (_, _, children) = units.get(*selected_entity).unwrap();
-
-        selected_children.extend(children.iter());
-    }
-
-    for (entity, parent, mut visibility) in highlights.iter_mut() {
-        let is_parent_unit = units
-            .iter()
-            .any(|(unit_entity, _, _)| unit_entity == **parent);
-
-        if !is_parent_unit {
-            // We don't want to manage e.g. lymph nodes' selectors
-            continue;
-        }
-
-        visibility.is_visible = selected_children.contains(&entity);
-    }
 }
 
 fn point_in_rect(
