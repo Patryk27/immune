@@ -7,7 +7,7 @@ use itertools::Itertools;
 use super::cell_node::LymphNode;
 use super::highlight::HighlightPlugin;
 use super::units::Unit;
-use crate::pathfinding::{Map, Pathfinder, PathseekersQueue};
+use crate::pathfinding::PathseekersQueue;
 use crate::ui::UiEvent;
 
 pub struct InputPlugin;

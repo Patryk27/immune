@@ -114,8 +114,6 @@ impl Pathfinder {
         let map = DiscreteMap::new(&map, pathseeker, target);
         let path = bfs(&map, |map| map.successors(), |map| map.arrived());
 
-        // self.debug_path(&path);
-
         let path = path
             .into_iter()
             .flatten()
