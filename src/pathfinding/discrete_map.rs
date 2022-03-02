@@ -126,16 +126,11 @@ impl DiscreteMap {
 
     fn neighbours(&self, idx: usize) -> Vec<usize> {
         let (row, col) = Self::idx_to_coordinates(idx, self.map_size);
-        let mut neighbours = vec![];
+        let mut neighbours =
+            vec![(row + 1, col), (row + 1, col + 1), (row, col + 1)];
 
         if row > 0 {
-            neighbours.extend(vec![
-                (row + 1, col),
-                (row + 1, col + 1),
-                (row, col + 1),
-                (row - 1, col),
-                (row - 1, col + 1),
-            ]);
+            neighbours.extend(vec![(row - 1, col), (row - 1, col + 1)]);
         }
 
         if col > 0 {
