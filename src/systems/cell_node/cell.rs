@@ -51,6 +51,15 @@ impl<'a> Cell<'a> {
             })
             .insert_bundle(ColliderBundle {
                 shape: ColliderShapeComponent(ColliderShape::ball(0.25)),
+                material: ColliderMaterialComponent(ColliderMaterial {
+                    friction: 0.1,
+                    restitution: 0.5,
+                    ..Default::default()
+                }),
+                flags: ColliderFlagsComponent(ColliderFlags {
+                    active_events: ActiveEvents::CONTACT_EVENTS,
+                    ..Default::default()
+                }),
                 ..Default::default()
             })
             .insert(RigidBodyPositionSync::Discrete)

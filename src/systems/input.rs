@@ -78,14 +78,15 @@ fn process_mouse_command(
     for event in mouse_button_input_events.iter() {
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
-                let (mut unit, transform) = units.get_mut(*unit).unwrap();
-                let pathfinder = Pathfinder::new(
-                    &map,
-                    transform.translation.truncate(),
-                    state.mouse_pos,
-                );
-                let path = pathfinder.path();
-                unit.set_path(path, Some(state.mouse_pos));
+                if let Ok((mut unit, transform)) = units.get_mut(*unit) {
+                    let pathfinder = Pathfinder::new(
+                        &map,
+                        transform.translation.truncate(),
+                        state.mouse_pos,
+                    );
+                    let path = pathfinder.path();
+                    unit.set_path(path, Some(state.mouse_pos));
+                }
             }
         }
     }

@@ -11,12 +11,27 @@ const STOPPING_FORCE_FACTOR: f32 = 2.0;
 const MOVEMENT_STRETCH_FACTOR: f32 = 1.4;
 const MOVEMENT_SQUEEZE_FACTOR: f32 = 0.6;
 
-#[derive(Component, Default)]
+const MAX_HEALTH: f32 = 1.0;
+const BASE_DAMAGE: f32 = 0.25; // By default a cell can take 4 hits
+
+#[derive(Component)]
 pub struct Unit {
     // TODO(dzejkop): Should be enum, target can be unit, etc.
     pub target: Option<Vec2>,
     pub path: Vec<Vec2>,
     pub step: usize,
+    pub health: f32,
+}
+
+impl Default for Unit {
+    fn default() -> Self {
+        Self {
+            target: Default::default(),
+            path: Default::default(),
+            step: Default::default(),
+            health: MAX_HEALTH,
+        }
+    }
 }
 
 impl Unit {
@@ -28,7 +43,9 @@ impl Unit {
 }
 
 pub fn initialize(app: &mut App) {
-    app.add_system(movement).add_system(animate);
+    app.add_system(movement)
+        .add_system(animate)
+        .add_system(display_events);
 }
 
 pub fn movement(
@@ -95,6 +112,37 @@ pub fn movement(
 
             let diff = desired_linvel - current_linvel;
             forces.force = diff * STOPPING_FORCE_FACTOR;
+        }
+    }
+}
+
+fn display_events(
+    mut commands: Commands,
+    mut contact_events: EventReader<ContactEvent>,
+    mut units: Query<&mut Unit>,
+) {
+    for contact_event in contact_events.iter() {
+        match contact_event {
+            ContactEvent::Started(left, right) => {
+                deal_damage(left, &mut units, &mut commands);
+                deal_damage(right, &mut units, &mut commands);
+            }
+            ContactEvent::Stopped(_, _) => (),
+        }
+    }
+}
+
+fn deal_damage(
+    handle: &ColliderHandle,
+    units: &mut Query<&mut Unit>,
+    commands: &mut Commands,
+) {
+    let entity = handle.entity();
+    if let Ok(mut unit) = units.get_mut(entity) {
+        unit.health -= BASE_DAMAGE;
+
+        if unit.health <= 0.0 {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }

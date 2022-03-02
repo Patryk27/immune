@@ -94,9 +94,9 @@ fn highlight_selected_units(
     let mut selected_children: Vec<Entity> = Vec::with_capacity(capacity);
 
     for selected_entity in state.selected_units.iter() {
-        let (_, _, children) = units.get(*selected_entity).unwrap();
-
-        selected_children.extend(children.iter());
+        if let Ok((_, _, children)) = units.get(*selected_entity) {
+            selected_children.extend(children.iter());
+        }
     }
 
     for (entity, parent, mut visibility) in highlights.iter_mut() {
