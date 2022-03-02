@@ -73,31 +73,37 @@ impl<'a> Cell<'a> {
 
         // Spawn cell's sprite
         entity.with_children(|entity| {
-            let texture = assets.load(body.asset_path());
-
             entity
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color,
-                        ..Default::default()
-                    },
-                    transform: Transform::default()
-                        .with_scale(Vec3::splat(0.25)),
-                    texture,
-                    ..Default::default()
-                })
+                .spawn()
+                .insert(Transform::default())
+                .insert(GlobalTransform::default())
                 .insert(CellBody)
-                .insert(CellFadeIn::default());
-        });
+                .with_children(|entity| {
+                    let texture = assets.load(body.asset_path());
 
-        // Spawn cell's antigens / antigen binders
-        entity.with_children(|entity| match self {
-            Cell::Leukocyte(cell) => {
-                cell.binder.spawn(assets, entity, body, color)
-            }
-            Cell::Pathogen(cell) => {
-                cell.antigen.spawn(assets, entity, body, color)
-            }
+                    entity
+                        .spawn_bundle(SpriteBundle {
+                            sprite: Sprite {
+                                color,
+                                ..Default::default()
+                            },
+                            transform: Transform::default()
+                                .with_scale(Vec3::splat(0.25)),
+                            texture,
+                            ..Default::default()
+                        })
+                        .insert(CellFadeIn::default());
+
+                    // Spawn cell's antigens / antigen binders
+                    match self {
+                        Cell::Leukocyte(cell) => {
+                            cell.binder.spawn(assets, entity, body, color)
+                        }
+                        Cell::Pathogen(cell) => {
+                            cell.antigen.spawn(assets, entity, body, color)
+                        }
+                    }
+                });
         });
 
         // Spawn cell's selector
