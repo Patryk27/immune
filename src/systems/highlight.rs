@@ -1,9 +1,8 @@
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
-use crate::systems::input::InputState;
 use super::units::Unit;
-
+use crate::systems::input::InputState;
 
 pub struct Selector;
 
@@ -43,7 +42,6 @@ impl Selector {
         }
     }
 }
-
 
 #[derive(Component)]
 pub struct SelectorHighlight;
@@ -119,7 +117,6 @@ fn animate_highlight_selection(
     mut highlight_state: ResMut<HighlightRes>,
     mut highlights: Query<(&SelectorHighlight, &Visibility, &mut Transform)>,
 ) {
-
     if highlight_state.zoom + ZOOM_SPEED > ZOOM_MAX {
         highlight_state.zoom_dir = -1.0
     } else if highlight_state.zoom - ZOOM_SPEED < ZOOM_MIN {
@@ -137,5 +134,4 @@ fn animate_highlight_selection(
             transform.scale.y = 1.0;
         }
     }
-
 }
