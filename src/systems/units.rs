@@ -35,10 +35,9 @@ impl Default for Unit {
 }
 
 impl Unit {
-    pub fn set_path(&mut self, path: Vec<Vec2>, target: Option<Vec2>) {
+    pub fn set_path(&mut self, path: Vec<Vec2>) {
         self.step = 0;
         self.path = path;
-        self.target = target;
     }
 }
 
@@ -89,7 +88,8 @@ pub fn movement(
                     default_force_direction
                 }
             } else {
-                default_force_direction
+                // Wait till you have path
+                Vec2::ZERO
             };
 
             let force_direction = pixel_to_world(force_direction);

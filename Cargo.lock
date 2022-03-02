@@ -3282,6 +3282,7 @@ dependencies = [
  "bevy_egui",
  "bevy_prototype_debug_lines",
  "bevy_rapier2d",
+ "futures-lite",
  "indoc",
  "itertools",
  "keyframe",

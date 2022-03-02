@@ -7,7 +7,7 @@ use itertools::Itertools;
 use super::cell_node::LymphNode;
 use super::highlight::HighlightPlugin;
 use super::units::Unit;
-use crate::pathfinding::{Map, Pathfinder};
+use crate::pathfinding::{Map, Pathfinder, PathseekersQueue};
 use crate::ui::UiEvent;
 
 pub struct InputPlugin;
@@ -67,9 +67,9 @@ fn update_mouse_position(
 fn process_mouse_command(
     mut egui: ResMut<EguiContext>,
     state: Res<InputState>,
-    map: Res<Map>,
+    mut pathfinding_queue: ResMut<PathseekersQueue>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    mut units: Query<(&mut Unit, &Transform)>,
+    mut units: Query<(Entity, &mut Unit, &Transform)>,
 ) {
     if egui.ctx_mut().is_pointer_over_area() {
         return;
@@ -78,14 +78,16 @@ fn process_mouse_command(
     for event in mouse_button_input_events.iter() {
         if event.state.is_pressed() && event.button == MouseButton::Right {
             for unit in state.selected_units.iter() {
-                if let Ok((mut unit, transform)) = units.get_mut(*unit) {
-                    let pathfinder = Pathfinder::new(
-                        &map,
+                if let Ok((entity, mut unit, transform)) = units.get_mut(*unit)
+                {
+                    let target = state.mouse_pos;
+
+                    pathfinding_queue.insert(
+                        entity,
                         transform.translation.truncate(),
-                        state.mouse_pos,
+                        target,
                     );
-                    let path = pathfinder.path();
-                    unit.set_path(path, Some(state.mouse_pos));
+                    unit.target = Some(target);
                 }
             }
         }
