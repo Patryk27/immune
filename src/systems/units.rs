@@ -21,6 +21,13 @@ pub struct Unit {
     pub path: Vec<Vec2>,
     pub step: usize,
     pub health: f32,
+    pub alignment: Alignment,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Alignment {
+    Player,
+    Enemy,
 }
 
 impl Default for Unit {
@@ -30,6 +37,7 @@ impl Default for Unit {
             path: Default::default(),
             step: Default::default(),
             health: MAX_HEALTH,
+            alignment: Alignment::Player,
         }
     }
 }
@@ -44,7 +52,7 @@ impl Unit {
 pub fn initialize(app: &mut App) {
     app.add_system(movement)
         .add_system(animate)
-        .add_system(display_events);
+        .add_system(combat);
 }
 
 pub fn movement(
@@ -116,7 +124,7 @@ pub fn movement(
     }
 }
 
-fn display_events(
+fn combat(
     mut commands: Commands,
     mut contact_events: EventReader<ContactEvent>,
     mut units: Query<&mut Unit>,
@@ -124,20 +132,39 @@ fn display_events(
     for contact_event in contact_events.iter() {
         match contact_event {
             ContactEvent::Started(left, right) => {
-                deal_damage(left, &mut units, &mut commands);
-                deal_damage(right, &mut units, &mut commands);
+                let left = left.entity();
+                let right = right.entity();
+
+                let left_alignment = unit_alignment(left, &units);
+                let right_alignment = unit_alignment(right, &units);
+
+                match (left_alignment, right_alignment) {
+                    (Some(left_alignment), Some(right_alignment)) => {
+                        if left_alignment != right_alignment {
+                            deal_damage(left, &mut units, &mut commands);
+                            deal_damage(right, &mut units, &mut commands);
+                        }
+                    }
+                    _ => {}
+                }
             }
             ContactEvent::Stopped(_, _) => (),
         }
     }
 }
 
+fn unit_alignment(
+    entity: Entity,
+    units: &Query<&mut Unit>,
+) -> Option<Alignment> {
+    units.get(entity).map(|unit| unit.alignment).ok()
+}
+
 fn deal_damage(
-    handle: &ColliderHandle,
+    entity: Entity,
     units: &mut Query<&mut Unit>,
     commands: &mut Commands,
 ) {
-    let entity = handle.entity();
     if let Ok(mut unit) = units.get_mut(entity) {
         unit.health -= BASE_DAMAGE;
 

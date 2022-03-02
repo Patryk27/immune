@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 use super::{Leukocyte, Pathogen};
 use crate::systems::highlight::Selector;
 use crate::systems::physics::PHYSICS_SCALE;
-use crate::systems::units::Unit;
+use crate::systems::units::{Alignment, Unit};
 use crate::theme;
 
 #[derive(Component)]
@@ -24,6 +24,8 @@ impl<'a> Cell<'a> {
         vel: Vec2,
     ) {
         let mut entity = commands.spawn();
+
+        let mut unit = Unit::default();
 
         entity
             .insert(Transform::from_translation(
@@ -63,17 +65,20 @@ impl<'a> Cell<'a> {
                 ..Default::default()
             })
             .insert(RigidBodyPositionSync::Discrete)
-            .insert(Unit::default())
             .insert(CellFadeIn::default());
 
         match self {
             Cell::Leukocyte(cell) => {
+                unit.alignment = Alignment::Player;
                 entity.insert(**cell);
             }
             Cell::Pathogen(cell) => {
+                unit.alignment = Alignment::Enemy;
                 entity.insert(**cell);
             }
         }
+
+        entity.insert(unit);
 
         let (body, color) = match self {
             Cell::Leukocyte(cell) => (cell.body, Leukocyte::color(0)),
