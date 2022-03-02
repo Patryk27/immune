@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use super::camera::screen_to_pixel;
 use super::cell_node::LymphNode;
-use super::highlight::Highlight;
+use super::highlight::{Highlight, HighlightPlugin};
 use super::units::Unit;
 use crate::pathfinding::{Map, Pathfinder};
 use crate::ui::UiEvent;
@@ -17,16 +17,16 @@ impl Plugin for InputPlugin {
         app.insert_resource(InputState::default())
             .add_system(track_mouse_position)
             .add_system(process_mouse_selection)
-            .add_system(highlight_selection)
-            .add_system(process_mouse_command);
+            .add_system(process_mouse_command)
+            .add_plugin(HighlightPlugin);
     }
 }
 
-struct InputState {
+pub struct InputState {
     mouse_pos: Vec2,
     is_dragging: bool,
     drag_start_pos: Vec2,
-    selected_units: Vec<Entity>,
+    pub selected_units: Vec<Entity>,
 }
 
 impl Default for InputState {
@@ -205,6 +205,14 @@ fn highlight_selection(
     for (entity, _, mut visibility) in highlights.iter_mut() {
         visibility.is_visible = selected_children.contains(&entity);
     }
+}
+
+fn animate_highlight_selection(
+    mut highlights: Query<(Entity, &Highlight, &Visibility, &mut Transform)>,
+) {
+    let max_zoom = 10.0;
+    let min_zoom = -10.0;
+
 }
 
 fn point_in_rect(
