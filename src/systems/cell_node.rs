@@ -28,6 +28,7 @@ use super::physics::PHYSICS_SCALE;
 
 pub fn initialize(app: &mut App) {
     app.add_system(progress_lymph_nodes)
+        .add_system(animate_warnings)
         .add_system(animate_progress_bars)
         .add_system(animate_fresh_cells)
         .add_system(animate_connections)
@@ -41,6 +42,14 @@ fn progress_lymph_nodes(
     mut query: Query<(Entity, &mut LymphNode, &Transform)>,
 ) {
     for (_, mut lymph_node, transform) in &mut query.iter_mut() {
+        if lymph_node.state.paused || lymph_node.state.awaiting_resources {
+            continue;
+        }
+
+        if lymph_node.function == LymphNodeFunction::Provider {
+            continue;
+        }
+
         let output = if let Some(output) = &lymph_node.output {
             *output
         } else {
@@ -51,7 +60,7 @@ fn progress_lymph_nodes(
 
         lymph_node.production_tt += time.delta_seconds();
 
-        if lymph_node.production_tt >= lymph_node.production_duration {
+        if lymph_node.production_tt >= LymphNode::PRODUCTION_DURATION {
             lymph_node.production_tt = 0.0;
 
             match output {
@@ -82,6 +91,38 @@ fn progress_lymph_nodes(
     }
 }
 
+fn animate_warnings(
+    assets: Res<AssetServer>,
+    time: Res<Time>,
+    mut warnings: Query<(
+        &mut LymphNodeWarning,
+        &mut Sprite,
+        &mut Handle<Image>,
+    )>,
+) {
+    for (mut warn, mut warn_sprite, mut warn_image) in warnings.iter_mut() {
+        if warn.dirty {
+            warn.tt = 0.0;
+
+            *warn_image = warn
+                .asset_path
+                .map(|path| assets.load(path))
+                .unwrap_or_default();
+
+            warn.dirty = false;
+        }
+
+        let a = if warn.asset_path.is_some() {
+            warn.tt += 5.0 * time.delta_seconds();
+            warn.tt.sin().abs()
+        } else {
+            0.0
+        };
+
+        warn_sprite.color.set_a(a);
+    }
+}
+
 fn animate_progress_bars(
     lymph_nodes: Query<&LymphNode>,
     mut progress_bars: Query<
@@ -92,14 +133,18 @@ fn animate_progress_bars(
     for (parent, mut transform) in progress_bars.iter_mut() {
         let node = lymph_nodes.get(**parent).unwrap();
 
-        let progress = if node.output.is_some() {
-            node.production_tt / node.production_duration
+        let progress = if node.output.is_some()
+            && !node.state.paused
+            && !node.state.awaiting_resources
+            && node.function == LymphNodeFunction::Producer
+        {
+            node.production_tt / LymphNode::PRODUCTION_DURATION
         } else {
             0.0
         };
 
         *transform = Transform::default()
-            .with_translation(vec3(0.0, 0.0, 0.1))
+            .with_translation(vec3(0.0, 30.0, 0.1))
             .with_scale(vec3(progress, 1.0, 1.0));
     }
 }

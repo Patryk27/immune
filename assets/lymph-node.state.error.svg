@@ -8,7 +8,7 @@
    version="1.1"
    id="svg13287"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
-   sodipodi:docname="warning.svg"
+   sodipodi:docname="lymph-node.state.error.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +25,7 @@
      showgrid="false"
      width="100mm"
      inkscape:zoom="0.77326038"
-     inkscape:cx="396.3736"
+     inkscape:cx="133.20222"
      inkscape:cy="211.44236"
      inkscape:window-width="1916"
      inkscape:window-height="1037"
@@ -41,14 +41,14 @@
      id="layer1">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:203.757px;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.09395"
+       style="font-style:normal;font-weight:normal;font-size:203.757px;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:5.09395"
        x="-7.1799154"
        y="148.53966"
        id="text14602"
        transform="scale(1.485397,0.67322069)"><tspan
          sodipodi:role="line"
          id="tspan14600"
-         style="stroke-width:5.09395"
+         style="stroke-width:5.09395;fill:#ffffff"
          x="-7.1799154"
          y="148.53966">!</tspan></text>
   </g>

@@ -1,12 +1,11 @@
 use std::iter;
 
-use bevy::math::vec2;
+use bevy::math::{vec2, vec3};
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
-use crate::compiling::CompilationWarning;
 use crate::systems::highlight::Selector;
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::theme;
@@ -16,11 +15,14 @@ pub struct LymphNode {
     pub lhs: Option<LymphNodeInput>,
     pub rhs: Option<LymphNodeInput>,
     pub output: Option<LymphNodeOutput>,
+    pub function: LymphNodeFunction,
+    pub state: LymphNodeState,
     pub production_tt: f32,
-    pub production_duration: f32,
 }
 
 impl LymphNode {
+    pub const PRODUCTION_DURATION: f32 = 1.5;
+
     pub fn spawn(
         &self,
         commands: &mut Commands,
@@ -54,9 +56,9 @@ impl LymphNode {
             });
         });
 
-        // Spawn lymph node's compilation warning
+        // Spawn lymph node's warning
         entity.with_children(|entity| {
-            CompilationWarning::spawn(assets, entity);
+            LymphNodeWarning::spawn(entity);
         });
 
         // Spawn lymph node's progress bar
@@ -74,6 +76,18 @@ impl LymphNode {
             );
         });
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LymphNodeFunction {
+    Producer,
+    Provider,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LymphNodeState {
+    pub paused: bool,
+    pub awaiting_resources: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -109,6 +123,48 @@ impl LymphNodeInput {
 #[derive(Clone, Copy, Debug)]
 pub enum LymphNodeOutput {
     Leukocyte(Leukocyte),
+}
+
+#[derive(Component, Clone, Debug)]
+pub struct LymphNodeWarning {
+    pub asset_path: Option<&'static str>,
+    pub dirty: bool,
+    pub tt: f32,
+}
+
+impl LymphNodeWarning {
+    pub fn spawn(entity: &mut ChildBuilder) {
+        let transform = Transform::default()
+            .with_translation(vec3(
+                0.0,
+                25.0,
+                theme::z_index::LYMPH_NODE_COMPILATION_WARNING
+                    - theme::z_index::LYMPH_NODE,
+            ))
+            .with_scale(vec3(0.8, 0.8, 1.0));
+
+        entity
+            .spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb_u8(255, 190, 17),
+                    ..Default::default()
+                },
+                transform,
+                ..Default::default()
+            })
+            .insert(Self {
+                asset_path: None,
+                dirty: true,
+                tt: 0.0,
+            });
+    }
+
+    pub fn set(&mut self, new_asset_path: Option<&'static str>) {
+        if new_asset_path != self.asset_path {
+            self.dirty = true;
+            self.asset_path = new_asset_path;
+        }
+    }
 }
 
 #[derive(Component, Debug)]

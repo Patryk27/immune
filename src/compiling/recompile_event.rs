@@ -2,9 +2,10 @@ use std::collections::HashSet;
 
 use bevy::prelude::*;
 
-use super::{CompilationWarning, Compiler};
+use super::Compiler;
 use crate::systems::cell_node::{
     DeadLymphNodeConnection, LymphNode, LymphNodeConnection, LymphNodeInput,
+    LymphNodeWarning,
 };
 
 #[derive(Clone, Debug)]
@@ -13,7 +14,7 @@ pub struct RecompileEvent;
 pub(super) fn compile(
     mut events: EventReader<RecompileEvent>,
     mut nodes: Query<(Entity, &mut LymphNode, &Children)>,
-    mut warnings: Query<(&mut CompilationWarning, &mut Visibility)>,
+    mut warnings: Query<&mut LymphNodeWarning>,
 ) {
     if events.iter().next().is_none() {
         return;
@@ -25,18 +26,24 @@ pub(super) fn compile(
         compiler.add(entity, node);
     }
 
-    for (entity, output) in compiler.compile() {
+    for (entity, output, state, function) in compiler.compile() {
         let (_, mut node, children) = nodes.get_mut(entity).unwrap();
 
         node.output = output;
+        node.function = function;
+        node.state = state;
 
         for child in children.iter() {
-            if let Ok((mut warn, mut warn_vis)) = warnings.get_mut(*child) {
-                if !warn_vis.is_visible && output.is_none() {
-                    warn.tt = 0.0;
-                }
-
-                warn_vis.is_visible = output.is_none();
+            if let Ok(mut warn) = warnings.get_mut(*child) {
+                warn.set(if node.state.paused {
+                    Some("lymph-node.state.paused.png")
+                } else if node.state.awaiting_resources {
+                    Some("lymph-node.state.awaiting-resources.png")
+                } else if node.output.is_none() {
+                    Some("lymph-node.state.error.png")
+                } else {
+                    None
+                });
             }
         }
     }

@@ -1,11 +1,13 @@
-use std::collections::BTreeMap;
+//! TODO(pwy) memoization and some other optimizations could be nice
+
+use std::collections::{BTreeMap, HashSet};
 
 use bevy::prelude::Entity;
 use itertools::Itertools;
 
 use crate::systems::cell_node::{
-    Leukocyte, LeukocyteKind, LeukocyteProps, LymphNode, LymphNodeInput,
-    LymphNodeOutput, Protein,
+    Leukocyte, LeukocyteKind, LeukocyteProps, LymphNode, LymphNodeFunction,
+    LymphNodeInput, LymphNodeOutput, LymphNodeState, Protein,
 };
 
 #[derive(Default)]
@@ -16,13 +18,11 @@ pub struct Compiler {
 struct CompilerLymphNode {
     lhs: Option<LymphNodeInput>,
     rhs: Option<LymphNodeInput>,
-    output: CompilerLymphNodeOutput,
+    function: LymphNodeFunction,
+    state: LymphNodeState,
 }
 
-enum CompilerLymphNodeOutput {
-    Pending,
-    Compiled(Option<LymphNodeOutput>),
-}
+const MAX_DEPTH: u8 = 128;
 
 impl Compiler {
     pub fn add(&mut self, entity: Entity, node: &LymphNode) {
@@ -31,52 +31,77 @@ impl Compiler {
             CompilerLymphNode {
                 lhs: node.lhs,
                 rhs: node.rhs,
-                output: CompilerLymphNodeOutput::Pending,
+                function: LymphNodeFunction::Producer,
+                state: node.state,
             },
         );
     }
 
-    pub fn compile(mut self) -> Vec<(Entity, Option<LymphNodeOutput>)> {
+    pub fn compile(
+        mut self,
+    ) -> Vec<(
+        Entity,
+        Option<LymphNodeOutput>,
+        LymphNodeState,
+        LymphNodeFunction,
+    )> {
+        self.resolve_functions();
+
         self.nodes
             .keys()
             .cloned()
             .collect_vec()
             .into_iter()
-            .map(|entity| (entity, self.resolve(0, entity)))
+            .map(|entity| {
+                (
+                    entity,
+                    self.resolve_output(0, entity),
+                    self.resolve_state(entity),
+                    self.nodes[&entity].function,
+                )
+            })
             .collect()
     }
 
-    fn resolve(
-        &mut self,
-        depth: u8,
-        entity: Entity,
-    ) -> Option<LymphNodeOutput> {
-        assert!(depth < 128);
+    fn resolve_functions(&mut self) {
+        let providers: HashSet<_> = self
+            .nodes
+            .iter()
+            .flat_map(|(_, node)| {
+                let lhs = node.lhs.into_iter();
+                let rhs = node.rhs.into_iter();
 
-        let node = &self.nodes[&entity];
+                lhs.chain(rhs)
+            })
+            .flat_map(|input| {
+                if let LymphNodeInput::External(Some(entity)) = input {
+                    Some(entity)
+                } else {
+                    None
+                }
+            })
+            .collect();
 
-        match node.output {
-            CompilerLymphNodeOutput::Pending => {
-                let (lhs, rhs) = (node.lhs, node.rhs);
-                let output = self.resolve_inner(depth, lhs, rhs);
-
-                self.nodes.get_mut(&entity).unwrap().output =
-                    CompilerLymphNodeOutput::Compiled(output);
-
-                output
-            }
-
-            CompilerLymphNodeOutput::Compiled(output) => output,
+        for provider in providers {
+            self.nodes.get_mut(&provider).unwrap().function =
+                LymphNodeFunction::Provider;
         }
     }
 
-    fn resolve_inner(
-        &mut self,
+    fn resolve_output(
+        &self,
         depth: u8,
-        lhs: Option<LymphNodeInput>,
-        rhs: Option<LymphNodeInput>,
+        entity: Entity,
     ) -> Option<LymphNodeOutput> {
         use LymphNodeInput as I;
+
+        if depth > MAX_DEPTH {
+            return None;
+        }
+
+        let entity = &self.nodes[&entity];
+        let lhs = entity.lhs;
+        let rhs = entity.rhs;
 
         match (lhs, rhs) {
             // (Body + Binder) | (Binder + Body) => Leukocyte
@@ -90,32 +115,32 @@ impl Compiler {
                 }))
             }
 
-            // (External + Protein) | (Protein + External) => Extra
+            // (Leukocyte + Protein) | (Protein + Leukocyte) => Leukocyte + Extra
             (Some(I::External(Some(source))), Some(I::Protein(protein)))
             | (Some(I::Protein(protein)), Some(I::External(Some(source)))) => {
                 let LymphNodeOutput::Leukocyte(mut leukocyte) =
-                    self.resolve(depth + 1, source)?;
+                    self.resolve_output(depth + 1, source)?;
 
                 // TODO(pwy) they should do something unique
                 match protein {
                     Protein::Dumbbell => {
-                        leukocyte.props.hp += 2;
+                        leukocyte.props.hp += 5;
                     }
                     Protein::Star => {
-                        leukocyte.props.hp += 4;
+                        leukocyte.props.hp += 10;
                     }
                 }
 
                 Some(LymphNodeOutput::Leukocyte(leukocyte))
             }
 
-            // (External + External) | (External + External) => Extra
+            // (Leukocyte + Leukocyte) | (Leukocyte + Leukocyte) => Extra
             (Some(I::External(Some(lhs))), Some(I::External(Some(rhs)))) => {
                 let LymphNodeOutput::Leukocyte(lhs) =
-                    self.resolve(depth + 1, lhs)?;
+                    self.resolve_output(depth + 1, lhs)?;
 
                 let LymphNodeOutput::Leukocyte(rhs) =
-                    self.resolve(depth + 1, rhs)?;
+                    self.resolve_output(depth + 1, rhs)?;
 
                 if lhs.body == rhs.body
                     && lhs.binder == rhs.binder
@@ -127,7 +152,7 @@ impl Compiler {
                         kind: lhs.kind,
                         props: LeukocyteProps {
                             hp: ((lhs.props.hp as f32 + rhs.props.hp as f32)
-                                * 1.25) as _,
+                                * 1.5) as _,
                         },
                     }))
                 } else {
@@ -138,10 +163,43 @@ impl Compiler {
             // (None + External) | (External + None) => Pass-through
             (Some(I::External(Some(source))), None)
             | (None, Some(I::External(Some(source)))) => {
-                self.resolve(depth + 1, source)
+                self.resolve_output(depth + 1, source)
             }
 
             _ => None,
         }
+    }
+
+    fn resolve_state(&self, entity: Entity) -> LymphNodeState {
+        fn is_paused(
+            nodes: &BTreeMap<Entity, CompilerLymphNode>,
+            depth: u8,
+            entity: Entity,
+        ) -> bool {
+            if depth > MAX_DEPTH {
+                return false;
+            }
+
+            let node = &nodes[&entity];
+
+            if node.state.paused {
+                return true;
+            }
+
+            if let Some(LymphNodeInput::External(Some(lhs))) = node.lhs {
+                return is_paused(nodes, depth + 1, lhs);
+            }
+
+            if let Some(LymphNodeInput::External(Some(rhs))) = node.rhs {
+                return is_paused(nodes, depth + 1, rhs);
+            }
+
+            false
+        }
+
+        let mut state = self.nodes[&entity].state.clone();
+
+        state.awaiting_resources = is_paused(&self.nodes, 0, entity);
+        state
     }
 }

@@ -146,6 +146,15 @@ impl UiLymphNodeEditor {
 
                 ui.shrink_width_to_current();
 
+                // ---
+
+                ui.separator();
+                ui.add_space(3.0);
+                changed |= ui.checkbox(&mut lymph_node.state.paused, "Paused").clicked();
+                ui.add_space(3.0);
+
+                // ---
+
                 if lymph_node.output.is_none() {
                     ui.separator();
                     ui.add_space(3.0);

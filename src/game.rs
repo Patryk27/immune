@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
+use crate::compiling::RecompileEvent;
 use crate::level::{Level, LevelWave};
-use crate::systems::cell_node::{LymphNode, Pathogen, PathogenKind};
+use crate::systems::cell_node::{
+    LymphNode, LymphNodeFunction, LymphNodeState, Pathogen, PathogenKind,
+};
 
 pub struct GamePlugin;
 
@@ -28,14 +31,19 @@ fn setup(
     assets: Res<AssetServer>,
     mut state: ResMut<GameState>,
     level: Res<Level>,
+    mut recompile_event_tx: EventWriter<RecompileEvent>,
 ) {
     for lymph_node in &level.setup.lymph_nodes {
         LymphNode {
             lhs: None,
             rhs: None,
             output: None,
+            function: LymphNodeFunction::Producer,
+            state: LymphNodeState {
+                paused: false,
+                awaiting_resources: false,
+            },
             production_tt: 0.0,
-            production_duration: 1.5,
         }
         .spawn(
             &mut commands,
@@ -47,6 +55,8 @@ fn setup(
     }
 
     state.next_wave_at = level.waves[0].starts_at as _;
+
+    recompile_event_tx.send(RecompileEvent);
 }
 
 fn progress(
