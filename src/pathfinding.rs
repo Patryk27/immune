@@ -20,11 +20,14 @@ use crate::systems::units::Unit;
 type Pathseeker = Vec2;
 type Target = Vec2;
 
+const BUFFER_SIZE: usize = 2;
+
 pub struct PathfindingPlugin;
 
 #[derive(Default)]
 pub struct PathseekersQueue {
     queued: HashMap<Entity, (Pathseeker, Target)>,
+    in_process: usize,
 }
 
 impl PathseekersQueue {
@@ -79,19 +82,25 @@ fn spawn_pathfinder_task(
     let queue = state.queued.clone();
 
     for (entity, (pathfinder, target)) in queue {
-        let map = map.clone();
-        state.queued.remove(&entity);
+        if state.in_process < BUFFER_SIZE {
+            let map = map.clone();
+            state.queued.remove(&entity);
+            state.in_process += 1;
 
-        let task = thread_pool
-            .spawn(async move { Pathfinder::new(map, pathfinder, target) });
+            let task = thread_pool
+                .spawn(async move { Pathfinder::new(map, pathfinder, target) });
 
-        commands.entity(entity).insert(task);
+            commands.entity(entity).insert(task);
+        } else {
+            break
+        }
     }
 }
 
 fn handle_pathfinder_task(
     mut commands: Commands,
-    state: Res<DebugState>,
+    mut state: ResMut<PathseekersQueue>,
+    debug_state: Res<DebugState>,
     mut lines: ResMut<DebugLines>,
     mut transform_tasks: Query<(Entity, &mut Unit, &mut Task<Pathfinder>)>,
 ) {
@@ -99,7 +108,7 @@ fn handle_pathfinder_task(
         if let Some(pathfinder) =
             future::block_on(future::poll_once(&mut *task))
         {
-            if state.draw_obstacles_from_map {
+            if debug_state.draw_obstacles_from_map {
                 for pos in pathfinder.map.obstacles() {
                     // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
                     let field_size = DEBUG_MAP_FIELD_SIZE;
@@ -121,6 +130,7 @@ fn handle_pathfinder_task(
 
             // Task is complete, so remove task component from entity
             commands.entity(entity).remove::<Task<Pathfinder>>();
+            state.in_process -= 1;
         }
     }
 }

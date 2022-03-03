@@ -1,4 +1,4 @@
-#![feature(array_windows)]
+#![feature(array_windows, hash_drain_filter)]
 
 pub mod compiling;
 pub mod game;
