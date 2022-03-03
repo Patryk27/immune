@@ -1,34 +1,101 @@
-use std::cmp::Ordering;
-
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
-use itertools::Itertools;
 
-use super::{
-    draw_square, InputState, MousePos, SelectedUnits, SelectedUnitsChanged,
-};
+use super::{draw_square, InputState, MousePos};
 use crate::systems::bio::LymphNode;
 use crate::systems::units::Unit;
 use crate::ui::UiEvent;
 
-pub fn unit_selection(
+const MIN_DRAG_DISTANCE: f32 = 1.0;
+
+pub struct UnitSelectionPlugin;
+
+impl Plugin for UnitSelectionPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(SelectedUnits::default())
+            .add_event::<SelectedUnitsChanged>()
+            .add_event::<Selection>()
+            .add_system(unit_selection)
+            .add_system(track_drag)
+            .add_system(draw_selection_rect)
+            .add_system(select_lymph_node);
+    }
+}
+
+#[derive(Default)]
+pub struct SelectedUnits {
+    pub selected_units: Vec<Entity>,
+}
+
+pub struct SelectedUnitsChanged;
+
+pub enum Selection {
+    Drag,
+    Click,
+}
+
+fn draw_selection_rect(
+    state: Res<InputState>,
+    mouse_pos: Res<MousePos>,
+    mut lines: ResMut<DebugLines>,
+) {
+    if state.is_dragging {
+        draw_square(&mut lines, state.drag_start_pos, mouse_pos.0);
+    }
+}
+
+fn track_drag(
+    mut mouse_pos_at_start_of_drag: Local<Vec2>,
     mut egui: ResMut<EguiContext>,
     mut state: ResMut<InputState>,
     mouse_pos: Res<MousePos>,
-    mut selected_units: ResMut<SelectedUnits>,
-    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
     mouse: Res<Input<MouseButton>>,
-    units: Query<(Entity, &Transform, &Unit)>,
-    lymph_nodes: Query<(), With<LymphNode>>,
-    mut lines: ResMut<DebugLines>,
-    mut ui_events: EventWriter<UiEvent>,
+    mut selection_event: EventWriter<Selection>,
 ) {
-    if egui.ctx_mut().is_pointer_over_area() {
+    let is_pointer_over_ui = egui.ctx_mut().is_pointer_over_area();
+
+    // We can still stop dragging if over ui
+    if mouse.just_released(MouseButton::Left) {
+        if state.is_dragging {
+            state.is_dragging = false;
+
+            selection_event.send(Selection::Drag);
+        } else if !is_pointer_over_ui {
+            selection_event.send(Selection::Click);
+        }
+
+        return;
+    }
+
+    if is_pointer_over_ui {
         return;
     }
 
     if !state.is_dragging && mouse.just_pressed(MouseButton::Left) {
+        *mouse_pos_at_start_of_drag = mouse_pos.0;
+
+        return;
+    }
+
+    if !state.is_dragging
+        && mouse.pressed(MouseButton::Left)
+        && mouse_pos_at_start_of_drag.distance(mouse_pos.0) > MIN_DRAG_DISTANCE
+    {
+        state.is_dragging = true;
+        state.drag_start_pos = *mouse_pos_at_start_of_drag;
+
+        return;
+    }
+}
+
+fn select_lymph_node(
+    state: Res<InputState>,
+    lymph_nodes: Query<(), With<LymphNode>>,
+    mut selection_event: EventReader<Selection>,
+    mut ui_events: EventWriter<UiEvent>,
+) {
+    if let Some(Selection::Click) = selection_event.iter().next() {
         if let Some(entity) = state.hovered_entity {
             if lymph_nodes.get(entity).is_ok() {
                 ui_events.send(UiEvent::LymphNodeClicked(entity));
@@ -36,63 +103,75 @@ pub fn unit_selection(
             }
         }
     }
+}
 
-    if !state.is_dragging && mouse.just_pressed(MouseButton::Left) {
-        state.is_dragging = true;
-        state.drag_start_pos = mouse_pos.0;
-    } else if state.is_dragging && mouse.just_released(MouseButton::Left) {
-        state.is_dragging = false;
+fn unit_selection(
+    state: Res<InputState>,
+    mouse_pos: Res<MousePos>,
+    mut selected_units: ResMut<SelectedUnits>,
+    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
+    units: Query<(Entity, &Transform, &Unit)>,
+    mut selection_event: EventReader<Selection>,
+) {
+    match selection_event.iter().next() {
+        Some(Selection::Drag) => selected_units_in_rect(
+            &units,
+            state.drag_start_pos,
+            mouse_pos.0,
+            &mut selected_units,
+            &mut selected_units_changed,
+        ),
+        Some(Selection::Click) => {
+            select_unit_at_point(
+                &state,
+                units,
+                &mut selected_units,
+                selected_units_changed,
+            );
+        }
+        _ => (),
+    }
+}
 
-        let drag_x = (mouse_pos.0.x - state.drag_start_pos.x).abs();
-        let drag_y = (mouse_pos.0.y - state.drag_start_pos.y).abs();
-        let size = 50.0; // TODO(pry): this info should be within unit struct
-        let offset = Vec2::new(size, size);
-
-        if drag_x > offset.x && drag_y > offset.y {
-            selected_units.selected_units = units
-                .iter()
-                .filter(|(_, transform, _)| {
-                    point_in_rect(
-                        transform.translation.truncate(),
-                        state.drag_start_pos,
-                        mouse_pos.0,
-                    )
-                })
-                .map(|(entity, _, _)| entity)
-                .collect();
-
-            selected_units_changed.send(SelectedUnitsChanged);
-        } else {
-            let start_pos = mouse_pos.0 + offset;
-            let end_pos = mouse_pos.0 - offset;
-
-            selected_units.selected_units = units
-                .iter()
-                .filter(|(_, transform, _)| {
-                    point_in_rect(
-                        transform.translation.truncate(),
-                        start_pos,
-                        end_pos,
-                    )
-                })
-                .sorted_by(|(_, a, _), (_, b, _)| {
-                    let a = a.translation.truncate().distance(mouse_pos.0);
-                    let b = b.translation.truncate().distance(mouse_pos.0);
-
-                    a.partial_cmp(&b).unwrap_or(Ordering::Equal)
-                })
-                .map(|(entity, _, _)| entity)
-                .next()
-                .into_iter()
-                .collect();
+fn select_unit_at_point(
+    state: &InputState,
+    units: Query<(Entity, &Transform, &Unit)>,
+    selected_units: &mut SelectedUnits,
+    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
+) {
+    if let Some(entity) = state.hovered_entity {
+        if units.get(entity).is_ok() {
+            selected_units.selected_units = vec![entity];
 
             selected_units_changed.send(SelectedUnitsChanged);
         }
-    }
+    } else {
+        selected_units.selected_units = vec![];
 
-    if state.is_dragging {
-        draw_square(&mut lines, state.drag_start_pos, mouse_pos.0);
+        selected_units_changed.send(SelectedUnitsChanged);
     }
+}
+
+fn selected_units_in_rect(
+    units: &Query<(Entity, &Transform, &Unit)>,
+    drag_start_pos: Vec2,
+    mouse_pos: Vec2,
+    selected_units: &mut SelectedUnits,
+    selected_units_changed: &mut EventWriter<SelectedUnitsChanged>,
+) {
+    selected_units.selected_units = units
+        .iter()
+        .filter(|(_, transform, _)| {
+            point_in_rect(
+                transform.translation.truncate(),
+                drag_start_pos,
+                mouse_pos,
+            )
+        })
+        .map(|(entity, _, _)| entity)
+        .collect();
+
+    selected_units_changed.send(SelectedUnitsChanged);
 }
 
 fn point_in_rect(

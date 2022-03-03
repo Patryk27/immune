@@ -12,29 +12,22 @@ mod selector;
 mod selectors;
 mod unit_selection;
 
+pub use self::unit_selection::{SelectedUnits, SelectedUnitsChanged};
+
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(InputState::default())
-            .insert_resource(SelectedUnits::default())
+        app.add_plugin(unit_selection::UnitSelectionPlugin)
+            .insert_resource(InputState::default())
             .insert_resource(MousePos::default())
-            .add_event::<SelectedUnitsChanged>()
             .add_system(track_mouse_position)
             .add_system(movement_command)
-            .add_system(unit_selection::unit_selection)
             .add_system(selectors::track_selector_hovers)
             .add_system(selectors::update_selector_highlights)
             .add_system(selectors::animate_selectors);
     }
 }
-
-#[derive(Default)]
-pub struct SelectedUnits {
-    pub selected_units: Vec<Entity>,
-}
-
-pub struct SelectedUnitsChanged;
 
 #[derive(Default)]
 pub struct MousePos(pub Vec2);
