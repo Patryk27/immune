@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
@@ -16,10 +16,12 @@ pub struct UnitSelectionPlugin;
 impl Plugin for UnitSelectionPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SelectedUnits::default())
+            .insert_resource(SelectionGroups::default())
             .add_event::<SelectedUnitsChanged>()
             .add_event::<Selection>()
             .add_system(unit_selection)
             .add_system(track_drag)
+            .add_system(group_selection)
             .add_system(draw_selection_rect)
             .add_system(select_lymph_node);
     }
@@ -37,6 +39,9 @@ pub enum Selection {
     Click,
 }
 
+#[derive(Default)]
+pub struct SelectionGroups(pub HashMap<usize, HashSet<Entity>>);
+
 fn draw_selection_rect(
     state: Res<InputState>,
     mouse_pos: Res<MousePos>,
@@ -45,6 +50,51 @@ fn draw_selection_rect(
     if state.is_dragging {
         draw_square(&mut lines, state.drag_start_pos, mouse_pos.0);
     }
+}
+
+fn group_selection(
+    keyboard: Res<Input<KeyCode>>,
+    mut selected_units: ResMut<SelectedUnits>,
+    mut selection_groups: ResMut<SelectionGroups>,
+    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
+) {
+    if let Some(group) =
+        which_group_key_is_pressed(&keyboard, Input::just_pressed)
+    {
+        let group = selection_groups.0.entry(group).or_default();
+
+        if keyboard.pressed(KeyCode::LControl) {
+            *group = selected_units.selected_units.clone();
+        } else {
+            selected_units.selected_units = group.clone();
+            selected_units_changed.send(SelectedUnitsChanged);
+        }
+    }
+}
+
+fn which_group_key_is_pressed(
+    keyboard: &Input<KeyCode>,
+    method: impl Fn(&Input<KeyCode>, KeyCode) -> bool,
+) -> Option<usize> {
+    const GROUP_KEYS: &[KeyCode] = &[
+        KeyCode::Key1,
+        KeyCode::Key2,
+        KeyCode::Key3,
+        KeyCode::Key4,
+        KeyCode::Key5,
+        KeyCode::Key6,
+        KeyCode::Key7,
+        KeyCode::Key8,
+        KeyCode::Key9,
+    ];
+
+    for (idx, key) in GROUP_KEYS.iter().enumerate() {
+        if method(keyboard, *key) {
+            return Some(idx + 1);
+        }
+    }
+
+    None
 }
 
 fn track_drag(
