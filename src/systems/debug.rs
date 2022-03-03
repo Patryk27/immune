@@ -6,7 +6,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::*;
 
 use super::draw_square;
-use super::input::InputState;
+use super::input::MousePos;
 use super::physics::world_to_pixel;
 use super::units::Unit;
 use crate::pathfinding::{DiscreteMap, Map};
@@ -118,7 +118,7 @@ pub fn draw_motion_vectors(
 }
 
 pub fn capture_map(
-    input_state: Res<InputState>,
+    mouse_pos: Res<MousePos>,
     mut debug_state: ResMut<DebugState>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mut lines: ResMut<DebugLines>,
@@ -135,7 +135,7 @@ pub fn capture_map(
                 {
                     debug_state.is_dragging = false;
                     let start = debug_state.drag_start_pos;
-                    let end = input_state.mouse_pos;
+                    let end = mouse_pos.0;
                     let mid = Vec2::new(
                         (start.x + end.x) / 2f32,
                         (start.y + end.y) / 2f32,
@@ -164,7 +164,7 @@ pub fn capture_map(
                 // Drag start
                 (false, true) => {
                     debug_state.is_dragging = true;
-                    debug_state.drag_start_pos = input_state.mouse_pos;
+                    debug_state.drag_start_pos = mouse_pos.0;
                 }
                 _ => (),
             }
@@ -175,11 +175,7 @@ pub fn capture_map(
         return;
     }
 
-    draw_square(
-        &mut lines,
-        debug_state.drag_start_pos,
-        input_state.mouse_pos,
-    );
+    draw_square(&mut lines, debug_state.drag_start_pos, mouse_pos.0);
 }
 
 fn show_velocity_vector(

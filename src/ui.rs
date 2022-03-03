@@ -12,7 +12,7 @@ pub(self) use self::radio_image_button::*;
 pub(self) use self::textures::*;
 use crate::compiling::RecompileEvent;
 use crate::systems::bio::*;
-use crate::systems::input::{InputState, Selector};
+use crate::systems::input::{MousePos, Selector};
 
 pub struct UiPlugin;
 
@@ -82,7 +82,7 @@ fn process_lymph_node_editor(
     lines: ResMut<DebugLines>,
     egui: ResMut<EguiContext>,
     textures: Res<UiTextures>,
-    input: Res<InputState>,
+    mouse_pos: Res<MousePos>,
     mut state: ResMut<UiState>,
     mut lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
     recompile_event_tx: EventWriter<RecompileEvent>,
@@ -93,7 +93,7 @@ fn process_lymph_node_editor(
             lines,
             egui,
             &textures,
-            input.mouse_pos,
+            mouse_pos.0,
             &mut lymph_nodes,
             recompile_event_tx,
         ) {
