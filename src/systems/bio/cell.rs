@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use super::{Leukocyte, Pathogen};
-use crate::systems::highlight::Selector;
+use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::{Alignment, Unit};
 use crate::theme;
@@ -65,6 +65,7 @@ impl<'a> Cell<'a> {
                 ..Default::default()
             })
             .insert(RigidBodyPositionSync::Discrete)
+            .insert(Collider::Circle { radius: 50.0 })
             .insert(CellFadeIn::default());
 
         match self {

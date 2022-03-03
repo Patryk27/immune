@@ -9,11 +9,6 @@ pub struct UiLymphNodePicker {
     node: Option<Entity>,
 }
 
-pub enum UiLymphNodePickerEvent {
-    EscapePressed,
-    LymphNodeClicked(Entity),
-}
-
 pub enum UiLymphNodePickerOutcome {
     Awaiting,
     Completed,
@@ -79,14 +74,11 @@ impl UiLymphNodePicker {
         }
     }
 
-    pub fn notify(&mut self, event: UiLymphNodePickerEvent) {
-        match event {
-            UiLymphNodePickerEvent::EscapePressed => {
-                self.alive = false;
-            }
-            UiLymphNodePickerEvent::LymphNodeClicked(node) => {
-                self.node = Some(node);
-            }
-        }
+    pub fn on_escape_pressed(&mut self) {
+        self.alive = false;
+    }
+
+    pub fn on_lymph_node_clicked(&mut self, node: Entity) {
+        self.node = Some(node);
     }
 }

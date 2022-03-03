@@ -9,7 +9,8 @@ use super::draw_square;
 use super::input::InputState;
 use super::physics::world_to_pixel;
 use super::units::Unit;
-use crate::{pathfinding::{DiscreteMap, Map, FIELD_SIZE}, systems::draw_square_dur};
+use crate::pathfinding::{DiscreteMap, Map, FIELD_SIZE};
+use crate::systems::draw_square_dur;
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
@@ -139,10 +140,17 @@ pub fn capture_map(
 
                     if debug_state.draw_obstacles_from_map {
                         for pos in map.obstacles() {
-                            let top_left = pos - FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
-                            let bottom_right = pos + FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                            let top_left =
+                                pos - FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                            let bottom_right =
+                                pos + FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
 
-                            draw_square_dur(&mut lines, top_left, bottom_right, 10.0);
+                            draw_square_dur(
+                                &mut lines,
+                                top_left,
+                                bottom_right,
+                                10.0,
+                            );
                         }
                     }
                 }
