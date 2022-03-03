@@ -155,7 +155,7 @@ impl Compiler {
                     break;
                 }
 
-                if depth > 0 && self.nodes[&node].state.is_paused {
+                if self.nodes[&node].state.is_paused {
                     state.is_awaiting_resources = true;
                     break;
                 }

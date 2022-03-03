@@ -92,7 +92,7 @@ fn spawn_pathfinder_task(
 
             commands.entity(entity).insert(task);
         } else {
-            break
+            break;
         }
     }
 }
