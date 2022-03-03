@@ -20,7 +20,7 @@ use crate::systems::units::Unit;
 type Pathseeker = Vec2;
 type Target = Vec2;
 
-const BUFFER_SIZE: usize = 150;
+const BUFFER_SIZE: usize = 10;
 
 pub struct PathfindingPlugin;
 
@@ -46,8 +46,7 @@ impl Plugin for PathfindingPlugin {
         app.insert_resource(Map::default())
             .insert_resource(PathseekersQueue::default())
             .add_system(refresh_map)
-            .add_system(spawn_pathfinder_task)
-            .add_system(handle_pathfinder_task);
+            .add_system(single_threaded_pathinder);
     }
 }
 
@@ -73,6 +72,52 @@ fn refresh_map(
         .collect();
 }
 
+fn single_threaded_pathinder(
+    mut state: ResMut<PathseekersQueue>,
+    map: Res<Map>,
+    debug_state: Res<DebugState>,
+    mut lines: ResMut<DebugLines>,
+    mut units: Query<(Entity, &mut Unit)>,
+) {
+    let queue = state.queued.clone();
+
+    for (entity, (pathfinder, target)) in queue {
+        if state.in_process < BUFFER_SIZE {
+            let map = map.clone();
+            state.queued.remove(&entity);
+            state.in_process += 1;
+
+            let pathfinder = Pathfinder::new(map, pathfinder, target);
+
+            if let Ok((_, mut unit)) = units.get_mut(entity) {
+                if debug_state.draw_obstacles_from_map {
+                    for pos in pathfinder.map.obstacles() {
+                        let field_size = DEBUG_MAP_FIELD_SIZE;
+
+                        let top_left = pos - field_size;
+                        let bottom_right = pos + field_size;
+
+                        draw_square_dur(
+                            &mut lines,
+                            top_left,
+                            bottom_right,
+                            4.0,
+                        );
+                    }
+                }
+
+                let path = pathfinder.path();
+                unit.set_path(path);
+            }
+        } else {
+            break;
+        }
+    }
+
+    state.in_process = 0;
+}
+
+#[allow(dead_code)]
 fn spawn_pathfinder_task(
     mut commands: Commands,
     mut state: ResMut<PathseekersQueue>,
@@ -97,6 +142,7 @@ fn spawn_pathfinder_task(
     }
 }
 
+#[allow(dead_code)]
 fn handle_pathfinder_task(
     mut commands: Commands,
     mut state: ResMut<PathseekersQueue>,
