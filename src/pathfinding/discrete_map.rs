@@ -8,7 +8,7 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
-pub const FIELD_SIZE: usize = 50;
+pub const FIELD_SIZE: usize = 25;
 
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
@@ -178,10 +178,10 @@ impl DiscreteMap {
                     field.kind = FieldKinds::Occupied
                 }
 
-                if field.pos.distance(current_pos) < cell.size * 1.2 {
-                    // treat pathseeker pointlike
-                    field.kind = FieldKinds::Empty
-                }
+                // if field.pos.distance(current_pos) < cell.size * 1.2 {
+                //     // treat pathseeker pointlike
+                //     field.kind = FieldKinds::Empty
+                // }
             }
         }
     }

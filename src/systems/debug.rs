@@ -133,14 +133,18 @@ pub fn capture_map(
                     debug_state.is_dragging = false;
                     let start = debug_state.drag_start_pos;
                     let end = input_state.mouse_pos;
-                    let map = DiscreteMap::new(&map, start, end);
+                    let mid = Vec2::new((start.x + end.x) / 2f32 , (start.y + end.y) / 2f32);
+                    let map = DiscreteMap::new(&map, mid, end);
 
                     println!("{map}");
 
                     if debug_state.draw_obstacles_from_map {
                         for pos in map.obstacles() {
-                            let top_left = pos - FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
-                            let bottom_right = pos + FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                            // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                            let field_size = 5.0;
+
+                            let top_left = pos - field_size;
+                            let bottom_right = pos + field_size;
 
                             draw_square_dur(&mut lines, top_left, bottom_right, 10.0);
                         }
