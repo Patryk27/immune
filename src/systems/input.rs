@@ -4,7 +4,7 @@ use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
-use super::cell_node::LymphNode;
+use super::bio::LymphNode;
 use super::highlight::HighlightPlugin;
 use super::units::Unit;
 use crate::pathfinding::PathseekersQueue;

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 
-use crate::systems::cell_node::{LymphNode, LymphNodeInput};
+use crate::systems::bio::{LymphNode, LymphNodeInput};
 
 pub struct UiLymphNodePicker {
     alive: bool,

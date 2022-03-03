@@ -3,7 +3,7 @@ use std::iter;
 use bevy_egui::egui::{Response, Ui, Widget};
 
 use super::UiLymphNodeInputRadio;
-use crate::systems::cell_node::LymphNodeInput;
+use crate::systems::bio::LymphNodeInput;
 use crate::ui::UiTextures;
 
 pub struct UiLymphNodeInputRadios<'a> {

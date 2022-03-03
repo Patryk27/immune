@@ -1,7 +1,7 @@
 use bevy::math::Vec2;
 use serde::{Deserialize, Serialize};
 
-use crate::systems::cell_node::{Antigen, Body};
+use crate::systems::bio::{Antigen, Body};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]

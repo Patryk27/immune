@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use super::{MAX_SPEED, MOVEMENT_SQUEEZE_FACTOR, MOVEMENT_STRETCH_FACTOR};
-use crate::systems::cell_node::CellBody;
+use crate::systems::bio::CellBody;
 
 pub fn system(
     units: Query<(&Children, &RigidBodyVelocityComponent)>,

@@ -11,7 +11,7 @@ use pathfinding::prelude::bfs;
 pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::pathfinding::discrete_map::FieldKinds;
-use crate::systems::cell_node::LymphNode;
+use crate::systems::bio::LymphNode;
 use crate::systems::units::Unit;
 
 type Pathseeker = Vec2;

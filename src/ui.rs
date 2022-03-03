@@ -11,7 +11,7 @@ pub(self) use self::lymph_node_editor::*;
 pub(self) use self::radio_image_button::*;
 pub(self) use self::textures::*;
 use crate::compiling::RecompileEvent;
-use crate::systems::cell_node::*;
+use crate::systems::bio::*;
 use crate::systems::highlight::SelectorHighlight;
 use crate::systems::input::InputState;
 

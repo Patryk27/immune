@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, HashSet};
 use bevy::prelude::Entity;
 use itertools::Itertools;
 
-use crate::systems::cell_node::{
+use crate::systems::bio::{
     Leukocyte, LeukocyteKind, LeukocyteProps, LymphNode, LymphNodeFunction,
     LymphNodeInput, LymphNodeOutput, LymphNodeState, Protein,
 };
@@ -84,7 +84,7 @@ impl Compiler {
 
         for provider in providers {
             self.nodes.get_mut(&provider).unwrap().function =
-                LymphNodeFunction::Provider;
+                LymphNodeFunction::Supplier;
         }
     }
 
@@ -182,16 +182,20 @@ impl Compiler {
 
             let node = &nodes[&entity];
 
-            if node.state.paused {
+            if node.state.paused && depth > 0 {
                 return true;
             }
 
             if let Some(LymphNodeInput::External(Some(lhs))) = node.lhs {
-                return is_paused(nodes, depth + 1, lhs);
+                if is_paused(nodes, depth + 1, lhs) {
+                    return true;
+                }
             }
 
             if let Some(LymphNodeInput::External(Some(rhs))) = node.rhs {
-                return is_paused(nodes, depth + 1, rhs);
+                if is_paused(nodes, depth + 1, rhs) {
+                    return true;
+                }
             }
 
             false

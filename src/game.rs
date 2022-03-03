@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::compiling::RecompileEvent;
 use crate::level::{Level, LevelWave};
-use crate::systems::cell_node::{
+use crate::systems::bio::{
     LymphNode, LymphNodeFunction, LymphNodeState, Pathogen, PathogenKind,
 };
 

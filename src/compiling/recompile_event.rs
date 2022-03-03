@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use super::Compiler;
-use crate::systems::cell_node::{
+use crate::systems::bio::{
     DeadLymphNodeConnection, LymphNode, LymphNodeConnection, LymphNodeInput,
     LymphNodeWarning,
 };
@@ -53,7 +53,7 @@ pub(super) fn link(
     mut commands: Commands,
     mut events: EventReader<RecompileEvent>,
     nodes: Query<(Entity, &LymphNode, &Transform)>,
-    connections: Query<
+    connnections: Query<
         (Entity, &LymphNodeConnection),
         Without<DeadLymphNodeConnection>,
     >,
@@ -65,66 +65,49 @@ pub(super) fn link(
     let mut existing_connections = HashSet::new();
     let mut required_connections = HashSet::new();
 
-    for (_, connection) in connections.iter() {
-        existing_connections
-            .insert((connection.source_entity, connection.target_entity));
+    for (_, connection) in connnections.iter() {
+        existing_connections.insert((connection.source, connection.target));
     }
 
-    for (target_entity, target_node, &target_transform) in nodes.iter() {
+    for (target, target_node, &target_transform) in nodes.iter() {
         for source in [target_node.lhs, target_node.rhs] {
-            let source_entity =
+            let source =
                 if let Some(LymphNodeInput::External(Some(source))) = source {
                     source
                 } else {
                     continue;
                 };
 
-            required_connections.insert((source_entity, target_entity));
-            required_connections.insert((target_entity, source_entity));
+            required_connections.insert((source, target));
 
-            let (_, _, &source_transform) = nodes.get(source_entity).unwrap();
+            let (_, _, &source_transform) = nodes.get(source).unwrap();
 
-            let source = source_transform.translation.truncate();
-            let target = target_transform.translation.truncate();
-
-            for _ in 0..3 {
-                commands.spawn().insert(LymphNodeConnection::new(
-                    source,
-                    source_entity,
-                    target,
-                    target_entity,
-                ));
-            }
-
-            for _ in 0..3 {
-                commands.spawn().insert(LymphNodeConnection::new(
-                    target,
-                    target_entity,
-                    source,
-                    source_entity,
-                ));
-            }
+            LymphNodeConnection::new(
+                source,
+                source_transform.translation.truncate(),
+                target,
+                target_transform.translation.truncate(),
+            )
+            .spawn(&mut commands);
         }
     }
 
     let unnecessary_connections =
         existing_connections.difference(&required_connections);
 
-    for &(source_entity, target_entity) in unnecessary_connections {
-        let connection_entities =
-            connections.iter().filter_map(|(entity, connection)| {
-                if connection.source_entity == source_entity
-                    && connection.target_entity == target_entity
-                {
+    for &(source, target) in unnecessary_connections {
+        let connections =
+            connnections.iter().filter_map(|(entity, connection)| {
+                if connection.source == source && connection.target == target {
                     Some(entity)
                 } else {
                     None
                 }
             });
 
-        for entity in connection_entities {
+        for connection in connections {
             commands
-                .entity(entity)
+                .entity(connection)
                 .insert(DeadLymphNodeConnection::default());
         }
     }

@@ -11,7 +11,7 @@ use self::lymph_node_input_radios::*;
 use self::lymph_node_picker::*;
 use super::*;
 use crate::compiling::RecompileEvent;
-use crate::systems::cell_node::*;
+use crate::systems::bio::*;
 use crate::theme;
 
 pub struct UiLymphNodeEditor {
@@ -150,15 +150,22 @@ impl UiLymphNodeEditor {
 
                 ui.separator();
                 ui.add_space(3.0);
-                changed |= ui.checkbox(&mut lymph_node.state.paused, "Paused").clicked();
-                ui.add_space(3.0);
+                changed |= ui.checkbox(&mut lymph_node.state.paused, "Paused").changed();
 
                 // ---
 
                 if lymph_node.output.is_none() {
+                    ui.add_space(3.0);
                     ui.separator();
                     ui.add_space(3.0);
                     ui.colored_label(theme::ui::text_danger_egui(), "[!] This lymph node has invalid configuration and does not produce any cells.");
+                }
+
+                if lymph_node.state.awaiting_resources {
+                    ui.add_space(3.0);
+                    ui.separator();
+                    ui.add_space(3.0);
+                    ui.colored_label(theme::ui::text_danger_egui(), "[!] Some of this lymph node's inputs are paused.");
                 }
             });
 

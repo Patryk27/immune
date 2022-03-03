@@ -3,6 +3,7 @@ use std::iter;
 use bevy::math::{vec2, vec3};
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
+use itertools::Itertools;
 use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
@@ -81,7 +82,7 @@ impl LymphNode {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LymphNodeFunction {
     Producer,
-    Provider,
+    Supplier,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -193,24 +194,61 @@ impl LymphNodeProgressBar {
 
 #[derive(Component, Debug)]
 pub struct LymphNodeConnection {
-    pub source: Vec2,
-    pub source_entity: Entity,
-    pub target: Vec2,
-    pub target_entity: Entity,
-    pub points: Vec<LymphNodeConnectionPoint>,
-    pub tint_r: f32,
-    pub tint_g: f32,
-    pub tint_b: f32,
+    pub source: Entity,
+    pub source_pos: Vec2,
+    pub target: Entity,
+    pub target_pos: Vec2,
+    pub wires: Vec<LymphNodeConnectionWire>,
     pub tt: f32,
 }
 
 impl LymphNodeConnection {
     pub fn new(
-        source: Vec2,
-        source_entity: Entity,
-        target: Vec2,
-        target_entity: Entity,
+        source: Entity,
+        source_pos: Vec2,
+        target: Entity,
+        target_pos: Vec2,
     ) -> Self {
+        const WIRES: usize = 6;
+
+        assert_ne!(source, target);
+        assert_ne!(source_pos, target_pos);
+
+        let wires = (0..WIRES).map(|idx| {
+            let is_reverse = idx % 2 == 1;
+
+            if is_reverse {
+                LymphNodeConnectionWire::new(target_pos, source_pos, is_reverse)
+            } else {
+                LymphNodeConnectionWire::new(source_pos, target_pos, is_reverse)
+            }
+        });
+
+        Self {
+            source,
+            source_pos,
+            target,
+            target_pos,
+            wires: wires.collect(),
+            tt: 0.0,
+        }
+    }
+
+    pub fn spawn(self, commands: &mut Commands) {
+        commands.spawn().insert(self);
+    }
+}
+
+#[derive(Component, Debug)]
+pub struct LymphNodeConnectionWire {
+    pub points: Vec<LymphNodeConnectionWirePoint>,
+    pub tint_r: f32,
+    pub tint_g: f32,
+    pub tint_b: f32,
+}
+
+impl LymphNodeConnectionWire {
+    pub fn new(source: Vec2, target: Vec2, is_reverse: bool) -> Self {
         const SEGMENT_LEN: f32 = 4.0;
 
         let mut rng = rand::thread_rng();
@@ -223,28 +261,48 @@ impl LymphNodeConnection {
             pos.x += rng.gen_range(-3.0..3.0);
             pos.y += rng.gen_range(-3.0..3.0);
 
-            LymphNodeConnectionPoint {
+            LymphNodeConnectionWirePoint {
                 pos,
                 vel: Default::default(),
             }
         });
 
+        let mut points = points.collect_vec();
+
+        if !is_reverse {
+            for width in [15.0, 13.0, 11.0, 9.0, 7.0, 5.0, 3.0, 1.0] {
+                let dir = (source - target).normalize();
+                let dirp = dir.perp();
+                let at = target + dir * 90.0;
+
+                let indicator_points = [
+                    at,
+                    at + dirp * width,
+                    at - 20.0 * dir,
+                    at - dirp * width,
+                    at,
+                ];
+
+                points.extend(indicator_points.into_iter().map(|pos| {
+                    LymphNodeConnectionWirePoint {
+                        pos,
+                        vel: Default::default(),
+                    }
+                }));
+            }
+        }
+
         Self {
-            source,
-            source_entity,
-            target,
-            target_entity,
-            points: points.collect(),
+            points,
             tint_r: rng.gen_range(-0.02..0.1),
             tint_g: rng.gen_range(-0.2..0.2),
             tint_b: rng.gen_range(-0.2..0.2),
-            tt: 0.0,
         }
     }
 }
 
 #[derive(Debug)]
-pub struct LymphNodeConnectionPoint {
+pub struct LymphNodeConnectionWirePoint {
     pub pos: Vec2,
     pub vel: Vec2,
 }
@@ -252,5 +310,5 @@ pub struct LymphNodeConnectionPoint {
 #[derive(Component, Default)]
 pub struct DeadLymphNodeConnection {
     pub tt: f32,
-    pub in_progress: bool,
+    pub started: bool,
 }

@@ -1,6 +1,6 @@
 use bevy_egui::egui::{vec2, Response, Ui, Widget};
 
-use crate::systems::cell_node::{Antigen, Leukocyte, LymphNodeInput, Protein};
+use crate::systems::bio::{Antigen, Leukocyte, LymphNodeInput, Protein};
 use crate::theme;
 use crate::ui::{UiRadioImageButton, UiTextures};
 
