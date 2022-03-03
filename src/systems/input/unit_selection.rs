@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
@@ -25,7 +27,7 @@ impl Plugin for UnitSelectionPlugin {
 
 #[derive(Default)]
 pub struct SelectedUnits {
-    pub selected_units: Vec<Entity>,
+    pub selected_units: HashSet<Entity>,
 }
 
 pub struct SelectedUnitsChanged;
@@ -108,6 +110,7 @@ fn select_lymph_node(
 fn unit_selection(
     state: Res<InputState>,
     mouse_pos: Res<MousePos>,
+    keyboard: Res<Input<KeyCode>>,
     mut selected_units: ResMut<SelectedUnits>,
     mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
     units: Query<(Entity, &Transform, &Unit)>,
@@ -116,6 +119,7 @@ fn unit_selection(
     match selection_event.iter().next() {
         Some(Selection::Drag) => selected_units_in_rect(
             &units,
+            &keyboard,
             state.drag_start_pos,
             mouse_pos.0,
             &mut selected_units,
@@ -124,6 +128,7 @@ fn unit_selection(
         Some(Selection::Click) => {
             select_unit_at_point(
                 &state,
+                &keyboard,
                 units,
                 &mut selected_units,
                 selected_units_changed,
@@ -133,33 +138,15 @@ fn unit_selection(
     }
 }
 
-fn select_unit_at_point(
-    state: &InputState,
-    units: Query<(Entity, &Transform, &Unit)>,
-    selected_units: &mut SelectedUnits,
-    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
-) {
-    if let Some(entity) = state.hovered_entity {
-        if units.get(entity).is_ok() {
-            selected_units.selected_units = vec![entity];
-
-            selected_units_changed.send(SelectedUnitsChanged);
-        }
-    } else {
-        selected_units.selected_units = vec![];
-
-        selected_units_changed.send(SelectedUnitsChanged);
-    }
-}
-
 fn selected_units_in_rect(
     units: &Query<(Entity, &Transform, &Unit)>,
+    keyboard: &Input<KeyCode>,
     drag_start_pos: Vec2,
     mouse_pos: Vec2,
     selected_units: &mut SelectedUnits,
     selected_units_changed: &mut EventWriter<SelectedUnitsChanged>,
 ) {
-    selected_units.selected_units = units
+    let new_selected_units = units
         .iter()
         .filter(|(_, transform, _)| {
             point_in_rect(
@@ -168,10 +155,43 @@ fn selected_units_in_rect(
                 mouse_pos,
             )
         })
-        .map(|(entity, _, _)| entity)
-        .collect();
+        .map(|(entity, _, _)| entity);
+
+    if is_appending_selection(keyboard) {
+        selected_units.selected_units.extend(new_selected_units);
+    } else {
+        selected_units.selected_units = new_selected_units.collect();
+    }
 
     selected_units_changed.send(SelectedUnitsChanged);
+}
+
+fn select_unit_at_point(
+    state: &InputState,
+    keyboard: &Input<KeyCode>,
+    units: Query<(Entity, &Transform, &Unit)>,
+    selected_units: &mut SelectedUnits,
+    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
+) {
+    if let Some(entity) = state.hovered_entity {
+        if units.get(entity).is_ok() {
+            if !is_appending_selection(keyboard) {
+                selected_units.selected_units.clear();
+            }
+
+            selected_units.selected_units.insert(entity);
+
+            selected_units_changed.send(SelectedUnitsChanged);
+        }
+    } else {
+        selected_units.selected_units.clear();
+
+        selected_units_changed.send(SelectedUnitsChanged);
+    }
+}
+
+fn is_appending_selection(keyboard: &Input<KeyCode>) -> bool {
+    keyboard.pressed(KeyCode::LControl)
 }
 
 fn point_in_rect(
