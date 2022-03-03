@@ -1,15 +1,20 @@
 use std::f32::consts::PI;
 
+use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::*;
 
+use super::draw_square;
+use super::input::InputState;
 use super::physics::world_to_pixel;
 use super::units::Unit;
+use crate::pathfinding::{DiscreteMap, Map};
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
         .add_system(draw_motion_vectors)
+        .add_system(capture_map)
         .add_system(draw_paths);
 }
 
@@ -19,6 +24,8 @@ pub struct DebugState {
     pub show_force_vectors: bool,
     pub show_pathfinding: bool,
     pub track_position: bool,
+    pub is_dragging: bool,
+    pub drag_start_pos: Vec2,
 }
 
 impl Default for DebugState {
@@ -29,6 +36,8 @@ impl Default for DebugState {
             show_force_vectors: false,
             show_pathfinding: false,
             track_position: false,
+            is_dragging: false,
+            drag_start_pos: Vec2::ZERO,
         }
     }
 }
@@ -101,6 +110,50 @@ pub fn draw_motion_vectors(
             show_velocity_vector(position, velocity, &mut lines);
         }
     }
+}
+
+pub fn capture_map(
+    input_state: Res<InputState>,
+    mut debug_state: ResMut<DebugState>,
+    mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mut lines: ResMut<DebugLines>,
+    map: Res<Map>,
+    mouse_button_input: Res<Input<MouseButton>>,
+) {
+    for event in mouse_button_input_events.iter() {
+        if event.button == MouseButton::Middle {
+            match (debug_state.is_dragging, event.state.is_pressed()) {
+                // Drag end
+                (true, false)
+                    if mouse_button_input
+                        .just_released(MouseButton::Middle) =>
+                {
+                    debug_state.is_dragging = false;
+                    let start = debug_state.drag_start_pos;
+                    let end = input_state.mouse_pos;
+                    let map = DiscreteMap::new(&map, start, end);
+
+                    println!("{map}");
+                }
+                // Drag start
+                (false, true) => {
+                    debug_state.is_dragging = true;
+                    debug_state.drag_start_pos = input_state.mouse_pos;
+                }
+                _ => (),
+            }
+        }
+    }
+
+    if !debug_state.is_dragging {
+        return;
+    }
+
+    draw_square(
+        &mut lines,
+        debug_state.drag_start_pos,
+        input_state.mouse_pos,
+    );
 }
 
 fn show_velocity_vector(
