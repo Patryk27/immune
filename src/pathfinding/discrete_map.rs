@@ -1,5 +1,6 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::ops::Deref;
 
 use bevy::prelude::*;
 
@@ -9,6 +10,17 @@ type Row = usize;
 type Col = usize;
 
 pub const FIELD_SIZE: usize = 40;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PathNode(usize);
+
+impl Deref for PathNode {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
@@ -78,28 +90,20 @@ impl DiscreteMap {
         this
     }
 
-    pub fn arrived(&self) -> bool {
-        self.fields[self.pathseeker].kind == FieldKinds::Target
+    pub fn arrived(&self, idx: usize) -> bool {
+        self.fields[idx].kind == FieldKinds::Target
     }
 
-    pub fn successors(&self) -> Vec<Self> {
-        self.neighbours(self.pathseeker)
+    pub fn successors(&self, idx: usize) -> Vec<PathNode> {
+        self.neighbours(idx)
             .into_iter()
-            .filter(|neigbour| self.fields[*neigbour].is_walkable())
-            .map(|neighbour| {
-                let mut new = self.clone();
-
-                new.fields[self.pathseeker].kind = FieldKinds::Empty;
-
-                if new.fields[neighbour].kind != FieldKinds::Target {
-                    new.fields[neighbour].kind = FieldKinds::Pathseeker;
-                }
-
-                new.pathseeker = neighbour;
-
-                new
-            })
+            .filter(|neighbour| self.fields[*neighbour].is_walkable())
+            .map(|neighbour| PathNode(neighbour))
             .collect()
+    }
+
+    pub fn start(&self) -> PathNode {
+        PathNode(self.pathseeker)
     }
 
     pub fn mark(&mut self, idx: usize, kind: FieldKinds) {
@@ -205,6 +209,10 @@ impl DiscreteMap {
         }
 
         idx
+    }
+
+    pub fn idx_to_pos(&self, idx: usize) -> Vec2 {
+        self.fields[idx].pos
     }
 
     fn idx_to_coordinates(idx: usize, map_size: usize) -> (Row, Col) {

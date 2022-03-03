@@ -139,12 +139,13 @@ pub struct Pathfinder {
 impl Pathfinder {
     pub fn new(map: Map, pathseeker: Pathseeker, target: Target) -> Self {
         let map = DiscreteMap::new(&map, pathseeker, target);
-        let path = bfs(&map, |map| map.successors(), |map| map.arrived());
+        let start = map.start();
+        let path = bfs(&start, |pos| map.successors(**pos), |pos| map.arrived(**pos));
 
         let path = path
             .into_iter()
             .flatten()
-            .map(|map| map.pathseeker_pos())
+            .map(|idx| map.idx_to_pos(*idx))
             .collect();
 
         Self { map, path }
