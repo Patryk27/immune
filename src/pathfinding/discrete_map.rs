@@ -9,7 +9,7 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
-pub const FIELD_SIZE: usize = 40;
+pub const FIELD_SIZE: usize = 50;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PathNode(usize);
