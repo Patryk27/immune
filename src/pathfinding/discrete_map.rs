@@ -8,7 +8,7 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
-pub const FIELD_SIZE: usize = 30;
+pub const FIELD_SIZE: usize = 50;
 
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
@@ -34,7 +34,7 @@ impl Hash for DiscreteMap {
 
 impl DiscreteMap {
     pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
-        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize + 4;
+        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize;
         let map_size = if map_size % 2 == 0 {
             map_size + 1
         } else {
@@ -122,6 +122,14 @@ impl DiscreteMap {
 
     pub fn pathseeker_pos(&self) -> Vec2 {
         self.fields[self.pathseeker].pos
+    }
+
+    pub fn obstacles(&self) -> Vec<Vec2> {
+        self.fields
+            .iter()
+            .filter(|field| field.kind == FieldKinds::Occupied)
+            .map(|field| field.pos)
+            .collect()
     }
 
     fn neighbours(&self, idx: usize) -> Vec<usize> {

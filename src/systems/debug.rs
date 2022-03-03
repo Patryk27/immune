@@ -9,7 +9,7 @@ use super::draw_square;
 use super::input::InputState;
 use super::physics::world_to_pixel;
 use super::units::Unit;
-use crate::pathfinding::{DiscreteMap, Map};
+use crate::{pathfinding::{DiscreteMap, Map, FIELD_SIZE}, systems::draw_square_dur};
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
@@ -24,6 +24,7 @@ pub struct DebugState {
     pub show_force_vectors: bool,
     pub show_pathfinding: bool,
     pub track_position: bool,
+    pub draw_obstacles_from_map: bool,
     pub is_dragging: bool,
     pub drag_start_pos: Vec2,
 }
@@ -36,6 +37,7 @@ impl Default for DebugState {
             show_force_vectors: false,
             show_pathfinding: false,
             track_position: false,
+            draw_obstacles_from_map: false,
             is_dragging: false,
             drag_start_pos: Vec2::ZERO,
         }
@@ -134,6 +136,15 @@ pub fn capture_map(
                     let map = DiscreteMap::new(&map, start, end);
 
                     println!("{map}");
+
+                    if debug_state.draw_obstacles_from_map {
+                        for pos in map.obstacles() {
+                            let top_left = pos - FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                            let bottom_right = pos + FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+
+                            draw_square_dur(&mut lines, top_left, bottom_right, 10.0);
+                        }
+                    }
                 }
                 // Drag start
                 (false, true) => {

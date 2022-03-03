@@ -22,6 +22,10 @@ pub fn system(
             ctx.checkbox(&mut state.show_force_vectors, "Show force vectors");
             ctx.checkbox(&mut state.show_pathfinding, "Show pathfinding");
             ctx.checkbox(&mut state.track_position, "Track position");
+            ctx.checkbox(
+                &mut state.draw_obstacles_from_map,
+                "Draw obstacles from map",
+            );
         },
     );
 }
