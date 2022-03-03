@@ -41,35 +41,31 @@ fn progress_lymph_nodes(
     assets: Res<AssetServer>,
     mut query: Query<(Entity, &mut LymphNode, &Transform)>,
 ) {
-    for (_, mut lymph_node, transform) in &mut query.iter_mut() {
-        if lymph_node.state.paused || lymph_node.state.awaiting_resources {
+    for (_, mut node, transform) in &mut query.iter_mut() {
+        if !node.is_spawner() {
             continue;
         }
 
-        if lymph_node.function == LymphNodeFunction::Supplier {
-            continue;
-        }
-
-        let output = if let Some(output) = &lymph_node.output {
-            *output
+        let product = if let Some(product) = &node.product {
+            *product
         } else {
             continue;
         };
 
-        let lymph_node = &mut *lymph_node;
+        let node = &mut *node;
 
-        lymph_node.production_tt += time.delta_seconds();
+        node.production_tt += time.delta_seconds();
 
-        if lymph_node.production_tt >= LymphNode::PRODUCTION_DURATION {
-            lymph_node.production_tt = 0.0;
+        if node.production_tt >= LymphNode::PRODUCTION_DURATION {
+            node.production_tt = 0.0;
 
-            match output {
-                LymphNodeOutput::Leukocyte(leukocyte) => {
-                    let mut rng = rand::thread_rng();
+            if let LymphNodeProduct::Leukocyte(leukocyte) = product {
+                let mut rng = rand::thread_rng();
 
-                    let pos = transform.translation.truncate() / PHYSICS_SCALE;
+                let pos = transform.translation.truncate() / PHYSICS_SCALE;
 
-                    let vel = {
+                let vel =
+                    {
                         let angle = Transform::default().with_rotation(
                             Quat::from_axis_angle(
                                 Vec3::Z,
@@ -84,8 +80,7 @@ fn progress_lymph_nodes(
                         (angle * speed).translation.truncate()
                     };
 
-                    leukocyte.spawn(&mut commands, &assets, pos, vel);
-                }
+                leukocyte.spawn(&mut commands, &assets, pos, vel);
             }
         }
     }
@@ -124,20 +119,16 @@ fn animate_warnings(
 }
 
 fn animate_progress_bars(
-    lymph_nodes: Query<&LymphNode>,
+    nodes: Query<&LymphNode>,
     mut progress_bars: Query<
         (&Parent, &mut Transform),
         With<LymphNodeProgressBar>,
     >,
 ) {
     for (parent, mut transform) in progress_bars.iter_mut() {
-        let node = lymph_nodes.get(**parent).unwrap();
+        let node = nodes.get(**parent).unwrap();
 
-        let progress = if node.output.is_some()
-            && !node.state.paused
-            && !node.state.awaiting_resources
-            && node.function == LymphNodeFunction::Producer
-        {
+        let progress = if node.is_spawner() {
             node.production_tt / LymphNode::PRODUCTION_DURATION
         } else {
             0.0
@@ -222,7 +213,7 @@ fn animate_connections(
                     ),
                 );
 
-                budget -= 0.05;
+                budget -= 0.04;
             }
         }
     }

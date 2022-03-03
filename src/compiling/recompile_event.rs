@@ -2,10 +2,10 @@ use std::collections::HashSet;
 
 use bevy::prelude::*;
 
-use super::Compiler;
+use super::{CompilationWarning, Compiler};
 use crate::systems::bio::{
-    DeadLymphNodeConnection, LymphNode, LymphNodeConnection, LymphNodeInput,
-    LymphNodeWarning,
+    DeadLymphNodeConnection, LymphNode, LymphNodeConnection, LymphNodeProduct,
+    LymphNodeTarget, LymphNodeWarning,
 };
 
 #[derive(Clone, Debug)]
@@ -26,24 +26,30 @@ pub(super) fn compile(
         compiler.add(entity, node);
     }
 
-    for (entity, output, state, function) in compiler.compile() {
+    for (entity, (product, parent, state)) in compiler.compile() {
         let (_, mut node, children) = nodes.get_mut(entity).unwrap();
 
-        node.output = output;
-        node.function = function;
+        node.product = product;
+        node.parent = parent;
         node.state = state;
+
+        node.warning = if node.state.is_paused {
+            Some(CompilationWarning::NodeIsPaused)
+        } else if node.state.is_awaiting_resources {
+            Some(CompilationWarning::NodeIsAwaitingResources)
+        } else if node.product.is_none() {
+            Some(CompilationWarning::NodeHasNoProduct)
+        } else if matches!(node.product, Some(LymphNodeProduct::Resource(_)))
+            && !matches!(node.target, LymphNodeTarget::LymphNode(_))
+        {
+            Some(CompilationWarning::NodeHasNoChild)
+        } else {
+            None
+        };
 
         for child in children.iter() {
             if let Ok(mut warn) = warnings.get_mut(*child) {
-                warn.set(if node.state.paused {
-                    Some("lymph-node.state.paused.png")
-                } else if node.state.awaiting_resources {
-                    Some("lymph-node.state.awaiting-resources.png")
-                } else if node.output.is_none() {
-                    Some("lymph-node.state.error.png")
-                } else {
-                    None
-                });
+                warn.set(node.warning.map(|warn| warn.asset_path()));
             }
         }
     }
@@ -69,27 +75,25 @@ pub(super) fn link(
         existing_connections.insert((connection.source, connection.target));
     }
 
-    for (target, target_node, &target_transform) in nodes.iter() {
-        for source in [target_node.lhs, target_node.rhs] {
-            let source =
-                if let Some(LymphNodeInput::External(Some(source))) = source {
-                    source
-                } else {
-                    continue;
-                };
+    for (source, source_node, &source_transform) in nodes.iter() {
+        let target =
+            if let LymphNodeTarget::LymphNode(target) = source_node.target {
+                target
+            } else {
+                continue;
+            };
 
-            required_connections.insert((source, target));
+        required_connections.insert((source, target));
 
-            let (_, _, &source_transform) = nodes.get(source).unwrap();
+        let (_, _, &target_transform) = nodes.get(target).unwrap();
 
-            LymphNodeConnection::new(
-                source,
-                source_transform.translation.truncate(),
-                target,
-                target_transform.translation.truncate(),
-            )
-            .spawn(&mut commands);
-        }
+        LymphNodeConnection::new(
+            source,
+            source_transform.translation.truncate(),
+            target,
+            target_transform.translation.truncate(),
+        )
+        .spawn(&mut commands);
     }
 
     let unnecessary_connections =

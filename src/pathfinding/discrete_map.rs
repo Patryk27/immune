@@ -45,7 +45,7 @@ impl DiscreteMap {
         let top_left_field_x = mid.x - distance_to_edge;
         let top_left_field_y = mid.y + distance_to_edge;
 
-        let mut fields = (0..capacity)
+        let fields = (0..capacity)
             .map(|idx| {
                 let (row, col) = Self::idx_to_coordinates(idx, map_size);
                 let pos = Vec2::new(

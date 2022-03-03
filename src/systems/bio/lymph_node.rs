@@ -1,5 +1,3 @@
-use std::iter;
-
 use bevy::math::{vec2, vec3};
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
@@ -12,16 +10,18 @@ use itertools::Itertools;
 use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
+use crate::compiling::CompilationWarning;
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::theme;
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
-    pub lhs: Option<LymphNodeInput>,
-    pub rhs: Option<LymphNodeInput>,
-    pub output: Option<LymphNodeOutput>,
-    pub function: LymphNodeFunction,
+    pub resource: Option<LymphNodeResource>,
+    pub target: LymphNodeTarget,
+    pub product: Option<LymphNodeProduct>,
+    pub parent: Option<Entity>,
+    pub warning: Option<CompilationWarning>,
     pub state: LymphNodeState,
     pub production_tt: f32,
 }
@@ -96,52 +96,55 @@ impl LymphNode {
             );
         });
     }
+
+    pub fn is_spawner(&self) -> bool {
+        matches!(self.target, LymphNodeTarget::Outside)
+            && matches!(self.product, Some(LymphNodeProduct::Leukocyte(_)))
+            && !self.state.is_paused
+            && !self.state.is_awaiting_resources
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LymphNodeFunction {
-    Producer,
-    Supplier,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct LymphNodeState {
-    pub paused: bool,
-    pub awaiting_resources: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LymphNodeInput {
+pub enum LymphNodeResource {
+    Antigen(AntigenBinder),
     Body(Body),
-    Binder(AntigenBinder),
     Protein(Protein),
-    External(Option<Entity>),
 }
 
-impl LymphNodeInput {
+impl LymphNodeResource {
     pub fn variants() -> impl Iterator<Item = Self> {
+        let antigens = AntigenBinder::variants().map(Self::Antigen);
         let bodies = Body::variants().map(Self::Body);
-        let binders = AntigenBinder::variants().map(Self::Binder);
         let proteins = Protein::variants().map(Self::Protein);
 
-        bodies
-            .chain(binders)
-            .chain(proteins)
-            .chain(iter::once(Self::External(None)))
+        antigens.chain(bodies).chain(proteins)
     }
 
-    pub fn asset_path(&self) -> Option<&'static str> {
+    pub fn asset_path(&self) -> &'static str {
         match self {
-            Self::Body(body) => Some(body.asset_path()),
-            Self::Binder(binder) => Some(binder.asset_path()),
-            Self::Protein(protein) => Some(protein.asset_path()),
-            Self::External(_) => None,
+            Self::Antigen(antigen) => antigen.asset_path(),
+            Self::Body(body) => body.asset_path(),
+            Self::Protein(protein) => protein.asset_path(),
         }
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LymphNodeTarget {
+    Outside,
+    LymphNode(Entity),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LymphNodeState {
+    pub is_paused: bool,
+    pub is_awaiting_resources: bool,
+}
+
 #[derive(Clone, Copy, Debug)]
-pub enum LymphNodeOutput {
+pub enum LymphNodeProduct {
+    Resource(LymphNodeResource),
     Leukocyte(Leukocyte),
 }
 
@@ -268,17 +271,19 @@ pub struct LymphNodeConnectionWire {
 
 impl LymphNodeConnectionWire {
     pub fn new(source: Vec2, target: Vec2, is_reverse: bool) -> Self {
-        const SEGMENT_LEN: f32 = 4.0;
+        const SEGMENT_LEN: f32 = 8.0;
 
         let mut rng = rand::thread_rng();
         let points_count = (source.distance(target) / SEGMENT_LEN) as i32;
+
+        let dir = (source - target).normalize();
+        let dirp = dir.perp();
 
         let points = (0..points_count).map(|idx| {
             let mut pos = source
                 + (target - source) / (points_count as f32) * (idx as f32);
 
-            pos.x += rng.gen_range(-3.0..3.0);
-            pos.y += rng.gen_range(-3.0..3.0);
+            pos += dirp * rng.gen_range(-5.0..5.0);
 
             LymphNodeConnectionWirePoint {
                 pos,
@@ -290,8 +295,6 @@ impl LymphNodeConnectionWire {
 
         if !is_reverse {
             for width in [15.0, 13.0, 11.0, 9.0, 7.0, 5.0, 3.0, 1.0] {
-                let dir = (source - target).normalize();
-                let dirp = dir.perp();
                 let at = target + dir * 90.0;
 
                 let indicator_points = [

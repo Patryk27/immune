@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::compiling::RecompileEvent;
 use crate::level::{Level, LevelWave};
 use crate::systems::bio::{
-    LymphNode, LymphNodeFunction, LymphNodeState, Pathogen, PathogenKind,
+    LymphNode, LymphNodeState, LymphNodeTarget, Pathogen, PathogenKind,
 };
 
 mod progress_bars;
@@ -39,13 +39,14 @@ fn setup(
 ) {
     for lymph_node in &level.setup.lymph_nodes {
         LymphNode {
-            lhs: None,
-            rhs: None,
-            output: None,
-            function: LymphNodeFunction::Producer,
+            resource: None,
+            target: LymphNodeTarget::Outside,
+            product: None,
+            parent: None,
+            warning: None,
             state: LymphNodeState {
-                paused: false,
-                awaiting_resources: false,
+                is_paused: false,
+                is_awaiting_resources: false,
             },
             production_tt: 0.0,
         }

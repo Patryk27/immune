@@ -9,7 +9,7 @@ use super::draw_square;
 use super::input::InputState;
 use super::physics::world_to_pixel;
 use super::units::Unit;
-use crate::pathfinding::{DiscreteMap, Map, FIELD_SIZE};
+use crate::pathfinding::{DiscreteMap, Map};
 use crate::systems::draw_square_dur;
 
 pub const DEBUG_MAP_FIELD_SIZE: f32 = 5.0;

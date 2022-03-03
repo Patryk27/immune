@@ -2,34 +2,31 @@ use std::iter;
 
 use bevy_egui::egui::{Response, Ui, Widget};
 
-use super::UiLymphNodeInputRadio;
-use crate::systems::bio::LymphNodeInput;
+use super::UiLymphNodeResourceRadio;
+use crate::systems::bio::LymphNodeResource;
 use crate::ui::UiTextures;
 
-pub struct UiLymphNodeInputRadios<'a> {
+pub struct UiLymphNodeResourceRadios<'a> {
     textures: &'a UiTextures,
     label: &'a str,
-    selected_value: &'a mut Option<LymphNodeInput>,
-    needs_node_picker: &'a mut bool,
+    current_value: &'a mut Option<LymphNodeResource>,
 }
 
-impl<'a> UiLymphNodeInputRadios<'a> {
+impl<'a> UiLymphNodeResourceRadios<'a> {
     pub fn new(
         textures: &'a UiTextures,
         label: &'a str,
-        selected_value: &'a mut Option<LymphNodeInput>,
-        needs_node_picker: &'a mut bool,
+        current_value: &'a mut Option<LymphNodeResource>,
     ) -> Self {
         Self {
             label,
             textures,
-            selected_value,
-            needs_node_picker,
+            current_value,
         }
     }
 }
 
-impl Widget for UiLymphNodeInputRadios<'_> {
+impl Widget for UiLymphNodeResourceRadios<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut changed = false;
 
@@ -39,19 +36,18 @@ impl Widget for UiLymphNodeInputRadios<'_> {
                 ui.add_space(3.0);
 
                 let values = iter::once(None)
-                    .chain(LymphNodeInput::variants().map(Some));
+                    .chain(LymphNodeResource::variants().map(Some));
 
                 for value in values {
-                    let response = ui.add(UiLymphNodeInputRadio::new(
+                    let response = ui.add(UiLymphNodeResourceRadio::new(
                         self.textures,
+                        *self.current_value,
                         value,
-                        *self.selected_value,
-                        self.needs_node_picker,
                     ));
 
                     if response.clicked() {
+                        *self.current_value = value;
                         changed = true;
-                        *self.selected_value = value;
                     }
                 }
             })

@@ -1,14 +1,16 @@
-mod lymph_node_input_radio;
-mod lymph_node_input_radios;
 mod lymph_node_picker;
+mod lymph_node_resource_radio;
+mod lymph_node_resource_radios;
+mod lymph_node_target_radios;
 
 use bevy::prelude::*;
 use bevy_egui::egui::{self, Align2};
 use bevy_egui::EguiContext;
 
-use self::lymph_node_input_radio::*;
-use self::lymph_node_input_radios::*;
 use self::lymph_node_picker::*;
+use self::lymph_node_resource_radio::*;
+use self::lymph_node_resource_radios::*;
+use self::lymph_node_target_radios::UiLymphNodeTargetRadios;
 use super::*;
 use crate::compiling::RecompileEvent;
 use crate::systems::bio::*;
@@ -34,11 +36,8 @@ impl UiLymphNodeEditor {
         lymph_nodes: &Query<&Children, With<LymphNode>>,
         lymph_node: Entity,
     ) -> Self {
-        let asset_paths =
-            LymphNodeInput::variants().flat_map(|input| input.asset_path());
-
-        for asset_path in asset_paths {
-            textures.load(assets, egui, asset_path);
+        for variant in LymphNodeResource::variants() {
+            textures.load(assets, egui, variant.asset_path());
         }
 
         if let Ok(children) = lymph_nodes.get(lymph_node) {
@@ -76,23 +75,11 @@ impl UiLymphNodeEditor {
             return UiLymphNodeEditorOutcome::Completed;
         }
 
-        let (mut lymph_node, lymph_node_transform, _, lymph_node_entity) =
-            if let Ok(val) = lymph_nodes.get_mut(self.lymph_node) {
-                val
-            } else {
-                return UiLymphNodeEditorOutcome::Completed;
-            };
-
         let mut changed = false;
 
         if let Some(picker) = &mut self.lymph_node_picker {
-            match picker.process(
-                lines,
-                mouse_pos,
-                &mut lymph_node,
-                lymph_node_entity,
-                *lymph_node_transform,
-            ) {
+            match picker.process(lines, mouse_pos, lymph_nodes, self.lymph_node)
+            {
                 UiLymphNodePickerOutcome::Awaiting => {
                     return UiLymphNodeEditorOutcome::Awaiting;
                 }
@@ -104,6 +91,13 @@ impl UiLymphNodeEditor {
             }
         }
 
+        let (mut lymph_node, _, _, _) =
+            if let Ok(val) = lymph_nodes.get_mut(self.lymph_node) {
+                val
+            } else {
+                return UiLymphNodeEditorOutcome::Completed;
+            };
+
         let mut keep_opened = true;
 
         egui::Window::new("Lymph Node")
@@ -112,68 +106,66 @@ impl UiLymphNodeEditor {
             .collapsible(false)
             .open(&mut keep_opened)
             .show(egui.ctx_mut(), |ui| {
-                egui::Grid::new("lymph-node-editor.recipe").show(ui, |ui| {
-                    let mut needs_node_picker = false;
+                egui::Grid::new("lymph-node-editor.recipe")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.vertical(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.vertical(|ui| {
+                                    let response =
+                                        ui.add(UiLymphNodeResourceRadios::new(
+                                            textures,
+                                            "Resource:",
+                                            &mut lymph_node.resource,
+                                        ));
 
-                    changed |= ui
-                        .add(UiLymphNodeInputRadios::new(
-                            textures,
-                            "Input A:",
-                            &mut lymph_node.lhs,
-                            &mut needs_node_picker,
-                        ))
-                        .changed();
+                                    changed |= response.changed();
+                                });
 
-                    if needs_node_picker {
-                        self.lymph_node_picker = Some(UiLymphNodePicker::lhs());
-                    }
+                                ui.add_space(6.0);
+                                ui.separator();
+                            });
+                        });
 
-                    // ---
+                        ui.vertical(|ui| {
+                            let mut requests_node_picker = false;
 
-                    ui.centered_and_justified(|ui| {
-                        ui.label("+");
+                            let response =
+                                ui.add(UiLymphNodeTargetRadios::new(
+                                    &mut lymph_node.target,
+                                    &mut requests_node_picker,
+                                ));
+
+                            changed |= response.changed();
+
+                            if requests_node_picker {
+                                self.lymph_node_picker =
+                                    Some(UiLymphNodePicker::new());
+                            }
+                        });
                     });
-
-                    // ---
-
-                    let mut needs_node_picker = false;
-
-                    changed |= ui
-                        .add(UiLymphNodeInputRadios::new(
-                            textures,
-                            "Input B:",
-                            &mut lymph_node.rhs,
-                            &mut needs_node_picker,
-                        ))
-                        .changed();
-
-                    if needs_node_picker {
-                        self.lymph_node_picker = Some(UiLymphNodePicker::rhs());
-                    }
-                });
 
                 ui.shrink_width_to_current();
 
-                // ---
+                ui.vertical(|ui| {
+                    ui.separator();
+                    ui.add_space(3.0);
 
-                ui.separator();
-                ui.add_space(3.0);
-                changed |= ui.checkbox(&mut lymph_node.state.paused, "Paused").changed();
+                    let response =
+                        ui.checkbox(&mut lymph_node.state.is_paused, "Paused");
 
-                // ---
+                    changed |= response.changed();
+                });
 
-                if lymph_node.output.is_none() {
+                if let Some(warning) = lymph_node.warning {
                     ui.add_space(3.0);
                     ui.separator();
                     ui.add_space(3.0);
-                    ui.colored_label(theme::ui::text_danger_egui(), "[!] This lymph node has invalid configuration and does not produce any cells.");
-                }
 
-                if lymph_node.state.awaiting_resources {
-                    ui.add_space(3.0);
-                    ui.separator();
-                    ui.add_space(3.0);
-                    ui.colored_label(theme::ui::text_danger_egui(), "[!] Some of this lymph node's inputs are paused.");
+                    ui.colored_label(
+                        theme::ui::text_danger_egui(),
+                        warning.description(),
+                    );
                 }
             });
 
