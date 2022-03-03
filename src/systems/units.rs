@@ -9,9 +9,12 @@ const MOVEMENT_SQUEEZE_FACTOR: f32 = 0.6;
 
 const MAX_HEALTH: f32 = 1.0;
 const BASE_DAMAGE: f32 = 0.25; // By default a cell can take 4 hits
+const HEALTH_TO_SCALE: f32 = 1.0;
+const REGEN_RATE: f32 = 0.1; // 0.1 point per second
 
 mod animate;
 mod combat;
+mod health_regen;
 mod movement;
 
 #[derive(Component)]
@@ -21,6 +24,8 @@ pub struct Unit {
     pub path: Vec<Vec2>,
     pub step: usize,
     pub health: f32,
+    pub max_health: f32,
+    pub regen_rate: f32,
     pub alignment: Alignment,
 }
 
@@ -37,6 +42,8 @@ impl Default for Unit {
             path: Default::default(),
             step: Default::default(),
             health: MAX_HEALTH,
+            max_health: MAX_HEALTH,
+            regen_rate: REGEN_RATE,
             alignment: Alignment::Player,
         }
     }
@@ -52,5 +59,6 @@ impl Unit {
 pub fn initialize(app: &mut App) {
     app.add_system(movement::system)
         .add_system(animate::system)
-        .add_system(combat::system);
+        .add_system(combat::system)
+        .add_system(health_regen::system);
 }
