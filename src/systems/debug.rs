@@ -5,16 +5,19 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::*;
 
 use super::physics::world_to_pixel;
+use super::units::Unit;
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
-        .add_system(draw_motion_vectors);
+        .add_system(draw_motion_vectors)
+        .add_system(draw_paths);
 }
 
 pub struct DebugState {
     pub show_debug_window: bool,
     pub show_motion_vectors: bool,
     pub show_force_vectors: bool,
+    pub show_pathfinding: bool,
     pub track_position: bool,
 }
 
@@ -24,7 +27,36 @@ impl Default for DebugState {
             show_debug_window: true,
             show_motion_vectors: false,
             show_force_vectors: false,
+            show_pathfinding: false,
             track_position: false,
+        }
+    }
+}
+
+pub fn draw_paths(
+    state: Res<DebugState>,
+    query: Query<(&Transform, &Unit)>,
+    mut lines: ResMut<DebugLines>,
+) {
+    if !state.show_pathfinding {
+        return;
+    }
+
+    for (transform, unit) in query.iter() {
+        let mut prev = transform.translation;
+
+        if let Some(target) = unit.target {
+            draw_arrow(&mut lines, prev, target.extend(0.0), Color::TOMATO);
+        }
+
+        if unit.path.is_empty() {
+            continue;
+        }
+
+        for p in &unit.path {
+            let p = p.extend(0.0);
+            draw_arrow(&mut lines, prev, p, Color::FUCHSIA);
+            prev = p;
         }
     }
 }
