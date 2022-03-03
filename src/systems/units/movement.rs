@@ -60,7 +60,7 @@ fn force_direction_from_path(
     default_force_direction: Vec2,
 ) -> Vec2 {
     if unit.path.get(unit.step).is_none() {
-        return Vec2::ZERO;
+        return default_force_direction;
     }
 
     let mut min_distance_from_node = f32::INFINITY;
