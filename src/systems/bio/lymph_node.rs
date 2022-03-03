@@ -12,7 +12,7 @@ use itertools::Itertools;
 use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Protein};
-use crate::systems::highlight::Selector;
+use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::theme;
 
@@ -61,6 +61,7 @@ impl LymphNode {
                 }),
                 ..Default::default()
             })
+            .insert(Collider::Circle { radius: 100.0 })
             .insert(self.to_owned());
 
         // Spawn lymph node's sprite

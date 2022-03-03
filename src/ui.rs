@@ -12,8 +12,7 @@ pub(self) use self::radio_image_button::*;
 pub(self) use self::textures::*;
 use crate::compiling::RecompileEvent;
 use crate::systems::bio::*;
-use crate::systems::highlight::SelectorHighlight;
-use crate::systems::input::InputState;
+use crate::systems::input::{InputState, Selector};
 
 pub struct UiPlugin;
 
@@ -46,19 +45,25 @@ fn process_events(
     mut events: EventReader<UiEvent>,
     keys: Res<Input<KeyCode>>,
     mut state: ResMut<UiState>,
+    mut selectors: Query<&mut Selector>,
+    lymph_nodes: Query<&Children, With<LymphNode>>,
 ) {
     for event in events.iter() {
         match event {
             UiEvent::LymphNodeClicked(lymph_node) => {
                 if let Some(editor) = &mut state.lymph_node_editor {
-                    editor.notify(UiLymphNodeEditorEvent::LymphNodeClicked(
+                    editor.on_lymph_node_clicked(
+                        &mut selectors,
+                        &lymph_nodes,
                         *lymph_node,
-                    ));
+                    );
                 } else {
                     state.lymph_node_editor = Some(UiLymphNodeEditor::new(
                         &assets,
                         &mut egui,
                         &mut textures,
+                        &mut selectors,
+                        &lymph_nodes,
                         *lymph_node,
                     ));
                 }
@@ -68,7 +73,7 @@ fn process_events(
 
     if keys.just_pressed(KeyCode::Escape) {
         if let Some(editor) = &mut state.lymph_node_editor {
-            editor.notify(UiLymphNodeEditorEvent::EscapePressed);
+            editor.on_escape_pressed();
         }
     }
 }
@@ -79,43 +84,33 @@ fn process_lymph_node_editor(
     textures: Res<UiTextures>,
     input: Res<InputState>,
     mut state: ResMut<UiState>,
-    lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
+    mut lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
     recompile_event_tx: EventWriter<RecompileEvent>,
-    mut highlights: Query<&mut Visibility, With<SelectorHighlight>>,
+    mut selectors: Query<&mut Selector>,
 ) {
     if let Some(editor) = &mut state.lymph_node_editor {
-        for (_, _, children, entity) in lymph_nodes.iter() {
-            for &child in children.iter() {
-                if let Ok(mut highlight_visibility) = highlights.get_mut(child)
-                {
-                    highlight_visibility.is_visible =
-                        entity == editor.lymph_node();
-                }
-            }
-        }
-
         match editor.process(
             lines,
             egui,
             &textures,
             input.mouse_pos,
-            lymph_nodes,
+            &mut lymph_nodes,
             recompile_event_tx,
         ) {
             UiLymphNodeEditorOutcome::Awaiting => {
                 //
             }
+
             UiLymphNodeEditorOutcome::Completed => {
-                state.lymph_node_editor = None;
-            }
-        }
-    } else {
-        for (_, _, children, _) in lymph_nodes.iter() {
-            for &child in children.iter() {
-                if let Ok(mut highlight_visibility) = highlights.get_mut(child)
+                if let Ok((_, _, children, _)) =
+                    lymph_nodes.get(editor.lymph_node())
                 {
-                    highlight_visibility.is_visible = false;
+                    Selector::modify(&mut selectors, children, |selector| {
+                        selector.picked = false;
+                    });
                 }
+
+                state.lymph_node_editor = None;
             }
         }
     }

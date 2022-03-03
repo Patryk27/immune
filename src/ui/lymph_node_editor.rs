@@ -20,11 +20,6 @@ pub struct UiLymphNodeEditor {
     lymph_node_picker: Option<UiLymphNodePicker>,
 }
 
-pub enum UiLymphNodeEditorEvent {
-    EscapePressed,
-    LymphNodeClicked(Entity),
-}
-
 pub enum UiLymphNodeEditorOutcome {
     Awaiting,
     Completed,
@@ -35,6 +30,8 @@ impl UiLymphNodeEditor {
         assets: &AssetServer,
         egui: &mut EguiContext,
         textures: &mut UiTextures,
+        selectors: &mut Query<&mut Selector>,
+        lymph_nodes: &Query<&Children, With<LymphNode>>,
         lymph_node: Entity,
     ) -> Self {
         let asset_paths =
@@ -42,6 +39,12 @@ impl UiLymphNodeEditor {
 
         for asset_path in asset_paths {
             textures.load(assets, egui, asset_path);
+        }
+
+        if let Ok(children) = lymph_nodes.get(lymph_node) {
+            Selector::modify(selectors, children, |selector| {
+                selector.picked = true;
+            });
         }
 
         Self {
@@ -61,7 +64,12 @@ impl UiLymphNodeEditor {
         mut egui: ResMut<EguiContext>,
         textures: &UiTextures,
         mouse_pos: Vec2,
-        mut lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
+        lymph_nodes: &mut Query<(
+            &mut LymphNode,
+            &Transform,
+            &Children,
+            Entity,
+        )>,
         mut recompile_event_tx: EventWriter<RecompileEvent>,
     ) -> UiLymphNodeEditorOutcome {
         if !self.alive {
@@ -180,23 +188,35 @@ impl UiLymphNodeEditor {
         }
     }
 
-    pub fn notify(&mut self, event: UiLymphNodeEditorEvent) {
-        match event {
-            UiLymphNodeEditorEvent::EscapePressed => {
-                if let Some(picker) = &mut self.lymph_node_picker {
-                    picker.notify(UiLymphNodePickerEvent::EscapePressed);
-                } else {
-                    self.alive = false;
-                }
+    pub fn on_escape_pressed(&mut self) {
+        if let Some(picker) = &mut self.lymph_node_picker {
+            picker.on_escape_pressed();
+        } else {
+            self.alive = false;
+        }
+    }
+
+    pub fn on_lymph_node_clicked(
+        &mut self,
+        selectors: &mut Query<&mut Selector>,
+        lymph_nodes: &Query<&Children, With<LymphNode>>,
+        node: Entity,
+    ) {
+        if let Some(picker) = &mut self.lymph_node_picker {
+            picker.on_lymph_node_clicked(node);
+        } else {
+            if let Ok(children) = lymph_nodes.get(self.lymph_node) {
+                Selector::modify(selectors, children, |selector| {
+                    selector.picked = false;
+                });
             }
 
-            UiLymphNodeEditorEvent::LymphNodeClicked(node) => {
-                if let Some(picker) = &mut self.lymph_node_picker {
-                    picker
-                        .notify(UiLymphNodePickerEvent::LymphNodeClicked(node));
-                } else {
-                    self.lymph_node = node;
-                }
+            self.lymph_node = node;
+
+            if let Ok(children) = lymph_nodes.get(self.lymph_node) {
+                Selector::modify(selectors, children, |selector| {
+                    selector.picked = true;
+                });
             }
         }
     }

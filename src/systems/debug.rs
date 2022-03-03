@@ -9,7 +9,8 @@ use super::draw_square;
 use super::input::InputState;
 use super::physics::world_to_pixel;
 use super::units::Unit;
-use crate::{pathfinding::{DiscreteMap, Map, FIELD_SIZE}, systems::draw_square_dur};
+use crate::pathfinding::{DiscreteMap, Map, FIELD_SIZE};
+use crate::systems::draw_square_dur;
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
@@ -133,7 +134,10 @@ pub fn capture_map(
                     debug_state.is_dragging = false;
                     let start = debug_state.drag_start_pos;
                     let end = input_state.mouse_pos;
-                    let mid = Vec2::new((start.x + end.x) / 2f32 , (start.y + end.y) / 2f32);
+                    let mid = Vec2::new(
+                        (start.x + end.x) / 2f32,
+                        (start.y + end.y) / 2f32,
+                    );
                     let map = DiscreteMap::new(&map, mid, end);
 
                     println!("{map}");
@@ -146,7 +150,12 @@ pub fn capture_map(
                             let top_left = pos - field_size;
                             let bottom_right = pos + field_size;
 
-                            draw_square_dur(&mut lines, top_left, bottom_right, 10.0);
+                            draw_square_dur(
+                                &mut lines,
+                                top_left,
+                                bottom_right,
+                                10.0,
+                            );
                         }
                     }
                 }

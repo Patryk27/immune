@@ -201,7 +201,7 @@ impl Compiler {
             false
         }
 
-        let mut state = self.nodes[&entity].state.clone();
+        let mut state = self.nodes[&entity].state;
 
         state.awaiting_resources = is_paused(&self.nodes, 0, entity);
         state

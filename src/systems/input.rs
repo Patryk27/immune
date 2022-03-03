@@ -1,33 +1,48 @@
-use bevy::input::mouse::MouseButtonInput;
+mod collider;
+mod selector;
+
+use std::cmp::Ordering;
+
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
 use itertools::Itertools;
 
+pub use self::collider::*;
+pub use self::selector::*;
 use super::bio::LymphNode;
 use super::draw_square;
-use super::highlight::HighlightPlugin;
 use super::units::Unit;
 use crate::pathfinding::PathseekersQueue;
 use crate::ui::UiEvent;
+
+const HIGHLIGHT_ZOOM_MAX: f32 = 1.1;
+const HIGHLIGHT_ZOOM_MIN: f32 = 0.9;
+const HIGHLIGHT_ZOOM_SPEED: f32 = 0.01;
 
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(InputState::default())
-            .add_system(update_mouse_position)
-            .add_system(process_mouse_selection)
-            .add_system(process_mouse_command)
-            .add_plugin(HighlightPlugin);
+            .add_system(track_mouse_position)
+            .add_system(track_mouse_buttons)
+            .add_system(track_mouse)
+            .add_system(track_selector_hovers)
+            .add_system(track_selector_picks)
+            .add_system(animate_selectors);
     }
 }
 
 pub struct InputState {
     pub mouse_pos: Vec2,
-    is_dragging: bool,
-    drag_start_pos: Vec2,
+    pub is_dragging: bool,
+    pub drag_start_pos: Vec2,
     pub selected_units: Vec<Entity>,
+    pub selected_units_dirty: bool,
+    pub hovered_entity: Option<Entity>,
+    pub highlight_zoom: f32,
+    pub highlight_zoom_dir: f32,
 }
 
 impl Default for InputState {
@@ -36,12 +51,16 @@ impl Default for InputState {
             mouse_pos: Vec2::ZERO,
             is_dragging: false,
             drag_start_pos: Vec2::ZERO,
-            selected_units: vec![],
+            selected_units: Default::default(),
+            selected_units_dirty: false,
+            hovered_entity: Default::default(),
+            highlight_zoom: 1.0,
+            highlight_zoom_dir: 1.0,
         }
     }
 }
 
-fn update_mouse_position(
+fn track_mouse_position(
     mut egui: ResMut<EguiContext>,
     mut state: ResMut<InputState>,
     wnds: Res<Windows>,
@@ -65,43 +84,40 @@ fn update_mouse_position(
     }
 }
 
-fn process_mouse_command(
+fn track_mouse_buttons(
     mut egui: ResMut<EguiContext>,
     state: Res<InputState>,
     mut pathfinding_queue: ResMut<PathseekersQueue>,
-    mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mouse: Res<Input<MouseButton>>,
     mut units: Query<(Entity, &mut Unit, &Transform)>,
 ) {
     if egui.ctx_mut().is_pointer_over_area() {
         return;
     }
 
-    for event in mouse_button_input_events.iter() {
-        if event.state.is_pressed() && event.button == MouseButton::Right {
-            for unit in state.selected_units.iter() {
-                if let Ok((entity, mut unit, transform)) = units.get_mut(*unit)
-                {
-                    let target = state.mouse_pos;
+    if mouse.just_pressed(MouseButton::Right) {
+        for unit in state.selected_units.iter() {
+            if let Ok((entity, mut unit, transform)) = units.get_mut(*unit) {
+                let target = state.mouse_pos;
 
-                    pathfinding_queue.insert(
-                        entity,
-                        transform.translation.truncate(),
-                        target,
-                    );
-                    unit.target = Some(target);
-                }
+                pathfinding_queue.insert(
+                    entity,
+                    transform.translation.truncate(),
+                    target,
+                );
+
+                unit.target = Some(target);
             }
         }
     }
 }
 
-fn process_mouse_selection(
+fn track_mouse(
     mut egui: ResMut<EguiContext>,
     mut state: ResMut<InputState>,
-    mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse: Res<Input<MouseButton>>,
     units: Query<(Entity, &Transform, &Unit)>,
-    lymph_nodes: Query<(Entity, &Transform, &LymphNode)>,
+    lymph_nodes: Query<(), With<LymphNode>>,
     mut lines: ResMut<DebugLines>,
     mut ui_events: EventWriter<UiEvent>,
 ) {
@@ -109,106 +125,158 @@ fn process_mouse_selection(
         return;
     }
 
-    if !state.is_dragging && mouse_button_input.just_pressed(MouseButton::Left)
-    {
-        let clicked_entity =
-            lymph_nodes.iter().find_map(|(entity, transform, _)| {
-                if point_in_circle(
-                    state.mouse_pos,
-                    transform.translation.truncate(),
-                    70.0,
-                ) {
-                    Some(entity)
+    if !state.is_dragging && mouse.just_pressed(MouseButton::Left) {
+        if let Some(entity) = state.hovered_entity {
+            if lymph_nodes.get(entity).is_ok() {
+                ui_events.send(UiEvent::LymphNodeClicked(entity));
+                return;
+            }
+        }
+    }
+
+    if !state.is_dragging && mouse.just_pressed(MouseButton::Left) {
+        state.is_dragging = true;
+        state.drag_start_pos = state.mouse_pos;
+    } else if state.is_dragging && mouse.just_released(MouseButton::Left) {
+        state.is_dragging = false;
+
+        let drag_x = (state.mouse_pos.x - state.drag_start_pos.x).abs();
+        let drag_y = (state.mouse_pos.y - state.drag_start_pos.y).abs();
+        let size = 50.0; // TODO(pry): this info should be within unit struct
+        let offset = Vec2::new(size, size);
+
+        if drag_x > offset.x && drag_y > offset.y {
+            state.selected_units = units
+                .iter()
+                .filter(|(_, transform, _)| {
+                    point_in_rect(
+                        transform.translation.truncate(),
+                        state.drag_start_pos,
+                        state.mouse_pos,
+                    )
+                })
+                .map(|(entity, _, _)| entity)
+                .collect();
+
+            state.selected_units_dirty = true;
+        } else {
+            let start_pos = state.mouse_pos + offset;
+            let end_pos = state.mouse_pos - offset;
+
+            state.selected_units = units
+                .iter()
+                .filter(|(_, transform, _)| {
+                    point_in_rect(
+                        transform.translation.truncate(),
+                        start_pos,
+                        end_pos,
+                    )
+                })
+                .sorted_by(|(_, a, _), (_, b, _)| {
+                    let a = a.translation.truncate().distance(state.mouse_pos);
+                    let b = b.translation.truncate().distance(state.mouse_pos);
+
+                    a.partial_cmp(&b).unwrap_or(Ordering::Equal)
+                })
+                .map(|(entity, _, _)| entity)
+                .next()
+                .into_iter()
+                .collect();
+
+            state.selected_units_dirty = true;
+        }
+    }
+
+    if state.is_dragging {
+        draw_square(&mut lines, state.drag_start_pos, state.mouse_pos);
+    }
+}
+
+fn track_selector_hovers(
+    mut state: ResMut<InputState>,
+    entities: Query<(Entity, &Collider, &Transform, &Children)>,
+    mut selectors: Query<&mut Selector>,
+) {
+    if state.is_dragging {
+        // looks kiczowato
+        return;
+    }
+
+    let new_hovered_entity =
+        entities
+            .iter()
+            .find_map(|(entity, collider, transform, children)| {
+                if collider
+                    .contains(transform.translation.truncate(), state.mouse_pos)
+                {
+                    Some((entity, children))
                 } else {
                     None
                 }
             });
 
-        if let Some(entity) = clicked_entity {
-            ui_events.send(UiEvent::LymphNodeClicked(entity));
-            return;
+    if new_hovered_entity.map(|(e, _)| e) != state.hovered_entity {
+        if let Some(old_hovered_entity) = state.hovered_entity {
+            if let Ok((_, _, _, children)) = entities.get(old_hovered_entity) {
+                Selector::modify(&mut selectors, children, |selector| {
+                    selector.hovered = false;
+                });
+            }
         }
+
+        if let Some((_, children)) = new_hovered_entity {
+            Selector::modify(&mut selectors, children, |selector| {
+                selector.hovered = true;
+            });
+        }
+
+        state.hovered_entity = new_hovered_entity.map(|(e, _)| e);
+    }
+}
+
+fn track_selector_picks(
+    mut state: ResMut<InputState>,
+    units: Query<(Entity, &Unit, &Children)>,
+    mut selectors: Query<&mut Selector>,
+) {
+    if !state.selected_units_dirty {
+        return;
     }
 
-    for event in mouse_button_input_events.iter() {
-        if event.button == MouseButton::Left {
-            match (state.is_dragging, event.state.is_pressed()) {
-                // Drag end
-                (true, false)
-                    if mouse_button_input.just_released(MouseButton::Left) =>
-                {
-                    state.is_dragging = false;
-
-                    let drag_x =
-                        (state.mouse_pos.x - state.drag_start_pos.x).abs();
-                    let drag_y =
-                        (state.mouse_pos.y - state.drag_start_pos.y).abs();
-                    let size = 50.0; // TODO(pry): this info should be within unit struct
-                    let offset = Vec2::new(size, size);
-
-                    if drag_x > offset.x && drag_y > offset.y {
-                        state.selected_units = units
-                            .iter()
-                            .filter(|(_, transform, _)| {
-                                point_in_rect(
-                                    transform.translation.truncate(),
-                                    state.drag_start_pos,
-                                    state.mouse_pos,
-                                )
-                            })
-                            .map(|(entity, _, _)| entity)
-                            .collect();
-                    } else {
-                        let start_pos = state.mouse_pos + offset;
-                        let end_pos = state.mouse_pos - offset;
-
-                        state.selected_units = units
-                            .iter()
-                            .filter(|(_, transform, _)| {
-                                point_in_rect(
-                                    transform.translation.truncate(),
-                                    start_pos,
-                                    end_pos,
-                                )
-                            })
-                            .sorted_by(|(_, one, _), (_, other, _)| {
-                                let one_distance = (one
-                                    .translation
-                                    .truncate()
-                                    .distance(state.mouse_pos)
-                                    * 100.0)
-                                    as u64;
-
-                                let other_distance = (other
-                                    .translation
-                                    .truncate()
-                                    .distance(state.mouse_pos)
-                                    * 100.0)
-                                    as u64;
-
-                                one_distance.cmp(&other_distance)
-                            })
-                            .map(|(entity, _, _)| entity)
-                            .next()
-                            .into_iter()
-                            .collect();
-                    }
-                }
-                // Drag start
-                (false, true) => {
-                    state.is_dragging = true;
-                    state.drag_start_pos = state.mouse_pos;
-                }
-                _ => (),
+    for (entity, _, children) in units.iter() {
+        for &child in children.iter() {
+            if let Ok(mut selector) = selectors.get_mut(child) {
+                selector.picked = state.selected_units.contains(&entity);
             }
         }
     }
 
-    if !state.is_dragging {
-        return;
+    state.selected_units_dirty = false;
+}
+
+fn animate_selectors(
+    mut state: ResMut<InputState>,
+    mut selectors: Query<(&Selector, &mut Visibility, &mut Transform)>,
+) {
+    if state.highlight_zoom + HIGHLIGHT_ZOOM_SPEED > HIGHLIGHT_ZOOM_MAX {
+        state.highlight_zoom_dir = -1.0
+    } else if state.highlight_zoom - HIGHLIGHT_ZOOM_SPEED < HIGHLIGHT_ZOOM_MIN {
+        state.highlight_zoom_dir = 1.0
     }
 
-    draw_square(&mut lines, state.drag_start_pos, state.mouse_pos);
+    state.highlight_zoom += HIGHLIGHT_ZOOM_SPEED * state.highlight_zoom_dir;
+
+    for (selector, mut visibility, mut transform) in selectors.iter_mut() {
+        visibility.is_visible = selector.hovered || selector.picked;
+
+        if selector.picked {
+            transform.scale.x = state.highlight_zoom;
+            transform.scale.y = state.highlight_zoom;
+        } else {
+            transform.scale.x = 1.0;
+            transform.scale.y = 1.0;
+        }
+    }
 }
 
 fn point_in_rect(
@@ -222,12 +290,4 @@ fn point_in_rect(
     let max_y = rect_top_left.y.max(rect_bottom_right.y);
 
     point.x > min_x && point.x < max_x && point.y > min_y && point.y < max_y
-}
-
-fn point_in_circle(
-    point: Vec2,
-    circle_center: Vec2,
-    circle_radius: f32,
-) -> bool {
-    point.distance(circle_center) <= circle_radius
 }
