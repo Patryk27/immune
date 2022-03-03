@@ -20,7 +20,7 @@ use crate::systems::units::Unit;
 type Pathseeker = Vec2;
 type Target = Vec2;
 
-const BUFFER_SIZE: usize = 2;
+const BUFFER_SIZE: usize = 150;
 
 pub struct PathfindingPlugin;
 

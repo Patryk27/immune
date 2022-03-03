@@ -46,14 +46,14 @@ impl Hash for DiscreteMap {
 
 impl DiscreteMap {
     pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
-        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize + 10;
+        let map_size = mid.distance(target) as usize / FIELD_SIZE;
         let map_size = if map_size % 2 == 0 {
             map_size + 1
         } else {
             map_size
         };
         let capacity = map_size.pow(2);
-        let distance_to_edge = (FIELD_SIZE * map_size / 2) as f32;
+        let distance_to_edge = (FIELD_SIZE * map_size) as f32;
         let top_left_field_x = mid.x - distance_to_edge;
         let top_left_field_y = mid.y + distance_to_edge;
 
@@ -61,8 +61,8 @@ impl DiscreteMap {
             .map(|idx| {
                 let (row, col) = Self::idx_to_coordinates(idx, map_size);
                 let pos = Vec2::new(
-                    top_left_field_x + (col * FIELD_SIZE) as f32,
-                    top_left_field_y - (row * FIELD_SIZE) as f32,
+                    top_left_field_x + (col * FIELD_SIZE * 2) as f32,
+                    top_left_field_y - (row * FIELD_SIZE * 2) as f32,
                 );
 
                 Field {
@@ -125,6 +125,10 @@ impl DiscreteMap {
 
     pub fn pathseeker_pos(&self) -> Vec2 {
         self.fields[self.pathseeker].pos
+    }
+
+    pub fn target_pos(&self) -> Vec2 {
+        self.fields[self.target].pos
     }
 
     pub fn obstacles(&self) -> Vec<Vec2> {
