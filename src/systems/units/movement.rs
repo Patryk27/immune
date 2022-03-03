@@ -102,7 +102,7 @@ fn maintain_position(
 }
 
 fn rotate(v: Vec2, to: Vec2) -> Vec2 {
-    let angle = to.angle_between(v);
+    let angle = v.angle_between(to);
     let x = v.x * angle.cos() - v.y * angle.sin();
     let y = v.x * angle.sin() + v.y * angle.cos();
 

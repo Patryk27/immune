@@ -12,6 +12,8 @@ use super::units::Unit;
 use crate::pathfinding::{DiscreteMap, Map, FIELD_SIZE};
 use crate::systems::draw_square_dur;
 
+pub const DEBUG_MAP_FIELD_SIZE: f32 = 5.0;
+
 pub fn initialize(app: &mut App) {
     app.insert_resource(DebugState::default())
         .add_system(draw_motion_vectors)
@@ -145,7 +147,7 @@ pub fn capture_map(
                     if debug_state.draw_obstacles_from_map {
                         for pos in map.obstacles() {
                             // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
-                            let field_size = 5.0;
+                            let field_size = DEBUG_MAP_FIELD_SIZE;
 
                             let top_left = pos - field_size;
                             let bottom_right = pos + field_size;

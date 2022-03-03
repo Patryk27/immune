@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy::tasks::{AsyncComputeTaskPool, Task};
+use bevy_prototype_debug_lines::DebugLines;
 use futures_lite::future;
 use pathfinding::prelude::bfs;
 
@@ -12,6 +13,8 @@ pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::pathfinding::discrete_map::FieldKinds;
 use crate::systems::bio::LymphNode;
+use crate::systems::debug::{DebugState, DEBUG_MAP_FIELD_SIZE};
+use crate::systems::draw_square_dur;
 use crate::systems::units::Unit;
 
 type Pathseeker = Vec2;
@@ -88,12 +91,31 @@ fn spawn_pathfinder_task(
 
 fn handle_pathfinder_task(
     mut commands: Commands,
+    state: Res<DebugState>,
+    mut lines: ResMut<DebugLines>,
     mut transform_tasks: Query<(Entity, &mut Unit, &mut Task<Pathfinder>)>,
 ) {
     for (entity, mut unit, mut task) in transform_tasks.iter_mut() {
         if let Some(pathfinder) =
             future::block_on(future::poll_once(&mut *task))
         {
+            if state.draw_obstacles_from_map {
+                for pos in pathfinder.map.obstacles() {
+                    // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
+                    let field_size = DEBUG_MAP_FIELD_SIZE;
+
+                    let top_left = pos - field_size;
+                    let bottom_right = pos + field_size;
+
+                    draw_square_dur(
+                        &mut lines,
+                        top_left,
+                        bottom_right,
+                        4.0,
+                    );
+                }
+            }
+
             let path = pathfinder.path();
             unit.set_path(path);
 

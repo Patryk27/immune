@@ -8,7 +8,7 @@ use super::Map;
 type Row = usize;
 type Col = usize;
 
-pub const FIELD_SIZE: usize = 25;
+pub const FIELD_SIZE: usize = 40;
 
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
@@ -34,7 +34,7 @@ impl Hash for DiscreteMap {
 
 impl DiscreteMap {
     pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
-        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize;
+        let map_size = (mid.distance(target) / FIELD_SIZE as f32) as usize + 10;
         let map_size = if map_size % 2 == 0 {
             map_size + 1
         } else {
@@ -64,9 +64,6 @@ impl DiscreteMap {
         let pathseeker = capacity / 2;
         let target = Self::pos_to_idx(&fields, target);
 
-        fields[target].kind = FieldKinds::Target;
-        fields[pathseeker].kind = FieldKinds::Pathseeker;
-
         let mut this = Self {
             fields,
             map_size,
@@ -75,6 +72,8 @@ impl DiscreteMap {
         };
 
         this.mark_obstacles(map);
+        this.fields[target].kind = FieldKinds::Target;
+        this.fields[pathseeker].kind = FieldKinds::Pathseeker;
 
         this
     }
@@ -163,6 +162,7 @@ impl DiscreteMap {
 
     fn mark_obstacles(&mut self, map: &Map) {
         let current_pos = self.fields[self.pathseeker].pos;
+        let target = self.fields[self.target].pos;
 
         for node in map.lymph_nodes.iter() {
             for mut field in self.fields.iter_mut() {
@@ -178,10 +178,15 @@ impl DiscreteMap {
                     field.kind = FieldKinds::Occupied
                 }
 
-                // if field.pos.distance(current_pos) < cell.size * 1.2 {
-                //     // treat pathseeker pointlike
-                //     field.kind = FieldKinds::Empty
-                // }
+                if field.pos.distance(current_pos) < cell.size * 2.0 {
+                    // treat pathseeker pointlike
+                    field.kind = FieldKinds::Empty
+                }
+
+                if field.pos.distance(target) < cell.size * 2.0 {
+                    // clear target
+                    field.kind = FieldKinds::Empty
+                }
             }
         }
     }
@@ -257,6 +262,7 @@ impl Field {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
 pub enum FieldKinds {
     Empty,
     Occupied,
