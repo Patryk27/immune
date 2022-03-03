@@ -22,11 +22,6 @@ pub struct UiLymphNodeEditor {
     lymph_node_picker: Option<UiLymphNodePicker>,
 }
 
-pub enum UiLymphNodeEditorOutcome {
-    Awaiting,
-    Completed,
-}
-
 impl UiLymphNodeEditor {
     pub fn new(
         assets: &AssetServer,
@@ -70,32 +65,27 @@ impl UiLymphNodeEditor {
             Entity,
         )>,
         mut recompile_event_tx: EventWriter<RecompileEvent>,
-    ) -> UiLymphNodeEditorOutcome {
+    ) -> Poll<Option<Entity>> {
         if !self.alive {
-            return UiLymphNodeEditorOutcome::Completed;
+            return Poll::Ready(None);
         }
 
         let mut changed = false;
 
         if let Some(picker) = &mut self.lymph_node_picker {
-            match picker.process(lines, mouse_pos, lymph_nodes, self.lymph_node)
-            {
-                UiLymphNodePickerOutcome::Awaiting => {
-                    return UiLymphNodeEditorOutcome::Awaiting;
-                }
-
-                UiLymphNodePickerOutcome::Completed => {
-                    self.lymph_node_picker = None;
-                    changed |= true;
-                }
-            }
+            return picker
+                .process(lines, mouse_pos, lymph_nodes, self.lymph_node)
+                .map(|node| {
+                    recompile_event_tx.send(RecompileEvent);
+                    node
+                });
         }
 
         let (mut lymph_node, _, _, _) =
             if let Ok(val) = lymph_nodes.get_mut(self.lymph_node) {
                 val
             } else {
-                return UiLymphNodeEditorOutcome::Completed;
+                return Poll::Ready(None);
             };
 
         let mut keep_opened = true;
@@ -174,9 +164,9 @@ impl UiLymphNodeEditor {
         }
 
         if keep_opened {
-            UiLymphNodeEditorOutcome::Awaiting
+            Poll::Pending
         } else {
-            UiLymphNodeEditorOutcome::Completed
+            Poll::Ready(None)
         }
     }
 

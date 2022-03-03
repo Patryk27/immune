@@ -3,15 +3,11 @@ use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 
 use crate::systems::bio::{LymphNode, LymphNodeTarget};
+use crate::ui::Poll;
 
 pub struct UiLymphNodePicker {
     alive: bool,
     target_node_entity: Option<Entity>,
-}
-
-pub enum UiLymphNodePickerOutcome {
-    Awaiting,
-    Completed,
 }
 
 impl UiLymphNodePicker {
@@ -33,15 +29,15 @@ impl UiLymphNodePicker {
             Entity,
         )>,
         source_node_entity: Entity,
-    ) -> UiLymphNodePickerOutcome {
-        if !self.alive {
-            return UiLymphNodePickerOutcome::Completed;
-        }
-
+    ) -> Poll<Option<Entity>> {
         if let Some(target_node_entity) = self.target_node_entity {
             if target_node_entity == source_node_entity {
                 self.target_node_entity = None;
             }
+        }
+
+        if !self.alive {
+            return Poll::Ready(self.target_node_entity);
         }
 
         if let Some(target_node_entity) = self.target_node_entity {
@@ -65,9 +61,10 @@ impl UiLymphNodePicker {
 
             if result.is_err() {
                 // Some of the lymph nodes don't exist no more - what a pity!
+                Poll::Ready(None)
+            } else {
+                Poll::Ready(self.target_node_entity)
             }
-
-            UiLymphNodePickerOutcome::Completed
         } else {
             let (_, source_node_transform, _, _) =
                 lymph_nodes.get_mut(source_node_entity).unwrap();
@@ -78,7 +75,7 @@ impl UiLymphNodePicker {
                 0.0,
             );
 
-            UiLymphNodePickerOutcome::Awaiting
+            Poll::Pending
         }
     }
 

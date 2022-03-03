@@ -1,5 +1,6 @@
 mod debug_window;
 mod lymph_node_editor;
+mod poll;
 mod radio_image_button;
 mod textures;
 
@@ -8,6 +9,7 @@ use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
 
 pub(self) use self::lymph_node_editor::*;
+pub(self) use self::poll::*;
 pub(self) use self::radio_image_button::*;
 pub(self) use self::textures::*;
 use crate::compiling::RecompileEvent;
@@ -87,6 +89,7 @@ fn process_lymph_node_editor(
     mut lymph_nodes: Query<(&mut LymphNode, &Transform, &Children, Entity)>,
     recompile_event_tx: EventWriter<RecompileEvent>,
     mut selectors: Query<&mut Selector>,
+    mut events: EventWriter<UiEvent>,
 ) {
     if let Some(editor) = &mut state.lymph_node_editor {
         match editor.process(
@@ -97,11 +100,11 @@ fn process_lymph_node_editor(
             &mut lymph_nodes,
             recompile_event_tx,
         ) {
-            UiLymphNodeEditorOutcome::Awaiting => {
+            Poll::Pending => {
                 //
             }
 
-            UiLymphNodeEditorOutcome::Completed => {
+            Poll::Ready(node) => {
                 if let Ok((_, _, children, _)) =
                     lymph_nodes.get(editor.lymph_node())
                 {
@@ -111,6 +114,10 @@ fn process_lymph_node_editor(
                 }
 
                 state.lymph_node_editor = None;
+
+                if let Some(node) = node {
+                    events.send(UiEvent::LymphNodeClicked(node));
+                }
             }
         }
     }
