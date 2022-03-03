@@ -1,18 +1,17 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use super::{MAX_SPEED, MOVEMENT_SQUEEZE_FACTOR, MOVEMENT_STRETCH_FACTOR};
+use super::{
+    Unit, HEALTH_TO_SCALE, MAX_SPEED, MOVEMENT_SQUEEZE_FACTOR,
+    MOVEMENT_STRETCH_FACTOR,
+};
 use crate::systems::bio::CellBody;
 
 pub fn system(
-    units: Query<(&Children, &RigidBodyVelocityComponent)>,
+    units: Query<(&Unit, &Children, &RigidBodyVelocityComponent)>,
     mut child_sprites: Query<(&CellBody, &mut Transform)>,
 ) {
-    for (children, velocity) in units.iter() {
-        if velocity.linvel.magnitude() < 0.1 {
-            continue;
-        }
-
+    for (unit, children, velocity) in units.iter() {
         let direction = velocity.linvel.normalize();
 
         let up: Vector<Real> = [0.0, 1.0].into();
@@ -26,23 +25,30 @@ pub fn system(
 
         for child in children.iter() {
             if let Ok((_, mut transform)) = child_sprites.get_mut(*child) {
-                let stretch_x = remap(
-                    velocity.linvel.magnitude(),
-                    0.0,
-                    MAX_SPEED,
-                    1.0,
-                    MOVEMENT_SQUEEZE_FACTOR,
-                );
-                let stretch_y = remap(
-                    velocity.linvel.magnitude(),
-                    0.0,
-                    MAX_SPEED,
-                    1.0,
-                    MOVEMENT_STRETCH_FACTOR,
-                );
+                if velocity.linvel.magnitude() < 0.1 {
+                    transform.scale = Vec3::ONE * unit.health * HEALTH_TO_SCALE;
+                } else {
+                    let stretch_x = remap(
+                        velocity.linvel.magnitude(),
+                        0.0,
+                        MAX_SPEED,
+                        1.0,
+                        MOVEMENT_SQUEEZE_FACTOR,
+                    );
+                    let stretch_y = remap(
+                        velocity.linvel.magnitude(),
+                        0.0,
+                        MAX_SPEED,
+                        1.0,
+                        MOVEMENT_STRETCH_FACTOR,
+                    );
 
-                transform.rotation = Quat::from_rotation_z(angle);
-                transform.scale = Vec3::new(stretch_x, stretch_y, 1.0);
+                    transform.rotation = Quat::from_rotation_z(angle);
+                    transform.scale = Vec3::new(stretch_x, stretch_y, 1.0)
+                        * unit.health
+                        * HEALTH_TO_SCALE;
+                }
+                break;
             }
         }
     }
