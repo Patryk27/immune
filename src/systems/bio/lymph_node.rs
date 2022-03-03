@@ -1,7 +1,9 @@
 use bevy::math::{vec2, vec3};
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
-use bevy_rapier2d::physics::{ColliderBundle, RigidBodyBundle};
+use bevy_rapier2d::physics::{
+    ColliderBundle, ColliderPositionSync, RigidBodyBundle,
+};
 use bevy_rapier2d::prelude::{
     ColliderMaterial, ColliderMaterialComponent, ColliderShape,
     ColliderShapeComponent, RigidBodyType, RigidBodyTypeComponent,
@@ -49,11 +51,12 @@ impl LymphNode {
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
+                position: at.to_array().into(),
                 body_type: RigidBodyTypeComponent(RigidBodyType::Static),
                 ..Default::default()
             })
             .insert_bundle(ColliderBundle {
-                shape: ColliderShapeComponent(ColliderShape::ball(1.05)),
+                shape: ColliderShapeComponent(ColliderShape::ball(1.0)),
                 material: ColliderMaterialComponent(ColliderMaterial {
                     friction: 0.1,
                     restitution: 0.5,
@@ -61,6 +64,7 @@ impl LymphNode {
                 }),
                 ..Default::default()
             })
+            .insert(ColliderPositionSync::Discrete)
             .insert(Collider::Circle { radius: 100.0 })
             .insert(self.to_owned());
 
