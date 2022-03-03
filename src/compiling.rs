@@ -15,3 +15,38 @@ impl Plugin for CompilingPlugin {
             .add_system(recompile_event::link);
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CompilationWarning {
+    NodeIsPaused,
+    NodeIsAwaitingResources,
+    NodeHasNoProduct,
+    NodeHasNoChild,
+}
+
+impl CompilationWarning {
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::NodeIsPaused => {
+                "[!] Node does not produce anything because it is paused."
+            }
+            Self::NodeIsAwaitingResources => {
+                "[!] Node does not produce anything because its parent is paused."
+            }
+            Self::NodeHasNoProduct => "[!] Node does not produce anything because it is misconfigured (i.e. it uses an illegal combination of resources).",
+            Self::NodeHasNoChild => "[!] Node does not produce anything because it must be linked with another node first.",
+        }
+    }
+
+    pub fn asset_path(self) -> &'static str {
+        match self {
+            Self::NodeIsPaused => "lymph-node.state.paused.png",
+            Self::NodeIsAwaitingResources => {
+                "lymph-node.state.awaiting-resources.png"
+            }
+            Self::NodeHasNoProduct | Self::NodeHasNoChild => {
+                "lymph-node.state.error.png"
+            }
+        }
+    }
+}

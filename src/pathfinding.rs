@@ -107,12 +107,7 @@ fn handle_pathfinder_task(
                     let top_left = pos - field_size;
                     let bottom_right = pos + field_size;
 
-                    draw_square_dur(
-                        &mut lines,
-                        top_left,
-                        bottom_right,
-                        4.0,
-                    );
+                    draw_square_dur(&mut lines, top_left, bottom_right, 4.0);
                 }
             }
 

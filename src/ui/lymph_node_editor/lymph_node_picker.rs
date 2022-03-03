@@ -1,12 +1,12 @@
+use bevy::ecs::query::QueryEntityError;
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 
-use crate::systems::bio::{LymphNode, LymphNodeInput};
+use crate::systems::bio::{LymphNode, LymphNodeTarget};
 
 pub struct UiLymphNodePicker {
     alive: bool,
-    input: Input,
-    node: Option<Entity>,
+    target_node_entity: Option<Entity>,
 }
 
 pub enum UiLymphNodePickerOutcome {
@@ -14,25 +14,11 @@ pub enum UiLymphNodePickerOutcome {
     Completed,
 }
 
-enum Input {
-    Lhs,
-    Rhs,
-}
-
 impl UiLymphNodePicker {
-    pub fn lhs() -> Self {
+    pub fn new() -> Self {
         Self {
             alive: true,
-            input: Input::Lhs,
-            node: None,
-        }
-    }
-
-    pub fn rhs() -> Self {
-        Self {
-            alive: true,
-            input: Input::Rhs,
-            node: None,
+            target_node_entity: None,
         }
     }
 
@@ -40,32 +26,54 @@ impl UiLymphNodePicker {
         &mut self,
         mut lines: ResMut<DebugLines>,
         mouse_pos: Vec2,
-        lymph_node: &mut LymphNode,
-        lymph_node_entity: Entity,
-        lymph_node_transform: Transform,
+        lymph_nodes: &mut Query<(
+            &mut LymphNode,
+            &Transform,
+            &Children,
+            Entity,
+        )>,
+        source_node_entity: Entity,
     ) -> UiLymphNodePickerOutcome {
         if !self.alive {
             return UiLymphNodePickerOutcome::Completed;
         }
 
-        if let Some(node) = self.node {
-            if node == lymph_node_entity {
-                self.node = None;
+        if let Some(target_node_entity) = self.target_node_entity {
+            if target_node_entity == source_node_entity {
+                self.target_node_entity = None;
             }
         }
 
-        if let Some(node) = self.node {
-            let input = match self.input {
-                Input::Lhs => &mut lymph_node.lhs,
-                Input::Rhs => &mut lymph_node.rhs,
+        if let Some(target_node_entity) = self.target_node_entity {
+            let result: Result<_, QueryEntityError> = try {
+                let (target_node, _, _, _) =
+                    lymph_nodes.get_mut(target_node_entity)?;
+
+                if let Some(parent_node_entity) = target_node.parent {
+                    let (mut parent_node, _, _, _) =
+                        lymph_nodes.get_mut(parent_node_entity)?;
+
+                    parent_node.target = LymphNodeTarget::Outside;
+                }
+
+                let (mut source_node, _, _, _) =
+                    lymph_nodes.get_mut(source_node_entity)?;
+
+                source_node.target =
+                    LymphNodeTarget::LymphNode(target_node_entity);
             };
 
-            *input = Some(LymphNodeInput::External(Some(node)));
+            if result.is_err() {
+                // Some of the lymph nodes don't exist no more - what a pity!
+            }
 
             UiLymphNodePickerOutcome::Completed
         } else {
+            let (_, source_node_transform, _, _) =
+                lymph_nodes.get_mut(source_node_entity).unwrap();
+
             lines.line(
-                lymph_node_transform.translation.truncate().extend(5.0),
+                source_node_transform.translation.truncate().extend(5.0),
                 mouse_pos.extend(5.0),
                 0.0,
             );
@@ -79,6 +87,6 @@ impl UiLymphNodePicker {
     }
 
     pub fn on_lymph_node_clicked(&mut self, node: Entity) {
-        self.node = Some(node);
+        self.target_node_entity = Some(node);
     }
 }
