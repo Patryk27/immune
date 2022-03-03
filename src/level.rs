@@ -49,6 +49,8 @@ pub struct LevelVirus {
     pub body: Body,
     #[serde(rename = "Antigen")]
     pub antigen: Antigen,
+    #[serde(rename = "Count")]
+    pub count: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

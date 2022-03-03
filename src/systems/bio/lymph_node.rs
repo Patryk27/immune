@@ -3,6 +3,11 @@ use std::iter;
 use bevy::math::{vec2, vec3};
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
+use bevy_rapier2d::physics::{ColliderBundle, RigidBodyBundle};
+use bevy_rapier2d::prelude::{
+    ColliderMaterial, ColliderMaterialComponent, ColliderShape,
+    ColliderShapeComponent, RigidBodyType, RigidBodyTypeComponent,
+};
 use itertools::Itertools;
 use rand::Rng;
 
@@ -43,6 +48,19 @@ impl LymphNode {
             .insert(transform)
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
+            .insert_bundle(RigidBodyBundle {
+                body_type: RigidBodyTypeComponent(RigidBodyType::Static),
+                ..Default::default()
+            })
+            .insert_bundle(ColliderBundle {
+                shape: ColliderShapeComponent(ColliderShape::ball(1.05)),
+                material: ColliderMaterialComponent(ColliderMaterial {
+                    friction: 0.1,
+                    restitution: 0.5,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
             .insert(self.to_owned());
 
         // Spawn lymph node's sprite

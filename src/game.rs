@@ -6,6 +6,8 @@ use crate::systems::bio::{
     LymphNode, LymphNodeFunction, LymphNodeState, Pathogen, PathogenKind,
 };
 
+mod progress_bars;
+
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
@@ -14,14 +16,16 @@ impl Plugin for GamePlugin {
             .insert_resource(GameState::default())
             .add_startup_system(setup)
             .add_system(progress);
+
+        progress_bars::initialize(app);
     }
 }
 
 #[derive(Default)]
 struct GameState {
-    seconds: f32,
-    curr_wave_id: Option<usize>,
-    next_wave_at: f32,
+    pub seconds: f32,
+    pub curr_wave_id: Option<usize>,
+    pub next_wave_at: f32,
 }
 
 fn setup(
@@ -88,11 +92,13 @@ fn progress(
 
 fn spawn_wave(commands: &mut Commands, assets: &AssetServer, wave: &LevelWave) {
     for virus in &wave.viruses {
-        Pathogen {
-            body: virus.body,
-            antigen: virus.antigen,
-            kind: PathogenKind::Virus,
+        for _ in 0..virus.count {
+            Pathogen {
+                body: virus.body,
+                antigen: virus.antigen,
+                kind: PathogenKind::Virus,
+            }
+            .spawn(commands, assets, virus.pos, virus.vel);
         }
-        .spawn(commands, assets, virus.pos, virus.vel);
     }
 }
