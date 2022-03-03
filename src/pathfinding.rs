@@ -140,7 +140,11 @@ impl Pathfinder {
     pub fn new(map: Map, pathseeker: Pathseeker, target: Target) -> Self {
         let map = DiscreteMap::new(&map, pathseeker, target);
         let start = map.start();
-        let path = bfs(&start, |pos| map.successors(**pos), |pos| map.arrived(**pos));
+        let path = bfs(
+            &start,
+            |pos| map.successors(**pos),
+            |pos| map.arrived(**pos),
+        );
 
         let path = path
             .into_iter()
