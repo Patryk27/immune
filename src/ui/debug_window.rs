@@ -2,11 +2,16 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext};
 
 use crate::systems::debug::DebugState;
+use crate::systems::input::SelectedUnits;
+use crate::systems::units::{Alignment, Unit};
 
 pub fn system(
     time: Res<Time>,
     mut state: ResMut<DebugState>,
     mut egui: ResMut<EguiContext>,
+    mut units: Query<(&mut Unit, &mut Alignment)>,
+    selected_units: Res<SelectedUnits>,
+    mut commands: Commands,
 ) {
     egui::Window::new("Debug Window").collapsible(true).show(
         egui.ctx_mut(),
@@ -26,6 +31,22 @@ pub fn system(
                 &mut state.draw_obstacles_from_map,
                 "Draw obstacles from map",
             );
+
+            ctx.collapsing("Unit ops", |ctx| {
+                if ctx.button("Delete selected units").clicked() {
+                    for unit in selected_units.selected_units.iter() {
+                        commands.entity(*unit).despawn_recursive();
+                    }
+                }
+
+                if ctx.button("Flip alignment").clicked() {
+                    for unit in selected_units.selected_units.iter() {
+                        if let Ok((_, mut alignment)) = units.get_mut(*unit) {
+                            alignment.flip();
+                        }
+                    }
+                }
+            });
         },
     );
 }

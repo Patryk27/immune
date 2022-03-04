@@ -105,13 +105,19 @@ fn get_random_position_and_velocity(transform: &Transform) -> (Vec2, Vec2) {
 
 fn handle_lymph_node_alignment(
     mut lymph_nodes: Query<
-        (&mut LymphNode, &mut LymphNodeWarning, &Alignment),
+        (&Children, &mut LymphNode, &Alignment),
         Changed<Alignment>,
     >,
+    mut lymph_node_warning: Query<&mut LymphNodeWarning>,
 ) {
-    for (mut lymph_node, mut warning, alignment) in lymph_nodes.iter_mut() {
+    for (children, mut lymph_node, alignment) in lymph_nodes.iter_mut() {
         if let Alignment::Enemy = alignment {
-            warning.set(Some("biohazard-symbol.png"));
+            for child in children.iter() {
+                if let Ok(mut warning) = lymph_node_warning.get_mut(*child) {
+                    warning.set(Some("biohazard-symbol.png"));
+                }
+            }
+
             lymph_node.product =
                 Some(LymphNodeProduct::Pathogen(Pathogen::random()));
         }
