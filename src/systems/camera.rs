@@ -5,7 +5,14 @@ use bevy::prelude::*;
 use super::input::MousePos;
 
 const SPEED: f32 = 500.0;
+
+// On Windows the wheel events come in with values between -4 and 4
+// in the browser the values are -400 to 400
+#[cfg(target_arch = "wasm32")]
 const ZOOM_SPEED: f32 = 0.0032;
+#[cfg(not(target_arch = "wasm32"))]
+const ZOOM_SPEED: f32 = 0.32;
+
 const MAX_ZOOM: f32 = 10.0;
 
 #[derive(Default)]
