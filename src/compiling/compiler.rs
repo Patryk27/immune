@@ -146,7 +146,7 @@ impl Compiler {
                         }
 
                         Protein::Star => {
-                            cell.props.hp *= 0.2;
+                            cell.props.hp *= 2.0;
                             Some(P::Leukocyte(cell))
                         }
                     }

@@ -40,8 +40,14 @@ pub fn progress(level: &mut Level) {
 
         add_circle_wall(&mut level.wave.ops, chamber.x, chamber.y, chamber.r);
 
-        for n in 0..10 {
-            spawn_chamber_lymph_node(&mut level.wave.ops, &chamber, n <= 3);
+        if level.wave_idx < 3 {
+            for _ in 0..2 {
+                spawn_chamber_lymph_node(&mut level.wave.ops, &chamber, true);
+            }
+        } else {
+            for n in 0..10 {
+                spawn_chamber_lymph_node(&mut level.wave.ops, &chamber, n <= 3);
+            }
         }
 
         let chambers = level
@@ -75,7 +81,7 @@ fn spawn_chamber(level: &Level) -> LevelChamber {
     let (mut min_x, mut min_y, mut max_x, mut max_y) = aabb(level);
 
     for _ in 0..100 {
-        let r = rng.gen_range(10..25);
+        let r = rng.gen_range(8..20);
         let xs = (min_x + r)..(max_x - r);
         let ys = (min_y + r)..(max_y - r);
 
@@ -100,7 +106,7 @@ fn spawn_chamber(level: &Level) -> LevelChamber {
     }
 
     let chamber = LevelChamber {
-        x: rng.gen_range(10..25),
+        x: rng.gen_range(8..20),
         y: rng.gen_range(10..30),
         r: rng.gen_range(10..30),
     };
@@ -196,11 +202,11 @@ fn add_circle_wall(ops: &mut Vec<LevelWaveOp>, x: i32, y: i32, r: i32) {
         for dy in -r..r {
             let dist = dx.pow(2) + dy.pow(2);
 
-            if dist < (r - 1).pow(2) {
+            if dist < (r - 2).pow(2) {
                 remove_coords.push((x + dx, y + dy));
             }
 
-            if dist >= (r - 1).pow(2) && dist <= r.pow(2) {
+            if dist >= (r - 2).pow(2) && dist <= r.pow(2) {
                 coords.push((x + dx, y + dy));
             }
         }
