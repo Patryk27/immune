@@ -6,6 +6,7 @@ use rand::Rng;
 use super::{Antigen, Leukocyte, Pathogen, Protein};
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
+use crate::systems::units::combat::Weapon;
 use crate::systems::units::{Alignment, DeathBehavior, Health, Unit};
 use crate::theme;
 
@@ -77,10 +78,12 @@ impl<'a> Cell<'a> {
 
         match self {
             Cell::Leukocyte(cell) => {
+                entity.insert(Weapon::AntigenBinder(cell.binder));
                 entity.insert(Alignment::Player);
                 entity.insert((*cell).to_owned());
             }
             Cell::Pathogen(cell) => {
+                entity.insert(Weapon::Antigen(cell.antigen));
                 entity.insert(Alignment::Enemy);
                 entity.insert((*cell).to_owned());
             }

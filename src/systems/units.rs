@@ -13,10 +13,10 @@ const BASE_DAMAGE: f32 = 0.25; // By default a cell can take 4 hits
 const HEALTH_TO_SCALE: f32 = 1.0;
 const REGEN_RATE: f32 = 0.1; // 0.1 point per second
 
-mod animate;
-mod combat;
-mod health_regen;
-mod movement;
+pub mod animate;
+pub mod combat;
+pub mod health_regen;
+pub mod movement;
 
 #[derive(Debug, Component)]
 pub struct Unit {

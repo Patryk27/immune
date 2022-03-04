@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{Antigen, Body};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct AntigenBinder(Antigen);
+pub struct AntigenBinder(pub Antigen);
 
 impl AntigenBinder {
     pub fn new(antigen: Antigen) -> Self {
