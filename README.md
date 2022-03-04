@@ -1,6 +1,14 @@
-# unfair-advantage
+# Immune
 
-[Fat Pixels font](https://www.1001fonts.com/fat-pixels-font.html)
+> In this game you will take control of the immune system. Capture lymph nodes & build your army to defend against the hordes of viruses.
+>
+> Be warned though, you stand at a disadvantage - the viruses will never stop coming!
+
+[Play it online!](https://dzejkop.itch.io/immune)
+
+Game made for https://itch.io/jam/bevy-jam-1 by https://github.com/Dzejkop, https://github.com/Ryneqq & https://github.com/Patryk27.
+
+Warning: might contain peanuts & seriously rough Rust code!
 
 # Launching
 
@@ -28,3 +36,11 @@ to serve it you can use npm
 ```
 npx serve .
 ```
+
+# Assets
+
+[Fat Pixels font](https://www.1001fonts.com/fat-pixels-font.html)
+
+# License
+
+Licensed under the MIT license.
