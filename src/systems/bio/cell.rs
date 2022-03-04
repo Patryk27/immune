@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use super::{Leukocyte, Pathogen};
+use super::{Antigen, Leukocyte, Pathogen};
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::{Alignment, Unit};
@@ -16,6 +16,8 @@ pub enum Cell<'a> {
 }
 
 impl<'a> Cell<'a> {
+    pub const SIZE: f32 = 0.125;
+
     pub fn spawn(
         &self,
         commands: &mut Commands,
@@ -24,7 +26,6 @@ impl<'a> Cell<'a> {
         vel: Vec2,
     ) {
         let mut entity = commands.spawn();
-
         let mut unit = Unit::default();
 
         entity
@@ -52,7 +53,9 @@ impl<'a> Cell<'a> {
                 ..Default::default()
             })
             .insert_bundle(ColliderBundle {
-                shape: ColliderShapeComponent(ColliderShape::ball(0.25)),
+                shape: ColliderShapeComponent(ColliderShape::ball(
+                    Self::SIZE + Antigen::SIZE,
+                )),
                 material: ColliderMaterialComponent(ColliderMaterial {
                     friction: 0.1,
                     restitution: 0.5,
@@ -65,7 +68,9 @@ impl<'a> Cell<'a> {
                 ..Default::default()
             })
             .insert(RigidBodyPositionSync::Discrete)
-            .insert(Collider::Circle { radius: 50.0 })
+            .insert(Collider::Circle {
+                radius: (Self::SIZE + Antigen::SIZE) * PHYSICS_SCALE,
+            })
             .insert(CellFadeIn::default());
 
         match self {
@@ -102,8 +107,9 @@ impl<'a> Cell<'a> {
                                 color,
                                 ..Default::default()
                             },
-                            transform: Transform::default()
-                                .with_scale(Vec3::splat(0.25)),
+                            transform: Transform::from_scale(Vec3::splat(
+                                Self::SIZE,
+                            )),
                             texture,
                             ..Default::default()
                         })
@@ -126,7 +132,7 @@ impl<'a> Cell<'a> {
             Selector::spawn(
                 assets,
                 entity,
-                50.0,
+                2.4 * Self::SIZE * PHYSICS_SCALE,
                 Color::rgba_u8(0, 220, 0, 50),
             );
         });

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::prelude::SliceRandom;
+use rand::Rng;
 
 use super::{Antigen, Body, Cell};
 
@@ -12,6 +13,8 @@ pub struct Pathogen {
 
 impl Pathogen {
     pub fn color(a: u8) -> Color {
+        let mut rng = rand::thread_rng();
+
         let colors = vec![
             (52, 153, 255),  // light-blue~ish
             (27, 3, 179),    // dark-blue~ish
@@ -22,9 +25,12 @@ impl Pathogen {
             (64, 253, 213),  // green~ish
         ];
 
-        let &(r, g, b) = colors.choose(&mut rand::thread_rng()).unwrap();
+        let &(r, g, b) = colors.choose(&mut rng).unwrap();
+        let [mut h, s, l, a] = Color::rgba_u8(r, g, b, a).as_hlsa_f32();
 
-        Color::rgba_u8(r, g, b, a)
+        h += rng.gen_range(-40.0..40.0);
+
+        Color::hsla(h, s, l, a)
     }
 
     pub fn spawn(

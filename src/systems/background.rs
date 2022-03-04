@@ -32,18 +32,18 @@ struct BackgroundLayer {
 
 const LAYERS: &[BackgroundLayer] = &[
     BackgroundLayer {
-        num: 4056,
-        scale: 0.5,
+        num: 4096,
+        scale: 0.2,
         z: 0.2,
         parallax_layer: 6,
-        spread: 50_000.0,
+        spread: 10_000.0,
     },
     BackgroundLayer {
         num: 512,
-        scale: 1.0,
+        scale: 0.5,
         z: 0.1,
         parallax_layer: 8,
-        spread: 25_000.0,
+        spread: 10_000.0,
     },
 ];
 

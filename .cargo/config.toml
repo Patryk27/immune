@@ -1,2 +1,5 @@
+[alias]
+run-wasm = "run --target wasm32-unknown-unknown --release --no-default-features --features wasm   "
+
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"

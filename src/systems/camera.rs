@@ -2,9 +2,11 @@ use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 
+use super::input::MousePos;
+
 const SPEED: f32 = 500.0;
-const ZOOM_SPEED: f32 = 0.1;
-const MAX_ZOOM: f32 = 20.0;
+const ZOOM_SPEED: f32 = 0.0032;
+const MAX_ZOOM: f32 = 10.0;
 
 #[derive(Default)]
 pub struct State {
@@ -35,6 +37,7 @@ pub fn mouse(
     mouse: Res<Input<MouseButton>>,
     mut cursor: EventReader<MouseMotion>,
     mut wheel: EventReader<MouseWheel>,
+    mouse_pos: Res<MousePos>,
 ) {
     let (mut transform, _, mut ortho) = query.single_mut();
 
@@ -48,8 +51,15 @@ pub fn mouse(
     }
 
     for event in wheel.iter() {
+        let a = ortho.scale;
+
         ortho.scale =
             f32::clamp(ortho.scale - event.y * ZOOM_SPEED, 1.0, MAX_ZOOM);
+
+        let b = ortho.scale;
+        let change = b - a;
+
+        transform.translation -= (mouse_pos.1 * change).extend(0.0);
     }
 }
 
@@ -59,7 +69,6 @@ pub fn movement(
     mut query: Query<(&mut Transform, &Camera, &OrthographicProjection)>,
 ) {
     let (mut transform, _, ortho) = query.single_mut();
-
     let speed = SPEED * time.delta_seconds() * ortho.scale;
 
     if state.is_moving_up {

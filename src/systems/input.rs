@@ -30,7 +30,7 @@ impl Plugin for InputPlugin {
 }
 
 #[derive(Default)]
-pub struct MousePos(pub Vec2);
+pub struct MousePos(pub Vec2, pub Vec2);
 
 pub struct InputState {
     pub is_dragging: bool,
@@ -72,6 +72,7 @@ fn track_mouse_position(
             * camera.projection_matrix.inverse();
 
         mouse_pos.0 = ndc_to_world.project_point3(ndc.extend(-1.0)).truncate();
+        mouse_pos.1 = screen_pos - window_size / 2.0;
     }
 }
 

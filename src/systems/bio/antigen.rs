@@ -4,6 +4,8 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 use super::{Body, CellFadeIn};
+use crate::systems::bio::Cell;
+use crate::systems::physics::PHYSICS_SCALE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 pub enum Antigen {
@@ -13,19 +15,18 @@ pub enum Antigen {
 }
 
 impl Antigen {
+    pub const SIZE: f32 = 0.04;
+
     pub fn variants() -> impl Iterator<Item = Self> {
         [Self::Rectangle, Self::Semicircle, Self::Triangle].into_iter()
     }
 
     pub fn color(parent: Color, a: u8) -> Color {
-        let [r, g, b, _] = parent.as_rgba_f32();
+        let [h, s, mut l, _] = parent.as_hlsa_f32();
 
-        Color::rgba_u8(
-            (255.0 * r / 2.0) as _,
-            (255.0 * g / 2.0) as _,
-            (255.0 * b / 2.0) as _,
-            a,
-        )
+        l /= 2.0;
+
+        Color::hsla(h, s, l, (a as f32) / 255.0)
     }
 
     pub fn asset_path(&self) -> &'static str {
@@ -80,7 +81,7 @@ impl Antigen {
     }
 
     fn transforms(body: Body) -> impl Iterator<Item = Transform> {
-        const DISTANCE: f32 = 40.0;
+        const DISTANCE: f32 = Cell::SIZE * PHYSICS_SCALE;
 
         let sides = match body {
             Body::Circle => 4,

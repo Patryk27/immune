@@ -7,10 +7,12 @@ pub struct Selector {
 }
 
 impl Selector {
+    pub const SCALE: f32 = 0.1;
+
     pub fn spawn(
         assets: &AssetServer,
         entity: &mut ChildBuilder,
-        size: f32,
+        distance: f32,
         color: Color,
     ) {
         let texture = assets.load("selector.png");
@@ -24,7 +26,7 @@ impl Selector {
 
         for (flip_x, flip_y, mul_x, mul_y) in arrows {
             let transform =
-                Transform::from_xyz(size * mul_x, size * mul_y, 0.0);
+                Transform::from_xyz(distance * mul_x, distance * mul_y, 0.0);
 
             entity
                 .spawn_bundle(SpriteBundle {

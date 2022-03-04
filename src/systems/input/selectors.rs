@@ -88,11 +88,11 @@ pub fn animate_selectors(
         visibility.is_visible = selector.hovered || selector.picked;
 
         if selector.picked {
-            transform.scale.x = state.highlight_zoom;
-            transform.scale.y = state.highlight_zoom;
+            transform.scale.x = state.highlight_zoom * Selector::SCALE;
+            transform.scale.y = state.highlight_zoom * Selector::SCALE;
         } else {
-            transform.scale.x = 1.0;
-            transform.scale.y = 1.0;
+            transform.scale.x = 1.0 * Selector::SCALE;
+            transform.scale.y = 1.0 * Selector::SCALE;
         }
     }
 }

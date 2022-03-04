@@ -1,5 +1,5 @@
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::ops::Deref;
 
 use bevy::prelude::*;
@@ -29,20 +29,6 @@ pub struct DiscreteMap {
     map_size: usize,
     pathseeker: usize,
     target: usize,
-}
-
-impl PartialEq for DiscreteMap {
-    fn eq(&self, other: &DiscreteMap) -> bool {
-        self.pathseeker == other.pathseeker
-    }
-}
-
-impl Eq for DiscreteMap {}
-
-impl Hash for DiscreteMap {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.pathseeker.hash(state);
-    }
 }
 
 impl DiscreteMap {
@@ -341,7 +327,7 @@ mod tests {
         assert_coords(10, map_size, 1, 0);
         assert_coords(11, map_size, 1, 1);
         let map_size = 11;
-        assert_coords(10, map_size, 0);
+        assert_coords(10, map_size, 0, 10);
         assert_coords(11, map_size, 1, 0);
         assert_coords(12, map_size, 1, 1);
     }

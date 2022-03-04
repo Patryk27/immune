@@ -29,6 +29,7 @@ pub struct LymphNode {
 }
 
 impl LymphNode {
+    pub const SIZE: f32 = 0.45;
     pub const PRODUCTION_DURATION: f32 = 1.5;
 
     pub fn spawn(
@@ -56,7 +57,7 @@ impl LymphNode {
                 ..Default::default()
             })
             .insert_bundle(ColliderBundle {
-                shape: ColliderShapeComponent(ColliderShape::ball(1.0)),
+                shape: ColliderShapeComponent(ColliderShape::ball(Self::SIZE)),
                 material: ColliderMaterialComponent(ColliderMaterial {
                     friction: 0.1,
                     restitution: 0.5,
@@ -65,7 +66,9 @@ impl LymphNode {
                 ..Default::default()
             })
             .insert(ColliderPositionSync::Discrete)
-            .insert(Collider::Circle { radius: 100.0 })
+            .insert(Collider::Circle {
+                radius: Self::SIZE * PHYSICS_SCALE,
+            })
             .insert(self.to_owned());
 
         // Spawn lymph node's sprite
@@ -75,6 +78,7 @@ impl LymphNode {
                     color: Color::rgb_u8(222, 0, 222),
                     ..Default::default()
                 },
+                transform: Transform::from_scale(Vec3::splat(Self::SIZE)),
                 texture: assets.load("lymph-node.png"),
                 ..Default::default()
             });
@@ -95,7 +99,7 @@ impl LymphNode {
             Selector::spawn(
                 assets,
                 entity,
-                140.0,
+                1.5 * Self::SIZE * PHYSICS_SCALE,
                 Color::rgba_u8(242, 185, 56, 50),
             );
         });
@@ -164,11 +168,11 @@ impl LymphNodeWarning {
         let transform = Transform::default()
             .with_translation(vec3(
                 0.0,
-                25.0,
+                15.0,
                 theme::z_index::LYMPH_NODE_COMPILATION_WARNING
                     - theme::z_index::LYMPH_NODE,
             ))
-            .with_scale(vec3(0.8, 0.8, 1.0));
+            .with_scale(vec3(LymphNode::SIZE, LymphNode::SIZE, 1.0));
 
         entity
             .spawn_bundle(SpriteBundle {
@@ -207,11 +211,12 @@ impl LymphNodeProgressBar {
             .spawn_bundle(MaterialMesh2dBundle {
                 mesh: meshes
                     .add(Mesh::from(shape::Quad {
-                        size: vec2(220.0, 15.0),
+                        size: vec2(LymphNode::SIZE * PHYSICS_SCALE * 1.5, 10.0),
                         ..Default::default()
                     }))
                     .into(),
                 material: materials.add(ColorMaterial::from(Color::GREEN)),
+                transform: Transform::from_translation(vec3(0.0, 18.0, 0.1)),
                 ..Default::default()
             })
             .insert(Self);
@@ -299,7 +304,7 @@ impl LymphNodeConnectionWire {
 
         if !is_reverse {
             for width in [15.0, 13.0, 11.0, 9.0, 7.0, 5.0, 3.0, 1.0] {
-                let at = target + dir * 90.0;
+                let at = target + dir * 70.0;
 
                 let indicator_points = [
                     at,

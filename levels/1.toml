@@ -1,59 +1,53 @@
 [[Setup.LymphNode]]
-Pos = [-4.0, 0.0]
+Pos = [-5.0, -2.0]
 
 [[Setup.LymphNode]]
-Pos = [-1.0, -4.0]
+Pos = [-5.0, 0.0]
 
 [[Setup.LymphNode]]
+Pos = [-5.0, 2.0]
+
+[[Wave]]
+StartsAt = 0
+
+[[Wave.Virus]]
+Pos = [-1.0, 0.0]
+Vel = [0.0, 0.0]
+Body = "Circle"
+Antigen = "Rectangle"
+Count = 20
+
+[[Wave.Virus]]
+Pos = [-2.0, 0.0]
+Vel = [0.0, 0.0]
+Body = "Circle"
+Antigen = "Semicircle"
+Count = 20
+
+[[Wave.Virus]]
+Pos = [-3.0, 0.0]
+Vel = [0.0, 0.0]
+Body = "Circle"
+Antigen = "Triangle"
+Count = 20
+
+[[Wave.Virus]]
+Pos = [1.0, 0.0]
+Vel = [0.0, 0.0]
+Body = "Hexagon"
+Antigen = "Rectangle"
+Count = 20
+
+[[Wave.Virus]]
 Pos = [2.0, 0.0]
-
-[[Wave]]
-StartsAt = 10
-
-[[Wave.Virus]]
-Pos = [-20.0, 0.0]
-Vel = [0.0, 0.0]
-Body = "Circle"
-Antigen = "Rectangle"
-Count = 50
-
-[[Wave.Virus]]
-Pos = [20.0, 0.0]
 Vel = [0.0, 0.0]
 Body = "Hexagon"
-Antigen = "Rectangle"
-Count = 50
-
-[[Wave]]
-StartsAt = 40
+Antigen = "Semicircle"
+Count = 20
 
 [[Wave.Virus]]
-Pos = [-20.0, 0.0]
-Vel = [0.0, 0.0]
-Body = "Circle"
-Antigen = "Rectangle"
-Count = 100
-
-[[Wave.Virus]]
-Pos = [20.0, 0.0]
+Pos = [3.0, 0.0]
 Vel = [0.0, 0.0]
 Body = "Hexagon"
-Antigen = "Rectangle"
-Count = 100
-
-[[Wave]]
-StartsAt = 70
-
-[[Wave.Virus]]
-Pos = [-20.0, 0.0]
-Vel = [0.0, 0.0]
-Body = "Circle"
-Antigen = "Rectangle"
-Count = 150
-
-[[Wave.Virus]]
-Pos = [20.0, 0.0]
-Vel = [0.0, 0.0]
-Body = "Hexagon"
-Antigen = "Rectangle"
-Count = 150
+Antigen = "Triangle"
+Count = 20

@@ -134,9 +134,7 @@ fn animate_progress_bars(
             0.0
         };
 
-        *transform = Transform::default()
-            .with_translation(vec3(0.0, 30.0, 0.1))
-            .with_scale(vec3(progress, 1.0, 1.0));
+        transform.scale = vec3(progress, 1.0, 1.0);
     }
 }
 
