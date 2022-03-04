@@ -8,6 +8,7 @@ use super::Map;
 
 type Row = usize;
 type Col = usize;
+type Cost = i32;
 
 pub const FIELD_SIZE: usize = 50;
 
@@ -90,16 +91,28 @@ impl DiscreteMap {
         this
     }
 
-    pub fn arrived(&self, idx: usize) -> bool {
-        self.fields[idx].kind == FieldKinds::Target
+    pub fn successors(
+        &self,
+        idx: usize,
+    ) -> impl Iterator<Item = (PathNode, Cost)> + '_ {
+        self.neighbours(idx)
+            .filter(|(idx, _)| self.fields[*idx].is_walkable())
+            .map(|(idx, cost)| (PathNode(idx), cost))
     }
 
-    pub fn successors(&self, idx: usize) -> Vec<PathNode> {
-        self.neighbours(idx)
-            .into_iter()
-            .filter(|neighbour| self.fields[*neighbour].is_walkable())
-            .map(|neighbour| PathNode(neighbour))
-            .collect()
+    pub fn heuristic(&self, idx: usize) -> Cost {
+        let (target_row, target_col) =
+            Self::idx_to_coordinates(idx, self.map_size);
+        let (node_row, node_col) = Self::idx_to_coordinates(idx, self.map_size);
+
+        let (target_row, target_col) = (target_row as i32, target_col as i32);
+        let (node_row, node_col) = (node_row as i32, node_col as i32);
+
+        (target_row - node_row).abs() + (target_col - node_col).abs()
+    }
+
+    pub fn success(&self, idx: usize) -> bool {
+        self.fields[idx].kind == FieldKinds::Target
     }
 
     pub fn start(&self) -> PathNode {
@@ -139,33 +152,43 @@ impl DiscreteMap {
             .collect()
     }
 
-    fn neighbours(&self, idx: usize) -> Vec<usize> {
+    fn neighbours(&self, idx: usize) -> impl Iterator<Item = (usize, Cost)> {
         let (row, col) = Self::idx_to_coordinates(idx, self.map_size);
-        let mut neighbours =
-            vec![(row + 1, col), (row + 1, col + 1), (row, col + 1)];
+        let (row, col) = (row as i32, col as i32);
+        let map_size = self.map_size as i32;
 
-        if row > 0 {
-            neighbours.extend(vec![(row - 1, col), (row - 1, col + 1)]);
-        }
+        let deltas = [
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            //
+            (0, -1),
+            (0, 0),
+            (0, 1),
+            //
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ];
 
-        if col > 0 {
-            neighbours.extend(vec![(row + 1, col - 1), (row, col - 1)]);
-        }
+        deltas.into_iter().flat_map(move |(row_delta, col_delta)| {
+            let row = row + row_delta;
+            let col = col + col_delta;
+            let cost = (4 * row_delta.abs() + 4 * col_delta.abs()) / 2;
 
-        if row > 0 && col > 0 {
-            neighbours.push((row - 1, col - 1));
-        }
+            let idx =
+                if row < 0 || col < 0 || row >= map_size || col >= map_size {
+                    None
+                } else {
+                    Self::coordinates_to_idx(
+                        row as usize,
+                        col as usize,
+                        map_size as usize,
+                    )
+                };
 
-        neighbours
-            .into_iter()
-            .flat_map(|(row, col)| {
-                Self::coordinates_to_idx(
-                    row as usize,
-                    col as usize,
-                    self.map_size,
-                )
-            })
-            .collect()
+            idx.map(|idx| (idx, cost))
+        })
     }
 
     fn mark_obstacles(&mut self, map: &Map) {
@@ -318,7 +341,7 @@ mod tests {
         assert_coords(10, map_size, 1, 0);
         assert_coords(11, map_size, 1, 1);
         let map_size = 11;
-        assert_coords(10, map_size, 0, 10);
+        assert_coords(10, map_size, 0);
         assert_coords(11, map_size, 1, 0);
         assert_coords(12, map_size, 1, 1);
     }

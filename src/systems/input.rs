@@ -5,7 +5,7 @@ pub use self::collider::*;
 pub use self::selector::*;
 use super::draw_square;
 use super::units::Unit;
-use crate::pathfinding::PathseekersQueue;
+use crate::pathfinding::PathfindingState;
 
 mod collider;
 mod selector;
@@ -79,7 +79,7 @@ fn movement_command(
     mut egui: ResMut<EguiContext>,
     mouse_pos: Res<MousePos>,
     selected_units: Res<SelectedUnits>,
-    mut pathfinding_queue: ResMut<PathseekersQueue>,
+    mut pathfinding_queue: ResMut<PathfindingState>,
     mouse: Res<Input<MouseButton>>,
     mut units: Query<(Entity, &mut Unit, &Transform)>,
 ) {
@@ -92,7 +92,7 @@ fn movement_command(
             if let Ok((entity, mut unit, transform)) = units.get_mut(*unit) {
                 let target = mouse_pos.0;
 
-                pathfinding_queue.insert(
+                pathfinding_queue.add(
                     entity,
                     transform.translation.truncate(),
                     target,

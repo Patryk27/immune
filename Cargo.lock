@@ -1775,6 +1775,7 @@ checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
+ "stdweb 0.4.20",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -3284,6 +3285,7 @@ dependencies = [
  "bevy_rapier2d",
  "futures-lite",
  "indoc",
+ "instant",
  "itertools",
  "keyframe",
  "nalgebra",

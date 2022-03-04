@@ -9,7 +9,7 @@ use super::draw_square;
 use super::input::MousePos;
 use super::physics::world_to_pixel;
 use super::units::Unit;
-use crate::pathfinding::{DiscreteMap, Map};
+use crate::pathfinding::{DiscreteMap, PathfindingState};
 use crate::systems::draw_square_dur;
 
 pub const DEBUG_MAP_FIELD_SIZE: f32 = 5.0;
@@ -122,7 +122,7 @@ pub fn capture_map(
     mut debug_state: ResMut<DebugState>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
     mut lines: ResMut<DebugLines>,
-    map: Res<Map>,
+    pathfinding_state: Res<PathfindingState>,
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
     for event in mouse_button_input_events.iter() {
@@ -140,7 +140,8 @@ pub fn capture_map(
                         (start.x + end.x) / 2f32,
                         (start.y + end.y) / 2f32,
                     );
-                    let map = DiscreteMap::new(&map, mid, end);
+                    let map =
+                        DiscreteMap::new(&pathfinding_state.map, mid, end);
 
                     println!("{map}");
 

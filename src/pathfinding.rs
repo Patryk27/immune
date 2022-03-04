@@ -1,13 +1,12 @@
 mod discrete_map;
 mod map;
 
-use std::collections::HashMap;
+use std::collections::VecDeque;
 
 use bevy::prelude::*;
-use bevy::tasks::{AsyncComputeTaskPool, Task};
 use bevy_prototype_debug_lines::DebugLines;
-use futures_lite::future;
-use pathfinding::prelude::bfs;
+use instant::Instant;
+use pathfinding::prelude::astar;
 
 pub use self::discrete_map::*;
 pub use self::map::*;
@@ -20,42 +19,41 @@ use crate::systems::units::Unit;
 type Pathseeker = Vec2;
 type Target = Vec2;
 
-const BUFFER_SIZE: usize = 1;
-
 pub struct PathfindingPlugin;
 
-#[derive(Default)]
-pub struct PathseekersQueue {
-    queued: HashMap<Entity, (Pathseeker, Target)>,
-    in_process: usize,
+impl Plugin for PathfindingPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(PathfindingState::default())
+            .add_system(refresh_map)
+            .add_system(hande_queue);
+    }
 }
 
-impl PathseekersQueue {
-    pub fn insert(
+#[derive(Default)]
+pub struct PathfindingState {
+    pub map: Map,
+    pub queue: VecDeque<(Entity, Pathseeker, Target)>,
+    pub budget_ms: i32,
+}
+
+impl PathfindingState {
+    pub fn add(
         &mut self,
         entity: Entity,
         pathseeker: Pathseeker,
         target: Target,
     ) {
-        self.queued.insert(entity, (pathseeker, target));
-    }
-}
-
-impl Plugin for PathfindingPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(Map::default())
-            .insert_resource(PathseekersQueue::default())
-            .add_system(refresh_map)
-            .add_system(single_threaded_pathinder);
+        self.queue.retain(|(entity2, _, _)| *entity2 != entity);
+        self.queue.push_back((entity, pathseeker, target));
     }
 }
 
 fn refresh_map(
-    mut map: ResMut<Map>,
+    mut state: ResMut<PathfindingState>,
     lymph_nodes: Query<&Transform, With<LymphNode>>,
     units: Query<&Transform, With<Unit>>,
 ) {
-    map.lymph_nodes = lymph_nodes
+    state.map.lymph_nodes = lymph_nodes
         .iter()
         .map(|transform| MapLymphNode {
             pos: transform.translation.truncate(),
@@ -63,7 +61,7 @@ fn refresh_map(
         })
         .collect();
 
-    map.units = units
+    state.map.units = units
         .iter()
         .map(|transform| MapUnit {
             pos: transform.translation.truncate(),
@@ -72,108 +70,63 @@ fn refresh_map(
         .collect();
 }
 
-fn single_threaded_pathinder(
-    mut state: ResMut<PathseekersQueue>,
-    map: Res<Map>,
+fn hande_queue(
+    mut state: ResMut<PathfindingState>,
     debug_state: Res<DebugState>,
     mut lines: ResMut<DebugLines>,
-    mut units: Query<(Entity, &mut Unit)>,
+    mut units: Query<&mut Unit>,
 ) {
-    let queue = state.queued.clone();
+    state.budget_ms += 12;
 
-    for (entity, (pathfinder, target)) in queue {
-        if state.in_process < BUFFER_SIZE {
-            let map = map.clone();
-            state.queued.remove(&entity);
-            state.in_process += 1;
+    if state.budget_ms < 0 {
+        // Previous frame's path-finding took more than the allowed budget,
+        // recovering
+        return;
+    }
 
-            let pathfinder = Pathfinder::new(map, pathfinder, target);
+    if state.budget_ms >= 12 {
+        // Accumulating budget would be pointless
+        state.budget_ms = 12;
+    }
 
-            if let Ok((_, mut unit)) = units.get_mut(entity) {
-                if debug_state.draw_obstacles_from_map {
-                    for pos in pathfinder.map.obstacles() {
-                        let field_size = DEBUG_MAP_FIELD_SIZE;
+    if state.queue.is_empty() {
+        return;
+    }
 
-                        let top_left = pos - field_size;
-                        let bottom_right = pos + field_size;
+    let tt = Instant::now();
 
-                        draw_square_dur(
-                            &mut lines,
-                            top_left,
-                            bottom_right,
-                            4.0,
-                        );
-                    }
-                }
+    while (tt.elapsed().as_millis() as i32) < state.budget_ms {
+        let (entity, pathseeker, target) =
+            if let Some(item) = state.queue.pop_front() {
+                item
+            } else {
+                break;
+            };
 
-                let path = pathfinder.path();
-                unit.set_path(path);
-            }
+        let mut unit = if let Ok(unit) = units.get_mut(entity) {
+            unit
         } else {
-            break;
-        }
-    }
+            continue;
+        };
 
-    state.in_process = 0;
-}
+        let pathfinder = Pathfinder::new(&state.map, pathseeker, target);
 
-#[allow(dead_code)]
-fn spawn_pathfinder_task(
-    mut commands: Commands,
-    mut state: ResMut<PathseekersQueue>,
-    map: Res<Map>,
-    thread_pool: Res<AsyncComputeTaskPool>,
-) {
-    let queue = state.queued.clone();
+        if debug_state.draw_obstacles_from_map {
+            for pos in pathfinder.map.obstacles() {
+                let field_size = DEBUG_MAP_FIELD_SIZE;
 
-    for (entity, (pathfinder, target)) in queue {
-        if state.in_process < BUFFER_SIZE {
-            let map = map.clone();
-            state.queued.remove(&entity);
-            state.in_process += 1;
+                let top_left = pos - field_size;
+                let bottom_right = pos + field_size;
 
-            let task = thread_pool
-                .spawn(async move { Pathfinder::new(map, pathfinder, target) });
-
-            commands.entity(entity).insert(task);
-        } else {
-            break;
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn handle_pathfinder_task(
-    mut commands: Commands,
-    mut state: ResMut<PathseekersQueue>,
-    debug_state: Res<DebugState>,
-    mut lines: ResMut<DebugLines>,
-    mut transform_tasks: Query<(Entity, &mut Unit, &mut Task<Pathfinder>)>,
-) {
-    for (entity, mut unit, mut task) in transform_tasks.iter_mut() {
-        if let Some(pathfinder) =
-            future::block_on(future::poll_once(&mut *task))
-        {
-            if debug_state.draw_obstacles_from_map {
-                for pos in pathfinder.map.obstacles() {
-                    // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
-                    let field_size = DEBUG_MAP_FIELD_SIZE;
-
-                    let top_left = pos - field_size;
-                    let bottom_right = pos + field_size;
-
-                    draw_square_dur(&mut lines, top_left, bottom_right, 4.0);
-                }
+                draw_square_dur(&mut lines, top_left, bottom_right, 4.0);
             }
-
-            let path = pathfinder.path();
-            unit.set_path(path);
-
-            // Task is complete, so remove task component from entity
-            commands.entity(entity).remove::<Task<Pathfinder>>();
-            state.in_process -= 1;
         }
+
+        let path = pathfinder.path();
+        unit.set_path(path);
     }
+
+    state.budget_ms -= tt.elapsed().as_millis() as i32;
 }
 
 #[derive(Component)]
@@ -183,16 +136,19 @@ pub struct Pathfinder {
 }
 
 impl Pathfinder {
-    pub fn new(map: Map, pathseeker: Pathseeker, target: Target) -> Self {
-        let map = DiscreteMap::new(&map, pathseeker, target);
+    pub fn new(map: &Map, pathseeker: Pathseeker, target: Target) -> Self {
+        let map = DiscreteMap::new(map, pathseeker, target);
         let start = map.start();
-        let path = bfs(
+
+        let path = astar(
             &start,
             |pos| map.successors(**pos),
-            |pos| map.arrived(**pos),
+            |pos| map.heuristic(**pos),
+            |pos| map.success(**pos),
         );
 
         let path = path
+            .map(|(path, _)| path)
             .into_iter()
             .flatten()
             .map(|idx| map.idx_to_pos(*idx))
