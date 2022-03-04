@@ -48,18 +48,20 @@ const LAYERS: &[BackgroundLayer] = &[
 ];
 
 fn setup(assets: Res<AssetServer>, mut commands: Commands) {
-    let blur = assets.load("blur.png");
+    let blur_circle = assets.load("blur.png");
+    let blur_hexagon = assets.load("blur.hexagon.png");
+    let images = [blur_circle, blur_hexagon];
 
     for layer in LAYERS {
         for _ in 0..layer.num {
-            spawn(&mut commands, &blur, layer);
+            spawn(&mut commands, &images, layer);
         }
     }
 }
 
 fn spawn(
     commands: &mut Commands,
-    image: &Handle<Image>,
+    images: &[Handle<Image>],
     layer: &BackgroundLayer,
 ) {
     let parallax_layer = layer.parallax_layer;
@@ -75,12 +77,16 @@ fn spawn(
 
     let phase = rng.gen::<f32>() * MAX_PHASE;
 
-    let transform = Transform::from_scale(Vec3::ONE * scale);
+    let mut transform = Transform::from_scale(Vec3::ONE * scale);
+    transform.rotation =
+        Quat::from_rotation_z(rng.gen::<f32>() * std::f32::consts::PI * 2.0);
+
+    let img_idx = rng.gen::<usize>() % images.len();
 
     commands
         .spawn()
         .insert_bundle(SpriteBundle {
-            texture: image.clone(),
+            texture: images[img_idx].clone(),
             transform,
             sprite: Sprite {
                 color: Color::rgba(1.0, 1.0, 1.0, 0.2),

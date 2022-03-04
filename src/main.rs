@@ -9,7 +9,7 @@ use unfair_advantage::{compiling, game, pathfinding, ui};
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb_u8(1, 8, 90)))
+    app.insert_resource(ClearColor(Color::rgb_u8(0, 0, 0)))
         .add_plugins(DefaultPlugins)
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
