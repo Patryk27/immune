@@ -46,6 +46,14 @@ impl Health {
         }
     }
 
+    pub fn with_health(health: f32) -> Self {
+        Self {
+            health: health,
+            max_health: health,
+            regen_rate: REGEN_RATE,
+        }
+    }
+
     pub fn reset(&mut self) {
         self.health = self.max_health;
     }

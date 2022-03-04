@@ -85,7 +85,6 @@ pub fn system(
         match stage {
             WeclomePage => welcome_page(ui),
             LymphNodeIntroduction => lymph_node_introduction(ui),
-            ResourcesIntroduction => resources_introduction(ui),
             EnemiesIntroduction => enemies_introduction(ui),
             CombatInstuctions => combat_instuctions(ui),
             EnemiesUnfairAdventage => enemies_unfair_adventage(ui),
@@ -131,23 +130,6 @@ fn lymph_node_introduction(ui: &mut Ui) {
         ui.label("and can forward its oputput to another Lymph node.");
         ui.label("Only by combining different resources, you are able to build battle cells");
         ui.label("Try different combinations!");
-    });
-}
-
-fn resources_introduction(ui: &mut Ui) {
-    ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.add(egui::widgets::Image::new(
-            egui::TextureId::User(RESOURCE_TUTORIAL_PIC),
-            [715.0 / 2.0, 715.0 / 2.0],
-        ));
-    });
-
-    ui.separator();
-
-    ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Resources are vital component in cell building.");
-        ui.label("");
-        ui.label("But they are missing. sorry!");
     });
 }
 

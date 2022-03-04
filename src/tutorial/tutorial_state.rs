@@ -3,7 +3,6 @@ pub use self::TutorialStage::*;
 pub const TUTORIAL_STAGES: &[TutorialStage] = &[
     WeclomePage,
     LymphNodeIntroduction,
-    ResourcesIntroduction,
     EnemiesIntroduction,
     CombatInstuctions,
     EnemiesUnfairAdventage,
@@ -19,7 +18,6 @@ pub struct TutorialState {
 pub enum TutorialStage {
     WeclomePage,
     LymphNodeIntroduction,
-    ResourcesIntroduction,
     EnemiesIntroduction,
     CombatInstuctions,
     EnemiesUnfairAdventage,
@@ -31,7 +29,6 @@ impl TutorialStage {
         match *self {
             WeclomePage => "Welcome!",
             LymphNodeIntroduction => "Lymph node introduction",
-            ResourcesIntroduction => "Resources",
             EnemiesIntroduction => "Beware enemies",
             CombatInstuctions => "Kill them",
             EnemiesUnfairAdventage => "... before they kill you",

@@ -80,19 +80,18 @@ impl<'a> Cell<'a> {
             Cell::Leukocyte(cell) => {
                 entity.insert(Weapon::AntigenBinder(cell.binder));
                 entity.insert(Alignment::Player);
+                entity.insert(Health::with_health(cell.props.hp as f32));
                 entity.insert((*cell).to_owned());
             }
             Cell::Pathogen(cell) => {
                 entity.insert(Weapon::Antigen(cell.antigen));
                 entity.insert(Alignment::Enemy);
+                entity.insert(Health::default());
                 entity.insert((*cell).to_owned());
             }
         }
 
-        entity
-            .insert(Unit::default())
-            .insert(Health::default())
-            .insert(DeathBehavior::Die);
+        entity.insert(Unit::default()).insert(DeathBehavior::Die);
 
         let (body, proteins, color) = match self {
             Cell::Leukocyte(cell) => {
