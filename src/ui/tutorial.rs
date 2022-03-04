@@ -1,17 +1,17 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext};
 
-use crate::{game::GameState, tutorial::{TutorialState, TUTORIAL_STAGES}};
+use crate::game::GameState;
+use crate::tutorial::{TutorialState, TUTORIAL_STAGES};
 
 pub fn system(
     mut game_state: ResMut<GameState>,
     mut tutorial_state: ResMut<TutorialState>,
-    mut egui: ResMut<EguiContext>
+    mut egui: ResMut<EguiContext>,
 ) {
     if !game_state.tutorial {
         return;
     }
-
 
     egui::TopBottomPanel::top("top_panel").show(egui.ctx_mut(), |ui| {
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
@@ -19,14 +19,11 @@ pub fn system(
         });
     });
 
-
     egui::TopBottomPanel::bottom("bottom_panel").show(egui.ctx_mut(), |ui| {
-
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label("Tutorial progress placeholder");
         });
     });
-
 
     egui::TopBottomPanel::bottom("buttons_panel").show(egui.ctx_mut(), |ui| {
         ui.with_layout(egui::Layout::right_to_left(), |ui| {
@@ -53,7 +50,6 @@ pub fn system(
         });
 
         ui.separator();
-
 
         ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.label("Tutorial step placeholder");

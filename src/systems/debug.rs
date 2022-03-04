@@ -28,6 +28,7 @@ pub struct DebugState {
     pub show_pathfinding: bool,
     pub track_position: bool,
     pub draw_obstacles_from_map: bool,
+    pub debug_print_map: bool,
     pub is_dragging: bool,
     pub drag_start_pos: Vec2,
 }
@@ -41,6 +42,7 @@ impl Default for DebugState {
             show_pathfinding: false,
             track_position: false,
             draw_obstacles_from_map: false,
+            debug_print_map: false,
             is_dragging: false,
             drag_start_pos: Vec2::ZERO,
         }
@@ -125,8 +127,12 @@ pub fn capture_map(
     pathfinding_state: Res<PathfindingState>,
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
+    if !debug_state.debug_print_map {
+        return;
+    }
+
     for event in mouse_button_input_events.iter() {
-        if event.button == MouseButton::Middle {
+        if event.button == MouseButton::Left {
             match (debug_state.is_dragging, event.state.is_pressed()) {
                 // Drag end
                 (true, false)

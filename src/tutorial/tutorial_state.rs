@@ -18,7 +18,6 @@ pub struct TutorialState {
     pub stage: usize,
 }
 
-
 #[derive(Copy, Clone, Debug)]
 pub enum TutorialStage {
     WeclomePage,

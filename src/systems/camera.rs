@@ -48,7 +48,7 @@ pub fn mouse(
 ) {
     let (mut transform, _, mut ortho) = query.single_mut();
 
-    if mouse.pressed(MouseButton::Right) {
+    if mouse.pressed(MouseButton::Middle) {
         for event in cursor.iter() {
             let mut delta = event.delta.extend(0.0);
             delta.x *= -1.0;
