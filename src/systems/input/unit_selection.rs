@@ -6,7 +6,7 @@ use bevy_prototype_debug_lines::DebugLines;
 
 use super::{draw_square, InputState, MousePos};
 use crate::systems::bio::LymphNode;
-use crate::systems::units::Unit;
+use crate::systems::units::{Alignment, Unit};
 use crate::ui::UiEvent;
 
 const MIN_DRAG_DISTANCE: f32 = 1.0;
@@ -143,15 +143,16 @@ fn track_drag(
 
 fn select_lymph_node(
     state: Res<InputState>,
-    lymph_nodes: Query<(), With<LymphNode>>,
+    lymph_nodes: Query<&Alignment, With<LymphNode>>,
     mut selection_event: EventReader<Selection>,
     mut ui_events: EventWriter<UiEvent>,
 ) {
     if let Some(Selection::Click) = selection_event.iter().next() {
         if let Some(entity) = state.hovered_entity {
-            if lymph_nodes.get(entity).is_ok() {
-                ui_events.send(UiEvent::LymphNodeClicked(entity));
-                return;
+            if let Ok(alignment) = lymph_nodes.get(entity) {
+                if alignment.is_player() {
+                    ui_events.send(UiEvent::LymphNodeClicked(entity));
+                }
             }
         }
     }

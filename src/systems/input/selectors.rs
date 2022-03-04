@@ -4,7 +4,7 @@ use super::{
     Collider, InputState, MousePos, SelectedUnits, SelectedUnitsChanged,
     Selector,
 };
-use crate::systems::units::Unit;
+use crate::systems::units::{Alignment, Unit};
 
 const HIGHLIGHT_ZOOM_MAX: f32 = 1.1;
 const HIGHLIGHT_ZOOM_MIN: f32 = 0.9;
@@ -13,7 +13,7 @@ const HIGHLIGHT_ZOOM_SPEED: f32 = 0.01;
 pub fn track_selector_hovers(
     mut state: ResMut<InputState>,
     mouse_pos: Res<MousePos>,
-    entities: Query<(Entity, &Collider, &Transform, &Children)>,
+    entities: Query<(Entity, &Alignment, &Collider, &Transform, &Children)>,
     mut selectors: Query<&mut Selector>,
 ) {
     if state.is_dragging {
@@ -21,22 +21,23 @@ pub fn track_selector_hovers(
         return;
     }
 
-    let new_hovered_entity =
-        entities
-            .iter()
-            .find_map(|(entity, collider, transform, children)| {
-                if collider
+    let new_hovered_entity = entities.iter().find_map(
+        |(entity, alignment, collider, transform, children)| {
+            if alignment.is_player()
+                && collider
                     .contains(transform.translation.truncate(), mouse_pos.0)
-                {
-                    Some((entity, children))
-                } else {
-                    None
-                }
-            });
+            {
+                Some((entity, children))
+            } else {
+                None
+            }
+        },
+    );
 
     if new_hovered_entity.map(|(e, _)| e) != state.hovered_entity {
         if let Some(old_hovered_entity) = state.hovered_entity {
-            if let Ok((_, _, _, children)) = entities.get(old_hovered_entity) {
+            if let Ok((_, _, _, _, children)) = entities.get(old_hovered_entity)
+            {
                 Selector::modify(&mut selectors, children, |selector| {
                     selector.hovered = false;
                 });

@@ -22,6 +22,7 @@ pub enum CompilationWarning {
     NodeIsAwaitingResources,
     NodeHasNoProduct,
     NodeHasNoChild,
+    Infected,
 }
 
 impl CompilationWarning {
@@ -35,6 +36,7 @@ impl CompilationWarning {
             }
             Self::NodeHasNoProduct => "[!] Node does not produce anything because it is misconfigured (i.e. it uses an illegal combination of resources).",
             Self::NodeHasNoChild => "[!] Node does not produce anything because it must be linked with another node first.",
+            Self::Infected => "[!] Node is infected and cannot be controlled.",
         }
     }
 
@@ -47,6 +49,7 @@ impl CompilationWarning {
             Self::NodeHasNoProduct | Self::NodeHasNoChild => {
                 "lymph-node.state.error.png"
             }
+            Self::Infected => "lymph-node.state.infected.png",
         }
     }
 }

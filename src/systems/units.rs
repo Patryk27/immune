@@ -72,6 +72,10 @@ impl Alignment {
             Alignment::Enemy => Alignment::Player,
         }
     }
+
+    pub fn is_player(&self) -> bool {
+        matches!(self, Self::Player)
+    }
 }
 
 impl Default for Unit {

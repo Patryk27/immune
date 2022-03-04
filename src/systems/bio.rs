@@ -26,6 +26,7 @@ pub use self::pathogen::*;
 pub use self::protein::*;
 use super::physics::PHYSICS_SCALE;
 use super::units::Alignment;
+use crate::compiling::RecompileEvent;
 
 pub fn initialize(app: &mut App) {
     app.add_system(progress_lymph_nodes)
@@ -108,22 +109,38 @@ fn get_random_position_and_velocity(transform: &Transform) -> (Vec2, Vec2) {
 }
 
 fn handle_lymph_node_alignment(
-    mut lymph_nodes: Query<
-        (&Children, &mut LymphNode, &Alignment),
-        Changed<Alignment>,
-    >,
-    mut lymph_node_warning: Query<&mut LymphNodeWarning>,
+    mut lymph_nodes: Query<(&mut LymphNode, &Alignment), Changed<Alignment>>,
+    mut recompile: EventWriter<RecompileEvent>,
 ) {
-    for (children, mut lymph_node, alignment) in lymph_nodes.iter_mut() {
-        if let Alignment::Enemy = alignment {
-            for child in children.iter() {
-                if let Ok(mut warning) = lymph_node_warning.get_mut(*child) {
-                    warning.set(Some("biohazard-symbol.png"));
+    let mut sent_event = false;
+    let mut parents = vec![];
+
+    for (mut node, alignment) in lymph_nodes.iter_mut() {
+        match alignment {
+            Alignment::Enemy => {
+                if let Some(parent) = node.parent {
+                    parents.push(parent);
                 }
+
+                node.target = LymphNodeTarget::Outside;
+                node.product =
+                    Some(LymphNodeProduct::Pathogen(Pathogen::random()));
             }
 
-            lymph_node.product =
-                Some(LymphNodeProduct::Pathogen(Pathogen::random()));
+            _ => {
+                node.product = None;
+            }
+        }
+
+        if !sent_event {
+            recompile.send(RecompileEvent);
+            sent_event = true;
+        }
+    }
+
+    for parent in parents {
+        if let Ok((mut node, _)) = lymph_nodes.get_mut(parent) {
+            node.target = LymphNodeTarget::Outside;
         }
     }
 }
