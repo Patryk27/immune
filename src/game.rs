@@ -5,6 +5,7 @@ use crate::level::{Level, LevelWave};
 use crate::systems::bio::{
     LymphNode, LymphNodeState, LymphNodeTarget, Pathogen, PathogenKind,
 };
+use crate::tutorial::TutorialState;
 
 mod progress_bars;
 
@@ -14,6 +15,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Level::l1())
             .insert_resource(GameState::default())
+            .insert_resource(TutorialState::default())
             .add_startup_system(setup)
             .add_system(progress);
 
@@ -21,11 +23,22 @@ impl Plugin for GamePlugin {
     }
 }
 
-#[derive(Default)]
-struct GameState {
+pub struct GameState {
+    pub tutorial: bool,
     pub seconds: f32,
     pub curr_wave_id: Option<usize>,
     pub next_wave_at: f32,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self {
+            tutorial: false,
+            seconds: Default::default(),
+            curr_wave_id: Default::default(),
+            next_wave_at: Default::default(),
+        }
+    }
 }
 
 fn setup(
@@ -71,6 +84,10 @@ fn progress(
     mut state: ResMut<GameState>,
     level: Res<Level>,
 ) {
+    if state.tutorial {
+        return;
+    }
+
     state.seconds += time.delta_seconds();
 
     if state.seconds >= state.next_wave_at {
