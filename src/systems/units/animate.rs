@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use super::{
-    Health, Unit, HEALTH_TO_SCALE, MAX_SPEED, MOVEMENT_SQUEEZE_FACTOR,
-    MOVEMENT_STRETCH_FACTOR,
+    Health, Unit, MAX_SPEED, MOVEMENT_SQUEEZE_FACTOR, MOVEMENT_STRETCH_FACTOR,
 };
 use crate::systems::bio::CellBody;
 
@@ -25,9 +24,9 @@ pub fn system(
 
         for child in children.iter() {
             if let Ok((_, mut transform)) = child_sprites.get_mut(*child) {
+                let health_ratio = health.health / health.max_health;
                 if velocity.linvel.magnitude() < 0.1 {
-                    transform.scale =
-                        Vec3::ONE * health.health * HEALTH_TO_SCALE;
+                    transform.scale = Vec3::ONE * health_ratio;
                 } else {
                     let stretch_x = remap(
                         velocity.linvel.magnitude(),
@@ -45,9 +44,8 @@ pub fn system(
                     );
 
                     transform.rotation = Quat::from_rotation_z(angle);
-                    transform.scale = Vec3::new(stretch_x, stretch_y, 1.0)
-                        * health.health
-                        * HEALTH_TO_SCALE;
+                    transform.scale =
+                        Vec3::new(stretch_x, stretch_y, 1.0) * health_ratio;
                 }
                 break;
             }

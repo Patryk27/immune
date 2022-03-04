@@ -117,7 +117,7 @@ impl Compiler {
                         body,
                         binder,
                         kind: LeukocyteKind::Killer,
-                        props: LeukocyteProps { hp: 10 },
+                        props: LeukocyteProps { hp: 1.0 },
                         proteins: Default::default(),
                     }))
                 } else {
@@ -127,12 +127,12 @@ impl Compiler {
 
             (P::Leukocyte(mut cell), res) => match res {
                 R::Body(_) => {
-                    cell.props.hp += 5;
+                    cell.props.hp += 0.5;
                     Some(P::Leukocyte(cell))
                 }
 
                 R::Antigen(_) => {
-                    cell.props.hp += 2;
+                    cell.props.hp += 0.2;
                     Some(P::Leukocyte(cell))
                 }
 
@@ -141,12 +141,12 @@ impl Compiler {
 
                     match prot {
                         Protein::Dumbbell => {
-                            cell.props.hp += 10;
+                            cell.props.hp += 1.0;
                             Some(P::Leukocyte(cell))
                         }
 
                         Protein::Star => {
-                            cell.props.hp *= 2;
+                            cell.props.hp *= 0.2;
                             Some(P::Leukocyte(cell))
                         }
                     }

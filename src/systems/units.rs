@@ -10,7 +10,6 @@ const MOVEMENT_SQUEEZE_FACTOR: f32 = 0.6;
 const LYMPH_NODE_MAX_HEALTH: f32 = 10.0;
 const MAX_HEALTH: f32 = 1.0;
 const BASE_DAMAGE: f32 = 0.25; // By default a cell can take 4 hits
-const HEALTH_TO_SCALE: f32 = 1.0;
 const REGEN_RATE: f32 = 0.1; // 0.1 point per second
 
 pub mod animate;

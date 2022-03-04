@@ -33,7 +33,7 @@ pub enum LeukocyteKind {
     Killer,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct LeukocyteProps {
-    pub hp: u32,
+    pub hp: f32,
 }
