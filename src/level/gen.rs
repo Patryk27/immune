@@ -158,8 +158,8 @@ fn spawn_chamber_lymph_node(
     let mut rng = rand::thread_rng();
 
     while force {
-        let x = rng.gen_range((-c.r + 2)..(c.r - 2));
-        let y = rng.gen_range((-c.r + 2)..(c.r - 2));
+        let x = rng.gen_range((-c.r + 3)..=(c.r - 3));
+        let y = rng.gen_range((-c.r + 3)..=(c.r - 3));
 
         if c.contains(c.x + x, c.y + y) {
             let collides = ops.iter().any(|op| {
