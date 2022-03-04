@@ -5,6 +5,7 @@ use crate::level::{Level, LevelWave};
 use crate::systems::bio::{
     LymphNode, LymphNodeState, LymphNodeTarget, Pathogen, PathogenKind,
 };
+use crate::systems::units::Alignment;
 use crate::tutorial::TutorialState;
 
 mod progress_bars;
@@ -17,7 +18,8 @@ impl Plugin for GamePlugin {
             .insert_resource(GameState::default())
             .insert_resource(TutorialState::default())
             .add_startup_system(setup)
-            .add_system(progress);
+            .add_system(progress)
+            .add_system(game_over);
 
         progress_bars::initialize(app);
     }
@@ -28,6 +30,7 @@ pub struct GameState {
     pub seconds: f32,
     pub curr_wave_id: Option<usize>,
     pub next_wave_at: f32,
+    pub game_over: bool,
 }
 
 impl Default for GameState {
@@ -37,6 +40,7 @@ impl Default for GameState {
             seconds: Default::default(),
             curr_wave_id: Default::default(),
             next_wave_at: Default::default(),
+            game_over: false,
         }
     }
 }
@@ -119,4 +123,47 @@ fn spawn_wave(commands: &mut Commands, assets: &AssetServer, wave: &LevelWave) {
             .spawn(commands, assets, virus.pos, virus.vel);
         }
     }
+}
+
+fn game_over(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut state: ResMut<GameState>,
+    lymph_nodes: Query<(&Transform, &Alignment, &LymphNode), With<LymphNode>>,
+) {
+    let player_owned_lymph_nodes = lymph_nodes
+        .iter()
+        .filter(|(_, alignment, _)| alignment.is_player())
+        .count();
+
+    if player_owned_lymph_nodes == 0 {
+        state.game_over = true;
+    }
+
+    if !state.game_over {
+        return;
+    }
+
+    let font = assets.load("fat-pixels.regular.ttf");
+
+    let text_style = TextStyle {
+        font,
+        font_size: 45.0,
+        color: Color::WHITE,
+    };
+
+    let text_alignment = TextAlignment {
+        vertical: VerticalAlign::Center,
+        horizontal: HorizontalAlign::Center,
+    };
+
+    commands.spawn_bundle(Text2dBundle {
+        text: Text::with_section(
+            format!("Game Over"),
+            text_style.clone(),
+            text_alignment,
+        ),
+        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
+        ..Default::default()
+    });
 }
