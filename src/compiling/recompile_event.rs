@@ -33,19 +33,24 @@ pub(super) fn compile(
         node.parent = parent;
         node.state = state;
 
-        node.warning = if node.state.is_paused {
-            Some(CompilationWarning::NodeIsPaused)
-        } else if node.state.is_awaiting_resources {
-            Some(CompilationWarning::NodeIsAwaitingResources)
-        } else if node.product.is_none() {
-            Some(CompilationWarning::NodeHasNoProduct)
-        } else if matches!(node.product, Some(LymphNodeProduct::Resource(_)))
-            && !matches!(node.target, LymphNodeTarget::LymphNode(_))
-        {
-            Some(CompilationWarning::NodeHasNoChild)
-        } else {
-            None
-        };
+        node.warning =
+            if matches!(node.product, Some(LymphNodeProduct::Pathogen(_))) {
+                Some(CompilationWarning::Infected)
+            } else if node.state.is_paused {
+                Some(CompilationWarning::NodeIsPaused)
+            } else if node.state.is_awaiting_resources {
+                Some(CompilationWarning::NodeIsAwaitingResources)
+            } else if node.product.is_none() {
+                Some(CompilationWarning::NodeHasNoProduct)
+            } else if matches!(
+                node.product,
+                Some(LymphNodeProduct::Resource(_))
+            ) && !matches!(node.target, LymphNodeTarget::LymphNode(_))
+            {
+                Some(CompilationWarning::NodeHasNoChild)
+            } else {
+                None
+            };
 
         for child in children.iter() {
             if let Ok(mut warn) = warnings.get_mut(*child) {

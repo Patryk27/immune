@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::systems::bio::{
     Leukocyte, LeukocyteKind, LeukocyteProps, LymphNode, LymphNodeProduct,
-    LymphNodeResource, LymphNodeState, LymphNodeTarget, Protein,
+    LymphNodeResource, LymphNodeState, LymphNodeTarget, Pathogen, Protein,
 };
 
 #[derive(Default)]
@@ -17,12 +17,20 @@ pub struct Compiler {
 struct CachedLymphNode {
     resource: Option<LymphNodeResource>,
     state: LymphNodeState,
+    pathogen: Option<Pathogen>,
 }
 
 const MAX_DEPTH: u8 = 128;
 
 impl Compiler {
     pub fn add(&mut self, entity: Entity, node: &LymphNode) {
+        let pathogen =
+            if let Some(LymphNodeProduct::Pathogen(pathogen)) = node.product {
+                Some(pathogen)
+            } else {
+                None
+            };
+
         self.nodes.insert(
             entity,
             CachedLymphNode {
@@ -31,6 +39,7 @@ impl Compiler {
                     is_paused: node.state.is_paused,
                     is_awaiting_resources: false,
                 },
+                pathogen,
             },
         );
 
@@ -74,6 +83,10 @@ impl Compiler {
         }
 
         let node = &self.nodes[&entity];
+
+        if let Some(pathogen) = node.pathogen {
+            return Some(P::Pathogen(pathogen));
+        }
 
         let lhs = self
             .parents
