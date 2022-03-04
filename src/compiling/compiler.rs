@@ -105,6 +105,7 @@ impl Compiler {
                         binder,
                         kind: LeukocyteKind::Killer,
                         props: LeukocyteProps { hp: 10 },
+                        proteins: Default::default(),
                     }))
                 } else {
                     None
@@ -122,17 +123,21 @@ impl Compiler {
                     Some(P::Leukocyte(cell))
                 }
 
-                R::Protein(prot) => match prot {
-                    Protein::Dumbbell => {
-                        cell.props.hp += 10;
-                        Some(P::Leukocyte(cell))
-                    }
+                R::Protein(prot) => {
+                    cell.proteins.push(prot);
 
-                    Protein::Star => {
-                        cell.props.hp *= 2;
-                        Some(P::Leukocyte(cell))
+                    match prot {
+                        Protein::Dumbbell => {
+                            cell.props.hp += 10;
+                            Some(P::Leukocyte(cell))
+                        }
+
+                        Protein::Star => {
+                            cell.props.hp *= 2;
+                            Some(P::Leukocyte(cell))
+                        }
                     }
-                },
+                }
             },
 
             (P::Pathogen(_), _) => {

@@ -1,13 +1,14 @@
 use bevy::prelude::*;
 
-use super::{AntigenBinder, Body, Cell};
+use super::{AntigenBinder, Body, Cell, Protein};
 
-#[derive(Component, Clone, Copy, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Leukocyte {
     pub body: Body,
     pub binder: AntigenBinder,
     pub kind: LeukocyteKind,
     pub props: LeukocyteProps,
+    pub proteins: Vec<Protein>,
 }
 
 impl Leukocyte {

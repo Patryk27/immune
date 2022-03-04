@@ -1,7 +1,9 @@
+use bevy::math::vec3;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use rand::Rng;
 
-use super::{Antigen, Leukocyte, Pathogen};
+use super::{Antigen, Leukocyte, Pathogen, Protein};
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::{Alignment, DeathBehavior, Health, Unit};
@@ -25,6 +27,7 @@ impl<'a> Cell<'a> {
         pos: Vec2,
         vel: Vec2,
     ) {
+        let mut rng = rand::thread_rng();
         let mut entity = commands.spawn();
 
         entity
@@ -75,11 +78,11 @@ impl<'a> Cell<'a> {
         match self {
             Cell::Leukocyte(cell) => {
                 entity.insert(Alignment::Player);
-                entity.insert(**cell);
+                entity.insert((*cell).to_owned());
             }
             Cell::Pathogen(cell) => {
                 entity.insert(Alignment::Enemy);
-                entity.insert(**cell);
+                entity.insert((*cell).to_owned());
             }
         }
 
@@ -88,9 +91,13 @@ impl<'a> Cell<'a> {
             .insert(Health::default())
             .insert(DeathBehavior::Die);
 
-        let (body, color) = match self {
-            Cell::Leukocyte(cell) => (cell.body, Leukocyte::color(0)),
-            Cell::Pathogen(cell) => (cell.body, Pathogen::color(0)),
+        let (body, proteins, color) = match self {
+            Cell::Leukocyte(cell) => {
+                (cell.body, &cell.proteins[..], Leukocyte::color(0))
+            }
+            Cell::Pathogen(cell) => {
+                (cell.body, [].as_slice(), Pathogen::color(0))
+            }
         };
 
         // Spawn cell's sprite
@@ -128,6 +135,31 @@ impl<'a> Cell<'a> {
                     }
                 });
         });
+
+        // Spawn cell's proteins
+        for protein in proteins {
+            entity.with_children(|entity| {
+                let transform =
+                    Transform::from_scale(Vec3::splat(Self::SIZE / 3.0))
+                        .with_translation(
+                            vec3(
+                                rng.gen_range(-0.8..0.8),
+                                rng.gen_range(-0.8..0.8),
+                                0.1,
+                            ) * (Self::SIZE / 2.0),
+                        );
+
+                entity.spawn().insert_bundle(SpriteBundle {
+                    texture: assets.load(protein.asset_path()),
+                    transform,
+                    sprite: Sprite {
+                        color: Protein::color(),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                });
+            });
+        }
 
         // Spawn cell's selector
         entity.with_children(|entity| {

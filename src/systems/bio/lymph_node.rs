@@ -160,7 +160,7 @@ pub struct LymphNodeState {
     pub is_awaiting_resources: bool,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum LymphNodeProduct {
     Resource(LymphNodeResource),
     Leukocyte(Leukocyte),

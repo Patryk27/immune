@@ -48,13 +48,13 @@ fn progress_lymph_nodes(
             continue;
         }
 
+        let node = &mut *node;
+
         let product = if let Some(product) = &node.product {
-            *product
+            product
         } else {
             continue;
         };
-
-        let node = &mut *node;
 
         node.production_tt += time.delta_seconds();
 
@@ -62,19 +62,23 @@ fn progress_lymph_nodes(
             node.production_tt = 0.0;
 
             match product {
+                LymphNodeProduct::Resource(_) => {
+                    // no-op
+                }
+
                 LymphNodeProduct::Leukocyte(leukocyte) => {
                     let (pos, vel) =
                         get_random_position_and_velocity(transform);
 
                     leukocyte.spawn(&mut commands, &assets, pos, vel);
                 }
+
                 LymphNodeProduct::Pathogen(pathogen) => {
                     let (pos, vel) =
                         get_random_position_and_velocity(transform);
 
                     pathogen.spawn(&mut commands, &assets, pos, vel);
                 }
-                _ => (),
             }
         }
     }
