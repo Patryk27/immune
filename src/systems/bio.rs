@@ -114,18 +114,21 @@ fn handle_lymph_node_alignment(
 ) {
     let mut sent_event = false;
     let mut parents = vec![];
-    for (mut lymph_node, alignment) in lymph_nodes.iter_mut() {
+
+    for (mut node, alignment) in lymph_nodes.iter_mut() {
         match alignment {
             Alignment::Enemy => {
-                if let Some(parent) = lymph_node.parent {
+                if let Some(parent) = node.parent {
                     parents.push(parent);
                 }
 
-                lymph_node.product =
+                node.target = LymphNodeTarget::Outside;
+                node.product =
                     Some(LymphNodeProduct::Pathogen(Pathogen::random()));
             }
+
             _ => {
-                lymph_node.product = None;
+                node.product = None;
             }
         }
 
@@ -137,7 +140,7 @@ fn handle_lymph_node_alignment(
 
     for parent in parents {
         if let Ok((mut node, _)) = lymph_nodes.get_mut(parent) {
-            node.product = None;
+            node.target = LymphNodeTarget::Outside;
         }
     }
 }
