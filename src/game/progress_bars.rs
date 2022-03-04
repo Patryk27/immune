@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use super::GameState;
 use crate::systems::bio::Pathogen;
 
 const FONT_SIZE: f32 = 30.0;
@@ -12,11 +13,15 @@ struct ProgressText {
 }
 
 #[derive(Component)]
+struct WaveText;
+
+#[derive(Component)]
 struct NumberOfVirusesText;
 
 pub fn initialize(app: &mut App) {
     app.add_startup_system(setup)
         .add_system(position_text)
+        .add_system(update_wave_text)
         .add_system(update_number_of_viruses_text);
 }
 
@@ -33,6 +38,25 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
         vertical: VerticalAlign::Center,
         horizontal: HorizontalAlign::Center,
     };
+
+    commands
+        .spawn_bundle(Text2dBundle {
+            text: Text::with_section(
+                format!("Next wave in"),
+                text_style.clone(),
+                text_alignment,
+            ),
+            transform: Transform::from_translation(Vec3::new(
+                0.0,
+                0.0,
+                TEXT_Z_OFFSET,
+            )),
+            ..Default::default()
+        })
+        .insert(WaveText)
+        .insert(ProgressText {
+            offset: Vec3::Y * -30.0,
+        });
 
     commands
         .spawn_bundle(Text2dBundle {
@@ -69,6 +93,18 @@ fn position_text(
         transform.translation.z = TEXT_Z_OFFSET;
         transform.scale = Vec3::ONE * ortho.scale;
     }
+}
+
+fn update_wave_text(
+    game_state: Res<GameState>,
+    mut query: Query<(&mut Text, &WaveText)>,
+) {
+    let (mut text, _) = query.single_mut();
+
+    let seconds_until_next_wave = game_state.next_wave_at - game_state.seconds;
+
+    text.sections[0].value =
+        format!("Next wave in {seconds_until_next_wave:.0}");
 }
 
 fn update_number_of_viruses_text(
