@@ -133,33 +133,38 @@ impl<'a> Cell<'a> {
                             cell.antigen.spawn(assets, entity, body, color)
                         }
                     }
-                });
-        });
 
-        // Spawn cell's proteins
-        for protein in proteins {
-            entity.with_children(|entity| {
-                let transform =
-                    Transform::from_scale(Vec3::splat(Self::SIZE / 3.0))
+                    // Spawn cell's proteins
+                    for protein in proteins {
+                        let transform = Transform::from_scale(Vec3::splat(
+                            Self::SIZE / 2.5,
+                        ))
                         .with_translation(
                             vec3(
-                                rng.gen_range(-0.8..0.8),
-                                rng.gen_range(-0.8..0.8),
+                                rng.gen_range(-1.0..1.0),
+                                rng.gen_range(-1.0..1.0),
                                 0.1,
-                            ) * (Self::SIZE / 2.0),
+                            ) * (Self::SIZE * PHYSICS_SCALE / 2.0),
                         );
 
-                entity.spawn().insert_bundle(SpriteBundle {
-                    texture: assets.load(protein.asset_path()),
-                    transform,
-                    sprite: Sprite {
-                        color: Protein::color(),
-                        ..Default::default()
-                    },
-                    ..Default::default()
+                        let mut color = Protein::color();
+                        color.set_a(0.8);
+
+                        entity
+                            .spawn()
+                            .insert_bundle(SpriteBundle {
+                                texture: assets.load(protein.asset_path()),
+                                transform,
+                                sprite: Sprite {
+                                    color,
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            })
+                            .insert(CellFadeIn::default());
+                    }
                 });
-            });
-        }
+        });
 
         // Spawn cell's selector
         entity.with_children(|entity| {
