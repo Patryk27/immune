@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy_egui::egui::{TextStyle, Ui, WidgetText};
 use bevy_egui::{egui, EguiContext};
+use instant::{Duration, Instant};
 
-use crate::game::GameState;
+use crate::game::{GameState, LevelVm};
 use crate::tutorial::{TutorialState, TUTORIAL_STAGES};
 
 const LYMPH_TUTORIAL_PIC: u64 = 0;
@@ -61,9 +62,15 @@ pub fn system(
             if ui.button("Next").clicked() {
                 tutorial_state.stage += 1;
             }
+
             if ui.button("Skip tutorial").clicked() {
                 game_state.tutorial = false;
+
+                game_state.vm = LevelVm::AwaitingStart {
+                    at: Instant::now() + Duration::from_secs(5),
+                };
             }
+
             if tutorial_state.stage > 0 {
                 if ui.button("Back").clicked() {
                     tutorial_state.stage -= 1;
@@ -88,8 +95,13 @@ pub fn system(
             EnemiesIntroduction => enemies_introduction(ui),
             CombatInstuctions => combat_instuctions(ui),
             EnemiesUnfairAdventage => enemies_unfair_adventage(ui),
+
             Gameplay => {
                 game_state.tutorial = false;
+
+                game_state.vm = LevelVm::AwaitingStart {
+                    at: Instant::now() + Duration::from_secs(5),
+                };
             }
         }
     });

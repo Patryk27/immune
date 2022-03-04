@@ -33,6 +33,7 @@ pub struct GameState {
 }
 
 pub enum LevelVm {
+    Idle,
     AwaitingStart {
         at: Instant,
     },
@@ -48,16 +49,14 @@ pub enum LevelVm {
 
 impl Default for LevelVm {
     fn default() -> Self {
-        Self::AwaitingStart {
-            at: Instant::now() + Duration::from_secs(5),
-        }
+        Self::Idle
     }
 }
 
 impl Default for GameState {
     fn default() -> Self {
         Self {
-            tutorial: false, // TODO
+            tutorial: true,
             seconds: Default::default(),
             vm: LevelVm::default(),
             game_over: false,
@@ -85,6 +84,10 @@ fn progress(
 
     loop {
         match state.vm {
+            LevelVm::Idle => {
+                return;
+            }
+
             LevelVm::AwaitingStart { at } => {
                 if Instant::now() < at {
                     return;
@@ -171,7 +174,7 @@ fn progress(
             LevelVm::AwaitingWaveEnd => {
                 if lymph_nodes.iter().all(|a| a.is_player()) {
                     state.vm = LevelVm::AwaitingWaveStart {
-                        at: Instant::now() + Duration::from_secs(15),
+                        at: Instant::now() + Duration::from_secs(25),
                     };
                 } else {
                     return;
