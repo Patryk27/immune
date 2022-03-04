@@ -1,7 +1,6 @@
 use rand::Rng;
-use serde::Deserialize;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Body {
     Circle,
     Hexagon,

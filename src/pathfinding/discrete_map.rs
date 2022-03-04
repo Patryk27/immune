@@ -5,12 +5,14 @@ use std::ops::Deref;
 use bevy::prelude::*;
 
 use super::Map;
+use crate::systems::bio::{Cell, LymphNode, Wall};
+use crate::systems::physics::PHYSICS_SCALE;
 
 type Row = usize;
 type Col = usize;
 type Cost = i32;
 
-pub const FIELD_SIZE: usize = 50;
+pub const FIELD_SIZE: usize = (Wall::SIZE * PHYSICS_SCALE) as _;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PathNode(usize);
@@ -183,26 +185,44 @@ impl DiscreteMap {
 
         for node in map.lymph_nodes.iter() {
             for mut field in self.fields.iter_mut() {
-                if field.pos.distance(node.pos) < node.size {
-                    field.kind = FieldKinds::Occupied
+                if field.pos.distance_squared(node.pos)
+                    < (LymphNode::SIZE * PHYSICS_SCALE).powi(2)
+                {
+                    field.kind = FieldKinds::Occupied;
                 }
             }
         }
 
         for cell in map.units.iter() {
             for mut field in self.fields.iter_mut() {
-                if field.pos.distance(cell.pos) < cell.size {
-                    field.kind = FieldKinds::Occupied
+                if field.pos.distance_squared(cell.pos)
+                    < (Cell::SIZE * PHYSICS_SCALE).powi(2)
+                {
+                    field.kind = FieldKinds::Occupied;
                 }
 
-                if field.pos.distance(current_pos) < cell.size * 2.0 {
+                if field.pos.distance_squared(current_pos)
+                    < (Cell::SIZE * PHYSICS_SCALE * 2.0).powi(2)
+                {
                     // treat pathseeker pointlike
-                    field.kind = FieldKinds::Empty
+                    field.kind = FieldKinds::Empty;
                 }
 
-                if field.pos.distance(target) < cell.size * 2.0 {
+                if field.pos.distance_squared(target)
+                    < (Cell::SIZE * PHYSICS_SCALE * 2.0).powi(2)
+                {
                     // clear target
-                    field.kind = FieldKinds::Empty
+                    field.kind = FieldKinds::Empty;
+                }
+            }
+        }
+
+        for wall in map.walls.iter() {
+            for mut field in self.fields.iter_mut() {
+                if field.pos.distance_squared(wall.pos)
+                    < (Wall::SIZE * PHYSICS_SCALE).powi(2)
+                {
+                    field.kind = FieldKinds::Occupied;
                 }
             }
         }

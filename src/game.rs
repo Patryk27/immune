@@ -1,23 +1,23 @@
+mod progress_bars;
+
+use bevy::math::vec2;
 use bevy::prelude::*;
+use instant::{Duration, Instant};
 
 use crate::compiling::RecompileEvent;
-use crate::level::{Level, LevelWave};
-use crate::systems::bio::{
-    LymphNode, LymphNodeState, LymphNodeTarget, Pathogen, PathogenKind,
-};
+use crate::level::{Level, LevelWaveOp};
+use crate::systems::bio::{LymphNode, LymphNodeState, LymphNodeTarget, Wall};
+use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Alignment;
 use crate::tutorial::TutorialState;
-
-mod progress_bars;
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Level::l1())
+        app.insert_resource(Level::start())
             .insert_resource(GameState::default())
             .insert_resource(TutorialState::default())
-            .add_startup_system(setup)
             .add_system(progress)
             .add_system(game_over);
 
@@ -28,99 +28,168 @@ impl Plugin for GamePlugin {
 pub struct GameState {
     pub tutorial: bool,
     pub seconds: f32,
-    pub curr_wave_id: Option<usize>,
-    pub next_wave_at: f32,
+    pub vm: LevelVm,
     pub game_over: bool,
+}
+
+pub enum LevelVm {
+    AwaitingStart {
+        at: Instant,
+    },
+    Asleep {
+        until: Option<Instant>,
+        op_idx: usize,
+    },
+    AwaitingWaveEnd,
+    AwaitingWaveStart {
+        at: Instant,
+    },
+}
+
+impl Default for LevelVm {
+    fn default() -> Self {
+        Self::AwaitingStart {
+            at: Instant::now() + Duration::from_secs(5),
+        }
+    }
 }
 
 impl Default for GameState {
     fn default() -> Self {
         Self {
-            tutorial: true,
+            tutorial: false, // TODO
             seconds: Default::default(),
-            curr_wave_id: Default::default(),
-            next_wave_at: Default::default(),
+            vm: LevelVm::default(),
             game_over: false,
         }
     }
 }
 
-fn setup(
+fn progress(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     assets: Res<AssetServer>,
     mut state: ResMut<GameState>,
-    level: Res<Level>,
+    walls: Query<(Entity, &Transform), With<Wall>>,
+    mut level: ResMut<Level>,
     mut recompile_event_tx: EventWriter<RecompileEvent>,
+    lymph_nodes: Query<&Alignment, With<LymphNode>>,
 ) {
-    for lymph_node in &level.setup.lymph_nodes {
-        LymphNode {
-            resource: None,
-            target: LymphNodeTarget::Outside,
-            product: None,
-            parent: None,
-            warning: None,
-            state: LymphNodeState {
-                is_paused: false,
-                is_awaiting_resources: false,
-            },
-            production_tt: 0.0,
-        }
-        .spawn(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &assets,
-            lymph_node.pos,
-        );
-    }
-
-    state.next_wave_at = level.waves[0].starts_at as _;
-
-    recompile_event_tx.send(RecompileEvent);
-}
-
-fn progress(
-    time: Res<Time>,
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut state: ResMut<GameState>,
-    level: Res<Level>,
-) {
-    if state.tutorial {
+    if state.game_over {
         return;
     }
 
-    state.seconds += time.delta_seconds();
+    let build_pos =
+        |x: i32, y: i32| vec2((x as f32) * Wall::SIZE, (y as f32) * Wall::SIZE);
 
-    if state.seconds >= state.next_wave_at {
-        let curr_wave_id = state.curr_wave_id.map_or(0, |wave_id| wave_id + 1);
+    loop {
+        match state.vm {
+            LevelVm::AwaitingStart { at } => {
+                if Instant::now() < at {
+                    return;
+                }
 
-        if let Some(wave) = level.waves.get(curr_wave_id) {
-            spawn_wave(&mut commands, &assets, wave);
-        }
-
-        if let Some(wave) = level.waves.get(curr_wave_id + 1) {
-            state.next_wave_at = wave.starts_at as _;
-        } else {
-            // TODO proceed to the next level?
-            state.next_wave_at = f32::MAX;
-        }
-
-        state.curr_wave_id = Some(curr_wave_id);
-    }
-}
-
-fn spawn_wave(commands: &mut Commands, assets: &AssetServer, wave: &LevelWave) {
-    for virus in &wave.viruses {
-        for _ in 0..virus.count {
-            Pathogen {
-                body: virus.body,
-                antigen: virus.antigen,
-                kind: PathogenKind::Virus,
+                state.vm = LevelVm::Asleep {
+                    until: None,
+                    op_idx: 0,
+                };
             }
-            .spawn(commands, assets, virus.pos, virus.vel);
+
+            LevelVm::Asleep { until, op_idx } => {
+                if let Some(until) = until {
+                    if Instant::now() < until {
+                        return;
+                    }
+                }
+
+                let op = &level.wave.ops[op_idx];
+                let mut sleep = true;
+
+                match op {
+                    LevelWaveOp::AddWall { x, y } => {
+                        Wall::spawn(&mut commands, &assets, build_pos(*x, *y));
+                    }
+
+                    LevelWaveOp::RemoveWall { x, y } => {
+                        sleep = false;
+
+                        let pos = build_pos(*x, *y) * PHYSICS_SCALE;
+
+                        for (entity, transform) in walls.iter() {
+                            if (pos.x - transform.translation.x).abs() < 0.001
+                                && (pos.y - transform.translation.y).abs()
+                                    < 0.001
+                            {
+                                commands.entity(entity).despawn();
+                            }
+                        }
+                    }
+
+                    LevelWaveOp::AddLymphNode { x, y, alignment } => {
+                        LymphNode {
+                            resource: None,
+                            target: LymphNodeTarget::Outside,
+                            product: None,
+                            parent: None,
+                            warning: None,
+                            state: LymphNodeState {
+                                is_paused: false,
+                                is_awaiting_resources: false,
+                            },
+                            production_tt: 0.0,
+                        }
+                        .spawn(
+                            &mut commands,
+                            &mut meshes,
+                            &mut materials,
+                            &assets,
+                            build_pos(*x, *y),
+                            *alignment,
+                        );
+
+                        recompile_event_tx.send(RecompileEvent);
+                    }
+                }
+
+                state.vm = if level.wave.ops.get(op_idx + 1).is_some() {
+                    let until = if sleep {
+                        Some(Instant::now() + Duration::from_millis(2))
+                    } else {
+                        None
+                    };
+
+                    LevelVm::Asleep {
+                        until,
+                        op_idx: op_idx + 1,
+                    }
+                } else {
+                    LevelVm::AwaitingWaveEnd
+                };
+            }
+
+            LevelVm::AwaitingWaveEnd => {
+                if lymph_nodes.iter().all(|a| a.is_player()) {
+                    state.vm = LevelVm::AwaitingWaveStart {
+                        at: Instant::now() + Duration::from_secs(15),
+                    };
+                } else {
+                    return;
+                }
+            }
+
+            LevelVm::AwaitingWaveStart { at } => {
+                if Instant::now() <= at {
+                    return;
+                }
+
+                level.progress();
+
+                state.vm = LevelVm::Asleep {
+                    until: Some(Instant::now()),
+                    op_idx: 0,
+                };
+            }
         }
     }
 }
@@ -131,12 +200,17 @@ fn game_over(
     mut state: ResMut<GameState>,
     lymph_nodes: Query<(&Transform, &Alignment, &LymphNode), With<LymphNode>>,
 ) {
+    let enemy_owned_lymph_nodes = lymph_nodes
+        .iter()
+        .filter(|(_, alignment, _)| alignment.is_enemy())
+        .count();
+
     let player_owned_lymph_nodes = lymph_nodes
         .iter()
         .filter(|(_, alignment, _)| alignment.is_player())
         .count();
 
-    if player_owned_lymph_nodes == 0 {
+    if enemy_owned_lymph_nodes > 0 && player_owned_lymph_nodes == 0 {
         state.game_over = true;
     }
 

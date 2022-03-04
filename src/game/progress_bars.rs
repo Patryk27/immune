@@ -1,6 +1,8 @@
 use bevy::prelude::*;
+use instant::Instant;
 
-use super::GameState;
+use super::{GameState, LevelVm};
+use crate::level::Level;
 use crate::systems::bio::Pathogen;
 
 const FONT_SIZE: f32 = 30.0;
@@ -97,14 +99,33 @@ fn position_text(
 
 fn update_wave_text(
     game_state: Res<GameState>,
+    level: Res<Level>,
     mut query: Query<(&mut Text, &WaveText)>,
 ) {
     let (mut text, _) = query.single_mut();
 
-    let seconds_until_next_wave = game_state.next_wave_at - game_state.seconds;
+    text.sections[0].value = String::default();
 
-    text.sections[0].value =
-        format!("Next wave in {seconds_until_next_wave:.0}");
+    match game_state.vm {
+        LevelVm::AwaitingStart { at } => {
+            if let Some(d) = at.checked_duration_since(Instant::now()) {
+                text.sections[0].value =
+                    format!("Game begins in {} seconds", d.as_secs());
+            }
+        }
+
+        LevelVm::AwaitingWaveStart { at } => {
+            if let Some(d) = at.checked_duration_since(Instant::now()) {
+                text.sections[0].value = format!(
+                    "Wave {} starts in {} seconds",
+                    level.wave_idx,
+                    d.as_secs(),
+                );
+            }
+        }
+
+        _ => (),
+    }
 }
 
 fn update_number_of_viruses_text(

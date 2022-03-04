@@ -6,6 +6,7 @@ mod leukocyte;
 mod lymph_node;
 mod pathogen;
 mod protein;
+mod wall;
 
 use std::f32::consts::TAU;
 
@@ -24,6 +25,7 @@ pub use self::leukocyte::*;
 pub use self::lymph_node::*;
 pub use self::pathogen::*;
 pub use self::protein::*;
+pub use self::wall::*;
 use super::physics::PHYSICS_SCALE;
 use super::units::Alignment;
 use crate::compiling::RecompileEvent;

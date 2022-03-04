@@ -11,10 +11,9 @@ use pathfinding::prelude::astar;
 pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::pathfinding::discrete_map::FieldKinds;
-use crate::systems::bio::{Cell, LymphNode};
+use crate::systems::bio::{LymphNode, Wall};
 use crate::systems::debug::{DebugState, DEBUG_MAP_FIELD_SIZE};
 use crate::systems::draw_square_dur;
-use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
 
 type Pathseeker = Vec2;
@@ -53,12 +52,12 @@ fn refresh_map(
     mut state: ResMut<PathfindingState>,
     lymph_nodes: Query<&Transform, With<LymphNode>>,
     units: Query<&Transform, With<Unit>>,
+    walls: Query<&Transform, With<Wall>>,
 ) {
     state.map.lymph_nodes = lymph_nodes
         .iter()
         .map(|transform| MapLymphNode {
             pos: transform.translation.truncate(),
-            size: LymphNode::SIZE * PHYSICS_SCALE,
         })
         .collect();
 
@@ -66,7 +65,13 @@ fn refresh_map(
         .iter()
         .map(|transform| MapUnit {
             pos: transform.translation.truncate(),
-            size: Cell::SIZE * PHYSICS_SCALE,
+        })
+        .collect();
+
+    state.map.walls = walls
+        .iter()
+        .map(|transform| MapWall {
+            pos: transform.translation.truncate(),
         })
         .collect();
 }

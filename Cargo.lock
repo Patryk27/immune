@@ -3291,7 +3291,6 @@ dependencies = [
  "nalgebra",
  "pathfinding",
  "rand",
- "serde",
  "toml",
 ]
 

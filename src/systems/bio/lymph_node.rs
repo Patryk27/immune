@@ -40,10 +40,11 @@ impl LymphNode {
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<ColorMaterial>,
         assets: &AssetServer,
-        at: Vec2,
+        pos: Vec2,
+        alignment: Alignment,
     ) {
         let transform = Transform::from_translation(
-            (at * PHYSICS_SCALE).extend(theme::z_index::LYMPH_NODE),
+            (pos * PHYSICS_SCALE).extend(theme::z_index::LYMPH_NODE),
         )
         .with_scale(Vec3::splat(0.5));
 
@@ -54,7 +55,7 @@ impl LymphNode {
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
-                position: at.to_array().into(),
+                position: pos.to_array().into(),
                 body_type: RigidBodyTypeComponent(RigidBodyType::Static),
                 ..Default::default()
             })
@@ -72,7 +73,7 @@ impl LymphNode {
                 radius: Self::SIZE * PHYSICS_SCALE,
             })
             .insert(Health::lymph_node())
-            .insert(Alignment::Player)
+            .insert(alignment)
             .insert(DeathBehavior::SwitchSides)
             .insert(Weapon::None)
             .insert(self.to_owned());

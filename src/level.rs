@@ -1,61 +1,119 @@
-use bevy::math::Vec2;
-use serde::{Deserialize, Serialize};
+mod gen;
 
-use crate::systems::bio::{Antigen, Body};
+use crate::systems::units::Alignment;
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Debug)]
 pub struct Level {
-    #[serde(rename = "Setup")]
-    pub setup: LevelSetup,
-    #[serde(rename = "Wave")]
-    pub waves: Vec<LevelWave>,
+    pub chambers: Vec<LevelChamber>,
+    pub corridors: Vec<LevelCorridor>,
+    pub wave: LevelWave,
+    pub wave_idx: usize,
 }
 
 impl Level {
-    pub fn l1() -> Self {
-        Self::new(include_str!("../levels/1.toml"))
+    pub fn start() -> Self {
+        gen::start()
     }
 
-    fn new(str: &str) -> Self {
-        toml::from_str(str).unwrap()
+    pub fn progress(&mut self) {
+        gen::progress(self)
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct LevelSetup {
-    #[serde(rename = "LymphNode")]
-    pub lymph_nodes: Vec<LevelLymphNode>,
+#[derive(Clone, Debug)]
+pub struct LevelChamber {
+    pub x: i32,
+    pub y: i32,
+    pub r: i32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+impl LevelChamber {
+    fn contains(&self, x: i32, y: i32) -> bool {
+        (self.x - x).pow(2) + (self.y - y).pow(2) < self.r.pow(2)
+    }
+
+    fn distance_to_squared(&self, other: &Self) -> i32 {
+        (other.x - self.x).pow(2) + (other.y - self.y).pow(2)
+    }
+
+    fn collides_with(&self, other: &Self) -> bool {
+        (other.x - self.x).pow(2) + (other.y - self.y).pow(2)
+            <= (self.r + other.r).pow(2)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct LevelCorridor {
+    pub x1: i32,
+    pub y1: i32,
+    pub x2: i32,
+    pub y2: i32,
+}
+
+impl LevelCorridor {
+    fn walls(
+        &self,
+        chambers: &[LevelChamber],
+    ) -> (Vec<(i32, i32)>, Vec<(i32, i32)>) {
+        let mut add_walls = Vec::new();
+        let mut remove_walls = Vec::new();
+
+        let x_len = (self.x1 - self.x2).abs();
+        let y_len = (self.y1 - self.y2).abs();
+
+        let joint = (self.x1, self.y2);
+
+        for dx in 0..x_len {
+            let x = self.x1.min(self.x2) + dx;
+            let y = joint.1;
+
+            add_walls.push((x, y - 2));
+            remove_walls.push((x, y - 1));
+            remove_walls.push((x, y));
+            remove_walls.push((x, y + 1));
+            add_walls.push((x, y + 2));
+        }
+
+        for dy in 0..y_len {
+            let x = joint.0;
+            let y = self.y1.min(self.y2) + dy;
+
+            add_walls.push((x - 2, y));
+            remove_walls.push((x - 1, y));
+            remove_walls.push((x, y));
+            remove_walls.push((x + 1, y));
+            add_walls.push((x + 2, y));
+        }
+
+        let add_walls = add_walls
+            .into_iter()
+            .filter(|(x, y)| !chambers.iter().any(|c| c.contains(*x, *y)))
+            .collect();
+
+        (add_walls, remove_walls)
+    }
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct LevelWave {
-    #[serde(rename = "StartsAt")]
-    pub starts_at: u64,
-    #[serde(rename = "Virus")]
-    pub viruses: Vec<LevelVirus>,
+    pub ops: Vec<LevelWaveOp>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct LevelVirus {
-    #[serde(rename = "Pos")]
-    pub pos: Vec2,
-    #[serde(rename = "Vel")]
-    pub vel: Vec2,
-    #[serde(rename = "Body")]
-    pub body: Body,
-    #[serde(rename = "Antigen")]
-    pub antigen: Antigen,
-    #[serde(rename = "Count")]
-    pub count: usize,
-}
+#[derive(Clone, Debug)]
+pub enum LevelWaveOp {
+    AddWall {
+        x: i32,
+        y: i32,
+    },
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct LevelLymphNode {
-    #[serde(rename = "Pos")]
-    pub pos: Vec2,
+    RemoveWall {
+        x: i32,
+        y: i32,
+    },
+
+    AddLymphNode {
+        x: i32,
+        y: i32,
+        alignment: Alignment,
+    },
 }

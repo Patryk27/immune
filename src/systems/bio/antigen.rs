@@ -2,13 +2,12 @@ use std::f32::consts::TAU;
 
 use bevy::prelude::*;
 use rand::Rng;
-use serde::Deserialize;
 
 use super::{Body, CellFadeIn};
 use crate::systems::bio::Cell;
 use crate::systems::physics::PHYSICS_SCALE;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Antigen {
     Rectangle,
     Semicircle,
