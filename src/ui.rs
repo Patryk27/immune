@@ -23,6 +23,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(UiState::default())
             .insert_resource(UiTextures::default())
+            .add_startup_system(tutorial::load_assets)
             .add_event::<UiEvent>()
             .add_system(process_events)
             .add_system(process_lymph_node_editor)

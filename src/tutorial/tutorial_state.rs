@@ -3,13 +3,10 @@ pub use self::TutorialStage::*;
 pub const TUTORIAL_STAGES: &[TutorialStage] = &[
     WeclomePage,
     LymphNodeIntroduction,
-    LymhNodeConnecting,
-    LyphNodeUnitsProduction,
     ResourcesIntroduction,
-    UnitsControls,
     EnemiesIntroduction,
     CombatInstuctions,
-    EnemiesUnfairAdventageExplanation,
+    EnemiesUnfairAdventage,
     Gameplay,
 ];
 
@@ -22,13 +19,10 @@ pub struct TutorialState {
 pub enum TutorialStage {
     WeclomePage,
     LymphNodeIntroduction,
-    LymhNodeConnecting,
-    LyphNodeUnitsProduction,
     ResourcesIntroduction,
-    UnitsControls,
     EnemiesIntroduction,
     CombatInstuctions,
-    EnemiesUnfairAdventageExplanation,
+    EnemiesUnfairAdventage,
     Gameplay,
 }
 
@@ -37,13 +31,10 @@ impl TutorialStage {
         match *self {
             WeclomePage => "Welcome!",
             LymphNodeIntroduction => "Lymph node introduction",
-            LymhNodeConnecting => "Connecting Lymph nodes",
-            LyphNodeUnitsProduction => "Producing unites via Lymph nodes",
             ResourcesIntroduction => "Resources",
-            UnitsControls => "Cell units controls",
             EnemiesIntroduction => "Beware enemies",
             CombatInstuctions => "Kill them",
-            EnemiesUnfairAdventageExplanation => "... or they will kill you",
+            EnemiesUnfairAdventage => "... before they kill you",
             Gameplay => "",
         }
     }

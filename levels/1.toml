@@ -1,11 +1,11 @@
 [[Setup.LymphNode]]
-Pos = [-5.0, -2.0]
+Pos = [-2.0, -2.0]
 
 [[Setup.LymphNode]]
-Pos = [-5.0, 0.0]
+Pos = [2.0, 0.0]
 
 [[Setup.LymphNode]]
-Pos = [-5.0, 2.0]
+Pos = [-2.0, 2.0]
 
 [[Wave]]
 StartsAt = 0
@@ -15,7 +15,7 @@ Pos = [-1.0, 0.0]
 Vel = [0.0, 0.0]
 Body = "Circle"
 Antigen = "Rectangle"
-Count = 20
+Count = 0
 
 [[Wave.Virus]]
 Pos = [-2.0, 0.0]
