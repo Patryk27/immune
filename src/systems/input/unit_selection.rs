@@ -164,7 +164,7 @@ fn unit_selection(
     keyboard: Res<Input<KeyCode>>,
     mut selected_units: ResMut<SelectedUnits>,
     mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
-    units: Query<(Entity, &Transform, &Unit)>,
+    units: Query<(Entity, &Alignment, &Transform, &Unit)>,
     mut selection_event: EventReader<Selection>,
 ) {
     match selection_event.iter().next() {
@@ -190,7 +190,7 @@ fn unit_selection(
 }
 
 fn selected_units_in_rect(
-    units: &Query<(Entity, &Transform, &Unit)>,
+    units: &Query<(Entity, &Alignment, &Transform, &Unit)>,
     keyboard: &Input<KeyCode>,
     drag_start_pos: Vec2,
     mouse_pos: Vec2,
@@ -199,14 +199,15 @@ fn selected_units_in_rect(
 ) {
     let new_selected_units = units
         .iter()
-        .filter(|(_, transform, _)| {
-            point_in_rect(
-                transform.translation.truncate(),
-                drag_start_pos,
-                mouse_pos,
-            )
+        .filter(|(_, alignment, transform, _)| {
+            alignment.is_player()
+                && point_in_rect(
+                    transform.translation.truncate(),
+                    drag_start_pos,
+                    mouse_pos,
+                )
         })
-        .map(|(entity, _, _)| entity);
+        .map(|(entity, _, _, _)| entity);
 
     if is_appending_selection(keyboard) {
         selected_units.selected_units.extend(new_selected_units);
@@ -220,7 +221,7 @@ fn selected_units_in_rect(
 fn select_unit_at_point(
     state: &InputState,
     keyboard: &Input<KeyCode>,
-    units: Query<(Entity, &Transform, &Unit)>,
+    units: Query<(Entity, &Alignment, &Transform, &Unit)>,
     selected_units: &mut SelectedUnits,
     mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
 ) {

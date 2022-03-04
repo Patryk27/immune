@@ -17,7 +17,7 @@ const MAX_WAIT_TIME_BEFORE_ATTACKING: f32 = 20.0;
 
 pub fn initialize(app: &mut App) {
     app.insert_resource(State::default())
-        .insert_resource(EnemyAiEnabled(false))
+        .insert_resource(EnemyAiEnabled(true))
         .add_system(attack_lymph_nodes)
         .add_system(track_combat_group_center)
         .add_system(track_unit_alignment)

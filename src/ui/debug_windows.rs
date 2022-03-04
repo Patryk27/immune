@@ -6,10 +6,13 @@ use crate::systems::enemy_ai::{self, EnemyAiEnabled};
 use crate::systems::input::{SelectedUnits, SelectedUnitsChanged};
 use crate::systems::units::{Alignment, Unit};
 
+const ENABLED: bool = false;
+
 pub fn initialize(app: &mut App) {
-    app.insert_resource(crate::systems::debug::DebugState::default())
-        .add_system(ai_debug_window)
-        .add_system(debug_options_window);
+    if ENABLED {
+        app.add_system(ai_debug_window)
+            .add_system(debug_options_window);
+    }
 }
 
 fn debug_options_window(
