@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use bevy::prelude::Entity;
+use bevy::prelude::{warn, Entity};
 use itertools::Itertools;
 
 use crate::systems::bio::{
@@ -134,6 +134,11 @@ impl Compiler {
                     }
                 },
             },
+
+            (P::Pathogen(_), _) => {
+                warn!("Cannot compile with pathogens!");
+                None
+            }
         }
     }
 

@@ -1,3 +1,4 @@
+use rand::Rng;
 use serde::Deserialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -15,6 +16,16 @@ impl Body {
         match self {
             Self::Circle => "body.circle.png",
             Self::Hexagon => "body.hexagon.png",
+        }
+    }
+
+    pub fn random(rng: &mut impl Rng) -> Self {
+        let idx = rng.gen::<usize>() % 2;
+
+        match idx {
+            0 => Self::Circle,
+            1 => Self::Hexagon,
+            _ => unreachable!(),
         }
     }
 }

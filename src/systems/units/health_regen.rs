@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
-use super::Unit;
+use super::Health;
 
-pub fn system(time: Res<Time>, mut units: Query<&mut Unit>) {
-    for mut unit in units.iter_mut() {
-        unit.health = (unit.health + time.delta_seconds() * unit.regen_rate)
-            .clamp(0.0, unit.max_health);
+pub fn system(time: Res<Time>, mut units: Query<&mut Health>) {
+    for mut health in units.iter_mut() {
+        health.health = (health.health
+            + time.delta_seconds() * health.regen_rate)
+            .clamp(0.0, health.max_health);
     }
 }

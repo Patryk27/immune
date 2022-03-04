@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use rand::prelude::SliceRandom;
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 use super::{Antigen, Body, Cell};
 
@@ -12,6 +12,16 @@ pub struct Pathogen {
 }
 
 impl Pathogen {
+    pub fn random() -> Self {
+        let mut rng = thread_rng();
+
+        Self {
+            body: Body::random(&mut rng),
+            antigen: Antigen::random(&mut rng),
+            kind: PathogenKind::Virus,
+        }
+    }
+
     pub fn color(a: u8) -> Color {
         let mut rng = rand::thread_rng();
 

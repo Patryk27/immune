@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use super::{Alignment, Unit, BASE_DAMAGE};
+use super::{Alignment, DeathBehavior, Health, BASE_DAMAGE};
 
 pub fn system(
     mut commands: Commands,
     mut contact_events: EventReader<ContactEvent>,
-    mut units: Query<&mut Unit>,
+    mut units: Query<(&mut Alignment, &DeathBehavior, &mut Health)>,
 ) {
     for contact_event in contact_events.iter() {
         match contact_event {
@@ -14,8 +14,8 @@ pub fn system(
                 let left = left.entity();
                 let right = right.entity();
 
-                let left_alignment = unit_alignment(left, &units);
-                let right_alignment = unit_alignment(right, &units);
+                let left_alignment = alignment_of(left, &units);
+                let right_alignment = alignment_of(right, &units);
 
                 match (left_alignment, right_alignment) {
                     (Some(left_alignment), Some(right_alignment)) => {
@@ -32,23 +32,33 @@ pub fn system(
     }
 }
 
-fn unit_alignment(
+fn alignment_of(
     entity: Entity,
-    units: &Query<&mut Unit>,
+    units: &Query<(&mut Alignment, &DeathBehavior, &mut Health)>,
 ) -> Option<Alignment> {
-    units.get(entity).map(|unit| unit.alignment).ok()
+    units.get(entity).map(|(alignment, _, _)| *alignment).ok()
 }
 
 fn deal_damage(
     entity: Entity,
-    units: &mut Query<&mut Unit>,
+    units: &mut Query<(&mut Alignment, &DeathBehavior, &mut Health)>,
     commands: &mut Commands,
 ) {
-    if let Ok(mut unit) = units.get_mut(entity) {
-        unit.health -= BASE_DAMAGE;
+    if let Ok((mut alignment, death_behavior, mut health)) =
+        units.get_mut(entity)
+    {
+        health.health -= BASE_DAMAGE;
 
-        if unit.health <= 0.0 {
-            commands.entity(entity).despawn_recursive();
+        if health.health <= 0.0 {
+            match death_behavior {
+                DeathBehavior::Die => {
+                    commands.entity(entity).despawn_recursive()
+                }
+                DeathBehavior::SwitchSides => {
+                    alignment.flip();
+                    health.reset();
+                }
+            }
         }
     }
 }

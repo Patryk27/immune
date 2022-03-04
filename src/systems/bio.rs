@@ -25,9 +25,11 @@ pub use self::lymph_node::*;
 pub use self::pathogen::*;
 pub use self::protein::*;
 use super::physics::PHYSICS_SCALE;
+use super::units::Alignment;
 
 pub fn initialize(app: &mut App) {
     app.add_system(progress_lymph_nodes)
+        .add_system(handle_lymph_node_alignment)
         .add_system(animate_warnings)
         .add_system(animate_progress_bars)
         .add_system(animate_fresh_cells)
@@ -59,29 +61,59 @@ fn progress_lymph_nodes(
         if node.production_tt >= LymphNode::PRODUCTION_DURATION {
             node.production_tt = 0.0;
 
-            if let LymphNodeProduct::Leukocyte(leukocyte) = product {
-                let mut rng = rand::thread_rng();
+            match product {
+                LymphNodeProduct::Leukocyte(leukocyte) => {
+                    let (pos, vel) =
+                        get_random_position_and_velocity(transform);
 
-                let pos = transform.translation.truncate() / PHYSICS_SCALE;
+                    leukocyte.spawn(&mut commands, &assets, pos, vel);
+                }
+                LymphNodeProduct::Pathogen(pathogen) => {
+                    let (pos, vel) =
+                        get_random_position_and_velocity(transform);
 
-                let vel =
-                    {
-                        let angle = Transform::default().with_rotation(
-                            Quat::from_axis_angle(
-                                Vec3::Z,
-                                rng.gen_range(0.0..=TAU),
-                            ),
-                        );
-
-                        let speed = Transform::default().with_translation(
-                            vec3(8.0 * rng.gen_range(1.0..4.0), 0.0, 0.0),
-                        );
-
-                        (angle * speed).translation.truncate()
-                    };
-
-                leukocyte.spawn(&mut commands, &assets, pos, vel);
+                    pathogen.spawn(&mut commands, &assets, pos, vel);
+                }
+                _ => (),
             }
+        }
+    }
+}
+
+fn get_random_position_and_velocity(transform: &Transform) -> (Vec2, Vec2) {
+    let mut rng = rand::thread_rng();
+
+    let pos = transform.translation.truncate() / PHYSICS_SCALE;
+
+    let vel = {
+        let angle = Transform::default().with_rotation(Quat::from_axis_angle(
+            Vec3::Z,
+            rng.gen_range(0.0..=TAU),
+        ));
+
+        let speed = Transform::default().with_translation(vec3(
+            8.0 * rng.gen_range(1.0..4.0),
+            0.0,
+            0.0,
+        ));
+
+        (angle * speed).translation.truncate()
+    };
+
+    (pos, vel)
+}
+
+fn handle_lymph_node_alignment(
+    mut lymph_nodes: Query<
+        (&mut LymphNode, &mut LymphNodeWarning, &Alignment),
+        Changed<Alignment>,
+    >,
+) {
+    for (mut lymph_node, mut warning, alignment) in lymph_nodes.iter_mut() {
+        if let Alignment::Enemy = alignment {
+            warning.set(Some("biohazard-symbol.png"));
+            lymph_node.product =
+                Some(LymphNodeProduct::Pathogen(Pathogen::random()));
         }
     }
 }

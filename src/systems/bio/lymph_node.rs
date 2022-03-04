@@ -11,10 +11,11 @@ use bevy_rapier2d::prelude::{
 use itertools::Itertools;
 use rand::Rng;
 
-use super::{AntigenBinder, Body, Leukocyte, Protein};
+use super::{AntigenBinder, Body, Leukocyte, Pathogen, Protein};
 use crate::compiling::CompilationWarning;
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
+use crate::systems::units::{Alignment, DeathBehavior, Health};
 use crate::theme;
 
 #[derive(Component, Clone, Debug)]
@@ -69,6 +70,9 @@ impl LymphNode {
             .insert(Collider::Circle {
                 radius: Self::SIZE * PHYSICS_SCALE,
             })
+            .insert(Health::lymph_node())
+            .insert(Alignment::Player)
+            .insert(DeathBehavior::SwitchSides)
             .insert(self.to_owned());
 
         // Spawn lymph node's sprite
@@ -107,7 +111,13 @@ impl LymphNode {
 
     pub fn is_spawner(&self) -> bool {
         matches!(self.target, LymphNodeTarget::Outside)
-            && matches!(self.product, Some(LymphNodeProduct::Leukocyte(_)))
+            && matches!(
+                self.product,
+                Some(
+                    LymphNodeProduct::Leukocyte(_)
+                        | LymphNodeProduct::Pathogen(_)
+                )
+            )
             && !self.state.is_paused
             && !self.state.is_awaiting_resources
     }
@@ -154,6 +164,7 @@ pub struct LymphNodeState {
 pub enum LymphNodeProduct {
     Resource(LymphNodeResource),
     Leukocyte(Leukocyte),
+    Pathogen(Pathogen),
 }
 
 #[derive(Component, Clone, Debug)]

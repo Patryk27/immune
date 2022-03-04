@@ -1,6 +1,7 @@
 use std::f32::consts::TAU;
 
 use bevy::prelude::*;
+use rand::Rng;
 use serde::Deserialize;
 
 use super::{Body, CellFadeIn};
@@ -99,5 +100,16 @@ impl Antigen {
 
             (transform_rot * transform_pos).with_scale(Vec3::splat(0.1))
         })
+    }
+
+    pub fn random(rng: &mut impl Rng) -> Self {
+        let idx = rng.gen::<usize>() % 3;
+
+        match idx {
+            0 => Self::Rectangle,
+            1 => Self::Semicircle,
+            2 => Self::Triangle,
+            _ => unreachable!(),
+        }
     }
 }
