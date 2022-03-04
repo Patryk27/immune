@@ -102,7 +102,7 @@ fn welcome_page(ui: &mut Ui) {
         ui.label("");
         ui.label("");
         ui.label(
-            WidgetText::from("Immune: Unfair Adventage")
+            WidgetText::from("Immune: Unfair Advantage")
                 .text_style(TextStyle::Heading),
         );
         ui.label("");
@@ -118,19 +118,19 @@ fn lymph_node_introduction(ui: &mut Ui) {
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
         ui.add(egui::widgets::Image::new(
             egui::TextureId::User(LYMPH_TUTORIAL_PIC),
-            [934.0, 715.0],
+            [934.0 / 2.0, 715.0 / 2.0],
         ));
     });
 
     ui.separator();
 
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ");
-        ui.label("incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis ");
-        ui.label("nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-        ui.label("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ");
-        ui.label("fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa");
-        ui.label("qui officia deserunt mollit anim id est laborum.");
+        ui.label("Lymph nodes are cells which allows you to build battle unit cells.");
+        ui.label("In order to build battle unit cells you have to connect Lymph nodes.");
+        ui.label("Each of the Lymph nodes has access to one resource,");
+        ui.label("and can forward its oputput to another Lymph node.");
+        ui.label("Only by combining different resources, you are able to build battle cells");
+        ui.label("Try different combinations!");
     });
 }
 
@@ -138,19 +138,16 @@ fn resources_introduction(ui: &mut Ui) {
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
         ui.add(egui::widgets::Image::new(
             egui::TextureId::User(RESOURCE_TUTORIAL_PIC),
-            [715.0, 715.0],
+            [715.0 / 2.0, 715.0 / 2.0],
         ));
     });
 
     ui.separator();
 
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ");
-        ui.label("incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis ");
-        ui.label("nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-        ui.label("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ");
-        ui.label("fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa");
-        ui.label("qui officia deserunt mollit anim id est laborum.");
+        ui.label("Resources are vital component in cell building.");
+        ui.label("");
+        ui.label("But they are missing. sorry!");
     });
 }
 
@@ -158,19 +155,16 @@ fn enemies_introduction(ui: &mut Ui) {
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
         ui.add(egui::widgets::Image::new(
             egui::TextureId::User(ENEMIES_PIC),
-            [650.0, 557.0],
+            [650.0 / 2.0, 557.0 / 2.0],
         ));
     });
 
     ui.separator();
 
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ");
-        ui.label("incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis ");
-        ui.label("nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-        ui.label("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ");
-        ui.label("fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa");
-        ui.label("qui officia deserunt mollit anim id est laborum.");
+        ui.label("Those little cute buddies wants only one thing - to rip you apart.");
+        ui.label("Viruses are extremely dangerous and your job is to fight them.");
+        ui.label("Dont be fooled by those cute faces.");
     });
 }
 
@@ -178,19 +172,17 @@ fn combat_instuctions(ui: &mut Ui) {
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
         ui.add(egui::widgets::Image::new(
             egui::TextureId::User(COMBAT_PIC),
-            [1182.0, 955.0],
+            [1182.0 / 2.0, 955.0 / 2.0],
         ));
     });
 
     ui.separator();
 
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ");
-        ui.label("incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis ");
-        ui.label("nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-        ui.label("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ");
-        ui.label("fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa");
-        ui.label("qui officia deserunt mollit anim id est laborum.");
+        ui.label("To arms! Create tons of battle cells and protect your host body.");
+        ui.label("In order to select your units just drag your mouse with left button pressed.");
+        ui.label("You can also select one unit or multiselect with `ctrl` button hold");
+        ui.label("To give them order, press right mouse button in the place you want them to be.");
     });
 }
 
@@ -198,18 +190,15 @@ fn enemies_unfair_adventage(ui: &mut Ui) {
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
         ui.add(egui::widgets::Image::new(
             egui::TextureId::User(UNFAIR_ADVENTAGE_PIC),
-            [1388.0, 986.0],
+            [1388.0 / 2.0, 986.0 / 2.0],
         ));
     });
 
     ui.separator();
 
     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-        ui.label("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ");
-        ui.label("incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis ");
-        ui.label("nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-        ui.label("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu ");
-        ui.label("fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa");
-        ui.label("qui officia deserunt mollit anim id est laborum.");
+        ui.label("Enemies are smart and attack in groups but thats not the worse...");
+        ui.label("They can reproduce themselves in your Lymph nodes if you react too slow.");
+        ui.label("So give them battle from the very beggining otherwise you will rot.");
     });
 }
