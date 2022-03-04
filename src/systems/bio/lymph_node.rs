@@ -15,6 +15,7 @@ use super::{AntigenBinder, Body, Leukocyte, Pathogen, Protein};
 use crate::compiling::CompilationWarning;
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
+use crate::systems::units::combat::Weapon;
 use crate::systems::units::{Alignment, DeathBehavior, Health};
 use crate::theme;
 
@@ -73,6 +74,7 @@ impl LymphNode {
             .insert(Health::lymph_node())
             .insert(Alignment::Player)
             .insert(DeathBehavior::SwitchSides)
+            .insert(Weapon::None)
             .insert(self.to_owned());
 
         // Spawn lymph node's sprite
