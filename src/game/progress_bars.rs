@@ -98,15 +98,20 @@ fn position_text(
 }
 
 fn update_wave_text(
-    game_state: Res<GameState>,
+    state: Res<GameState>,
     level: Res<Level>,
     mut query: Query<(&mut Text, &WaveText)>,
 ) {
     let (mut text, _) = query.single_mut();
 
+    if state.game_over {
+        text.sections[0].value = "Game over".into();
+        return;
+    }
+
     text.sections[0].value = String::default();
 
-    match game_state.vm {
+    match state.vm {
         LevelVm::AwaitingStart { at } => {
             if let Some(d) = at.checked_duration_since(Instant::now()) {
                 text.sections[0].value =

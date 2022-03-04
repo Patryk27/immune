@@ -198,8 +198,6 @@ fn progress(
 }
 
 fn game_over(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
     mut state: ResMut<GameState>,
     lymph_nodes: Query<(&Transform, &Alignment, &LymphNode), With<LymphNode>>,
 ) {
@@ -216,31 +214,4 @@ fn game_over(
     if enemy_owned_lymph_nodes > 0 && player_owned_lymph_nodes == 0 {
         state.game_over = true;
     }
-
-    if !state.game_over {
-        return;
-    }
-
-    let font = assets.load("fat-pixels.regular.ttf");
-
-    let text_style = TextStyle {
-        font,
-        font_size: 45.0,
-        color: Color::WHITE,
-    };
-
-    let text_alignment = TextAlignment {
-        vertical: VerticalAlign::Center,
-        horizontal: HorizontalAlign::Center,
-    };
-
-    commands.spawn_bundle(Text2dBundle {
-        text: Text::with_section(
-            format!("Game Over"),
-            text_style.clone(),
-            text_alignment,
-        ),
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
-        ..Default::default()
-    });
 }

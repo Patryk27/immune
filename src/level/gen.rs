@@ -75,7 +75,7 @@ fn spawn_chamber(level: &Level) -> LevelChamber {
     let (mut min_x, mut min_y, mut max_x, mut max_y) = aabb(level);
 
     for _ in 0..100 {
-        let r = rng.gen_range(10..30);
+        let r = rng.gen_range(10..25);
         let xs = (min_x + r)..(max_x - r);
         let ys = (min_y + r)..(max_y - r);
 
@@ -100,8 +100,8 @@ fn spawn_chamber(level: &Level) -> LevelChamber {
     }
 
     let chamber = LevelChamber {
-        x: rng.gen_range(10..40),
-        y: rng.gen_range(10..40),
+        x: rng.gen_range(10..25),
+        y: rng.gen_range(10..30),
         r: rng.gen_range(10..30),
     };
 
