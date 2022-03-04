@@ -10,10 +10,10 @@ pub fn start() -> Level {
 
     add_circle_wall(&mut ops, 0, 0, 15);
     add_lymph_node(&mut ops, 0, 0, Alignment::Player);
-    add_lymph_node(&mut ops, -2, -2, Alignment::Player);
-    add_lymph_node(&mut ops, 2, -2, Alignment::Player);
-    add_lymph_node(&mut ops, -2, 2, Alignment::Player);
-    add_lymph_node(&mut ops, 2, 2, Alignment::Player);
+    add_lymph_node(&mut ops, -4, -4, Alignment::Player);
+    add_lymph_node(&mut ops, 4, -4, Alignment::Player);
+    add_lymph_node(&mut ops, -4, 4, Alignment::Player);
+    add_lymph_node(&mut ops, 4, 4, Alignment::Player);
 
     Level {
         chambers: vec![LevelChamber { x: 0, y: 0, r: 15 }],
@@ -152,8 +152,8 @@ fn spawn_chamber_lymph_node(
     let mut rng = rand::thread_rng();
 
     while force {
-        let x = rng.gen_range(3..(c.r - 3));
-        let y = rng.gen_range(3..(c.r - 3));
+        let x = rng.gen_range((-c.r + 2)..(c.r - 2));
+        let y = rng.gen_range((-c.r + 2)..(c.r - 2));
 
         if c.contains(c.x + x, c.y + y) {
             let collides = ops.iter().any(|op| {
