@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use unfair_advantage::systems::{
-    bio, camera, debug, enemy_ai, input, physics, units,
+    background, bio, camera, debug, enemy_ai, input, physics, units,
 };
 use unfair_advantage::{compiling, game, pathfinding, ui};
 
@@ -20,6 +20,7 @@ fn main() {
         .add_plugin(pathfinding::PathfindingPlugin)
         .add_plugin(game::GamePlugin);
 
+    background::initialize(&mut app);
     bio::initialize(&mut app);
     camera::initialize(&mut app);
     debug::initialize(&mut app);

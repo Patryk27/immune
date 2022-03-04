@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::DebugLines;
 
+pub mod background;
 pub mod bio;
 pub mod camera;
 pub mod debug;
