@@ -33,7 +33,7 @@ pub struct GameState {
 impl Default for GameState {
     fn default() -> Self {
         Self {
-            tutorial: false,
+            tutorial: true,
             seconds: Default::default(),
             curr_wave_id: Default::default(),
             next_wave_at: Default::default(),

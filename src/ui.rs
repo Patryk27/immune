@@ -3,7 +3,7 @@ mod lymph_node_editor;
 mod poll;
 mod radio_image_button;
 mod textures;
-mod tutorial_window;
+mod tutorial;
 
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
@@ -26,7 +26,7 @@ impl Plugin for UiPlugin {
             .add_event::<UiEvent>()
             .add_system(process_events)
             .add_system(process_lymph_node_editor)
-            .add_system(tutorial_window::system)
+            .add_system(tutorial::system)
             // Debug
             .insert_resource(crate::systems::debug::DebugState::default())
             .add_system(debug_window::system);
