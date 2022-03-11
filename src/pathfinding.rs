@@ -4,7 +4,6 @@ mod map;
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
-use bevy_prototype_debug_lines::DebugLines;
 use instant::Instant;
 use pathfinding::prelude::astar;
 
@@ -12,8 +11,6 @@ pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::pathfinding::discrete_map::FieldKinds;
 use crate::systems::bio::{LymphNode, Wall};
-use crate::systems::debug::{DebugState, DEBUG_MAP_FIELD_SIZE};
-use crate::systems::draw_square_dur;
 use crate::systems::units::Unit;
 
 type Pathseeker = Vec2;
@@ -51,19 +48,11 @@ impl PathfindingState {
 fn refresh_map(
     mut state: ResMut<PathfindingState>,
     lymph_nodes: Query<&Transform, With<LymphNode>>,
-    units: Query<&Transform, With<Unit>>,
     walls: Query<&Transform, With<Wall>>,
 ) {
     state.map.lymph_nodes = lymph_nodes
         .iter()
         .map(|transform| MapLymphNode {
-            pos: transform.translation.truncate(),
-        })
-        .collect();
-
-    state.map.units = units
-        .iter()
-        .map(|transform| MapUnit {
             pos: transform.translation.truncate(),
         })
         .collect();
@@ -78,8 +67,6 @@ fn refresh_map(
 
 fn hande_queue(
     mut state: ResMut<PathfindingState>,
-    debug_state: Res<DebugState>,
-    mut lines: ResMut<DebugLines>,
     mut units: Query<&mut Unit>,
 ) {
     state.budget_ms += 12;
@@ -116,18 +103,6 @@ fn hande_queue(
         };
 
         let pathfinder = Pathfinder::new(&state.map, pathseeker, target);
-
-        if debug_state.draw_obstacles_from_map {
-            for pos in pathfinder.map.obstacles() {
-                let field_size = DEBUG_MAP_FIELD_SIZE;
-
-                let top_left = pos - field_size;
-                let bottom_right = pos + field_size;
-
-                draw_square_dur(&mut lines, top_left, bottom_right, 4.0);
-            }
-        }
-
         let path = pathfinder.path();
         unit.set_path(path);
     }
@@ -143,7 +118,7 @@ pub struct Pathfinder {
 
 impl Pathfinder {
     pub fn new(map: &Map, pathseeker: Pathseeker, target: Target) -> Self {
-        let map = DiscreteMap::new(map, pathseeker, target);
+        let map = DiscreteMap::new(map, pathseeker, target, None);
         let start = map.start();
 
         let path = astar(

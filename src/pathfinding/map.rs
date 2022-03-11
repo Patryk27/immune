@@ -3,7 +3,7 @@ use bevy::prelude::*;
 #[derive(Clone, Debug, Default)]
 pub struct Map {
     pub lymph_nodes: Vec<MapLymphNode>,
-    pub units: Vec<MapUnit>,
+    // pub units: Vec<MapUnit>,
     pub walls: Vec<MapWall>,
 }
 

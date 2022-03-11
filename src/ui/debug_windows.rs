@@ -5,11 +5,10 @@ use crate::systems::debug::DebugState;
 use crate::systems::enemy_ai::{self, EnemyAiEnabled};
 use crate::systems::input::{SelectedUnits, SelectedUnitsChanged};
 use crate::systems::units::{Alignment, Unit};
-
-const ENABLED: bool = false;
+use crate::DEBUG;
 
 pub fn initialize(app: &mut App) {
-    if ENABLED {
+    if DEBUG {
         app.add_system(ai_debug_window)
             .add_system(debug_options_window);
     }

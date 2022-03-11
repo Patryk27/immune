@@ -34,13 +34,14 @@ pub struct DiscreteMap {
 }
 
 impl DiscreteMap {
-    pub fn new(map: &Map, mid: Vec2, target: Vec2) -> Self {
-        let map_size = mid.distance(target) as usize / FIELD_SIZE;
-        let map_size = if map_size % 2 == 0 {
-            map_size + 1
-        } else {
-            map_size
-        };
+    pub fn new(
+        map: &Map,
+        mid: Vec2,
+        target: Vec2,
+        map_size: Option<usize>,
+    ) -> Self {
+        let map_size = map_size.unwrap_or_else(|| Self::map_size_from_pos(mid, target));
+        let map_size = Self::standarize_map_size(map_size);
         let capacity = map_size.pow(2);
         let distance_to_edge = (FIELD_SIZE * map_size) as f32;
         let top_left_field_x = mid.x - distance_to_edge;
@@ -140,6 +141,22 @@ impl DiscreteMap {
             .collect()
     }
 
+    pub fn map_size_from_distance(distance: f32) -> usize {
+        distance as usize / FIELD_SIZE
+    }
+
+    pub fn map_size_from_pos(one: Vec2, other: Vec2) -> usize {
+        Self::map_size_from_distance(one.distance(other))
+    }
+
+    pub fn standarize_map_size(map_size: usize) -> usize {
+        if map_size % 2 == 0 {
+            map_size + 1
+        } else {
+            map_size
+        }
+    }
+
     fn neighbours(&self, idx: usize) -> impl Iterator<Item = (usize, Cost)> {
         let (row, col) = Self::idx_to_coordinates(idx, self.map_size);
         let (row, col) = (row as i32, col as i32);
@@ -190,16 +207,6 @@ impl DiscreteMap {
                 {
                     field.kind = FieldKinds::Occupied;
                 }
-            }
-        }
-
-        for cell in map.units.iter() {
-            for mut field in self.fields.iter_mut() {
-                if field.pos.distance_squared(cell.pos)
-                    < (Cell::SIZE * PHYSICS_SCALE).powi(2)
-                {
-                    field.kind = FieldKinds::Occupied;
-                }
 
                 if field.pos.distance_squared(current_pos)
                     < (Cell::SIZE * PHYSICS_SCALE * 2.0).powi(2)
@@ -216,6 +223,30 @@ impl DiscreteMap {
                 }
             }
         }
+
+        // for cell in map.units.iter() {
+        //     for mut field in self.fields.iter_mut() {
+        //         if field.pos.distance_squared(cell.pos)
+        //             < (Cell::SIZE * PHYSICS_SCALE).powi(2)
+        //         {
+        //             field.kind = FieldKinds::Occupied;
+        //         }
+
+        //         if field.pos.distance_squared(current_pos)
+        //             < (Cell::SIZE * PHYSICS_SCALE * 2.0).powi(2)
+        //         {
+        //             // treat pathseeker pointlike
+        //             field.kind = FieldKinds::Empty;
+        //         }
+
+        //         if field.pos.distance_squared(target)
+        //             < (Cell::SIZE * PHYSICS_SCALE * 2.0).powi(2)
+        //         {
+        //             // clear target
+        //             field.kind = FieldKinds::Empty;
+        //         }
+        //     }
+        // }
 
         for wall in map.walls.iter() {
             for mut field in self.fields.iter_mut() {
