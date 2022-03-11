@@ -7,7 +7,6 @@ use crate::game::{GameState, LevelVm};
 use crate::tutorial::{TutorialState, TUTORIAL_STAGES};
 
 const LYMPH_TUTORIAL_PIC: u64 = 0;
-const RESOURCE_TUTORIAL_PIC: u64 = 1;
 const ENEMIES_PIC: u64 = 2;
 const COMBAT_PIC: u64 = 3;
 const UNFAIR_ADVENTAGE_PIC: u64 = 4;
@@ -18,9 +17,6 @@ pub fn load_assets(
 ) {
     let texture_handle = assets.load("tutorial/lymph_tutorial.png");
     egui_context.set_egui_texture(LYMPH_TUTORIAL_PIC, texture_handle);
-
-    let texture_handle = assets.load("biohazard-symbol.png");
-    egui_context.set_egui_texture(RESOURCE_TUTORIAL_PIC, texture_handle);
 
     let texture_handle = assets.load("tutorial/enemies.png");
     egui_context.set_egui_texture(ENEMIES_PIC, texture_handle);
