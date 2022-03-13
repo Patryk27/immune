@@ -1,3 +1,7 @@
+//! lord forgive me for i have sinned, but at some point i _will_ refactor it
+
+use std::f32::consts::TAU;
+
 use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -158,8 +162,11 @@ fn spawn_chamber_lymph_node(
     let mut rng = rand::thread_rng();
 
     while force {
-        let x = rng.gen_range((-c.r + 3)..=(c.r - 3));
-        let y = rng.gen_range((-c.r + 3)..=(c.r - 3));
+        let angle = rng.gen_range(0f32..=TAU);
+        let direction = rng.gen_range(0..(c.r - 1)) as f32;
+
+        let x = (angle.sin() * direction) as i32;
+        let y = (angle.cos() * direction) as i32;
 
         if c.contains(c.x + x, c.y + y) {
             let collides = ops.iter().any(|op| {
@@ -198,15 +205,13 @@ fn add_circle_wall(ops: &mut Vec<LevelWaveOp>, x: i32, y: i32, r: i32) {
     let mut coords = Vec::new();
     let mut remove_coords = Vec::new();
 
-    for dx in -r..r {
-        for dy in -r..r {
+    for dx in -r..=r {
+        for dy in -r..=r {
             let dist = dx.pow(2) + dy.pow(2);
 
-            if dist < (r - 2).pow(2) {
+            if dist <= (r - 1).pow(2) {
                 remove_coords.push((x + dx, y + dy));
-            }
-
-            if dist >= (r - 2).pow(2) && dist <= r.pow(2) {
+            } else if dist >= (r - 1).pow(2) && dist <= r.pow(2) {
                 coords.push((x + dx, y + dy));
             }
         }

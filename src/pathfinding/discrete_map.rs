@@ -40,7 +40,8 @@ impl DiscreteMap {
         target: Vec2,
         map_size: Option<usize>,
     ) -> Self {
-        let map_size = map_size.unwrap_or_else(|| Self::map_size_from_pos(mid, target));
+        let map_size =
+            map_size.unwrap_or_else(|| Self::map_size_from_pos(mid, target));
         let map_size = Self::standarize_map_size(map_size);
         let capacity = map_size.pow(2);
         let distance_to_edge = (FIELD_SIZE * map_size) as f32;
@@ -85,7 +86,7 @@ impl DiscreteMap {
         idx: usize,
     ) -> impl Iterator<Item = (PathNode, Cost)> + '_ {
         self.neighbours(idx)
-            .filter(|(idx, _)| self.fields[*idx].is_walkable())
+            .filter(move |(idx2, _)| self.is_move_walkable(idx, *idx2))
             .map(|(idx, cost)| (PathNode(idx), cost))
     }
 
@@ -296,6 +297,38 @@ impl DiscreteMap {
         } else {
             Some(col + (row * map_size))
         }
+    }
+
+    fn is_move_walkable(&self, from: usize, to: usize) -> bool {
+        if !self.fields[to].is_walkable() {
+            return false;
+        }
+
+        let (x1, y1) = Self::idx_to_coordinates(from, self.map_size);
+        let (x2, y2) = Self::idx_to_coordinates(to, self.map_size);
+
+        let (x1, y1) = (x1 as i32, y1 as i32);
+        let (x2, y2) = (x2 as i32, y2 as i32);
+
+        let is_diagonal = (x1 - x2).abs() + (y1 - y2).abs() > 1;
+
+        if is_diagonal {
+            let x_idx =
+                Self::coordinates_to_idx(x2 as _, y1 as _, self.map_size)
+                    .unwrap();
+            let x_blocked = !self.fields[x_idx].is_walkable();
+
+            let y_idx =
+                Self::coordinates_to_idx(x1 as _, y2 as _, self.map_size)
+                    .unwrap();
+            let y_blocked = !self.fields[y_idx].is_walkable();
+
+            if x_blocked && y_blocked {
+                return false;
+            }
+        }
+
+        true
     }
 }
 

@@ -37,6 +37,7 @@ pub fn initialize(app: &mut App) {
         .add_system(animate_progress_bars)
         .add_system(animate_fresh_cells)
         .add_system(animate_connections)
+        .add_system(animate_walls)
         .add_system(progress_dying_connections);
 }
 
@@ -275,6 +276,48 @@ fn animate_connections(
                 budget -= 0.04;
             }
         }
+    }
+}
+
+fn animate_walls(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut fade_ins: Query<
+        (Entity, &mut Transform, &mut WallFadeIn),
+        (With<Wall>, Without<WallFadeOut>),
+    >,
+    mut fade_outs: Query<
+        (Entity, &mut Transform, &mut WallFadeOut),
+        (With<Wall>, Without<WallFadeIn>),
+    >,
+) {
+    // TODO(pwy) the -0.05 part I'm not sure about, but something's off otherwise
+    const WALL_REAL_SIZE: f32 = Wall::SIZE / 2.0 - 0.05;
+
+    for (entity, mut transform, mut tag) in fade_ins.iter_mut() {
+        tag.tt += time.delta_seconds() / 1.2;
+
+        if tag.tt >= 1.0 {
+            commands.entity(entity).remove::<WallFadeIn>();
+        }
+
+        let progress = EaseInOutCubic.y(tag.tt.min(1.0) as f64) as f32;
+
+        transform.scale = Vec3::splat(progress * WALL_REAL_SIZE);
+    }
+
+    // ---
+
+    for (entity, mut transform, mut tag) in fade_outs.iter_mut() {
+        tag.tt += time.delta_seconds() / 1.2;
+
+        if tag.tt >= 1.0 {
+            commands.entity(entity).despawn();
+        }
+
+        let progress = 1.0 - EaseInOutCubic.y(tag.tt.min(1.0) as f64) as f32;
+
+        transform.scale = Vec3::splat(progress * WALL_REAL_SIZE);
     }
 }
 

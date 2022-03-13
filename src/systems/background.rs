@@ -89,7 +89,7 @@ fn spawn(
             texture: images[img_idx].clone(),
             transform,
             sprite: Sprite {
-                color: Color::rgba(1.0, 1.0, 1.0, 0.2),
+                color: Color::rgba(1.0, 1.0, 1.0, 0.12),
                 ..Default::default()
             },
             ..Default::default()

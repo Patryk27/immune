@@ -78,7 +78,8 @@ fn hande_queue(
     }
 
     if state.budget_ms >= 12 {
-        // Accumulating budget would be pointless
+        // Accumulating budget would be pointless, since we want to keep the
+        // algorithm working in real-time
         state.budget_ms = 12;
     }
 

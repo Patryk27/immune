@@ -63,7 +63,7 @@ impl LevelCorridor {
 
         let joint = (self.x1, self.y2);
 
-        for dx in 0..x_len {
+        for dx in 0..=x_len {
             let x = self.x1.min(self.x2) + dx;
             let y = joint.1;
 
@@ -74,7 +74,7 @@ impl LevelCorridor {
             add_walls.push((x, y + 2));
         }
 
-        for dy in 0..y_len {
+        for dy in 0..=y_len {
             let x = joint.0;
             let y = self.y1.min(self.y2) + dy;
 
@@ -83,6 +83,35 @@ impl LevelCorridor {
             remove_walls.push((x, y));
             remove_walls.push((x + 1, y));
             add_walls.push((x + 2, y));
+        }
+
+        for dx in -2..=2 {
+            for dy in -2..=2 {
+                let x = joint.0 + dx;
+                let y = joint.1 + dy;
+
+                let has_add =
+                    add_walls.iter().any(|(ax, ay)| (*ax == x) && (*ay == y));
+
+                if !has_add {
+                    add_walls.push((x, y));
+                }
+            }
+        }
+
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                let x = joint.0 + dx;
+                let y = joint.1 + dy;
+
+                let has_remove = remove_walls
+                    .iter()
+                    .any(|(ax, ay)| (*ax == x) && (*ay == y));
+
+                if !has_remove {
+                    remove_walls.push((x, y));
+                }
+            }
         }
 
         let add_walls = add_walls

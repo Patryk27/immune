@@ -146,8 +146,12 @@ pub fn capture_map(
                         (start.x + end.x) / 2f32,
                         (start.y + end.y) / 2f32,
                     );
-                    let map =
-                        DiscreteMap::new(&pathfinding_state.map, mid, end, None);
+                    let map = DiscreteMap::new(
+                        &pathfinding_state.map,
+                        mid,
+                        end,
+                        None,
+                    );
 
                     println!("{map}");
 

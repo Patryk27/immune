@@ -18,12 +18,11 @@ impl Wall {
         let transform = Transform::from_translation(
             (pos * PHYSICS_SCALE).extend(theme::z_index::WALL),
         )
-        .with_scale(Vec3::splat(Self::SIZE / 2.0 - 0.05));
+        .with_scale(Vec3::splat(0.0));
 
         let mut entity = commands.spawn();
 
         entity
-            .insert(transform)
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(SpriteBundle {
@@ -52,6 +51,17 @@ impl Wall {
                 }),
                 ..Default::default()
             })
-            .insert(Self);
+            .insert(Self)
+            .insert(WallFadeIn::default());
     }
+}
+
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct WallFadeIn {
+    pub tt: f32,
+}
+
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct WallFadeOut {
+    pub tt: f32,
 }

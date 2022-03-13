@@ -6,7 +6,9 @@ use instant::{Duration, Instant};
 
 use crate::compiling::RecompileEvent;
 use crate::level::{Level, LevelWaveOp};
-use crate::systems::bio::{LymphNode, LymphNodeState, LymphNodeTarget, Wall};
+use crate::systems::bio::{
+    LymphNode, LymphNodeState, LymphNodeTarget, Wall, WallFadeIn, WallFadeOut,
+};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Alignment;
 use crate::tutorial::TutorialState;
@@ -124,7 +126,13 @@ fn progress(
                                 && (pos.y - transform.translation.y).abs()
                                     < 0.001
                             {
-                                commands.entity(entity).despawn();
+                                sleep = true;
+
+                                commands.entity(entity).remove::<WallFadeIn>();
+
+                                commands
+                                    .entity(entity)
+                                    .insert(WallFadeOut::default());
                             }
                         }
                     }
