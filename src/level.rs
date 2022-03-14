@@ -1,7 +1,12 @@
 mod gen;
 
+use nalgebra::Point2;
+
 use crate::systems::units::Alignment;
 
+pub type LevelPoint = Point2<i32>;
+
+// TODO(pwy) since there's just one level anyway, we could use a better name (World?)
 #[derive(Clone, Debug)]
 pub struct Level {
     pub chambers: Vec<LevelChamber>,
@@ -17,6 +22,23 @@ impl Level {
 
     pub fn progress(&mut self) {
         gen::progress(self)
+    }
+
+    // TODO(pwy) add memoization
+    pub fn bounds(&self) -> (i32, i32, i32, i32) {
+        let mut min_x = 0;
+        let mut min_y = 0;
+        let mut max_x = 0;
+        let mut max_y = 0;
+
+        for chamber in &self.chambers {
+            min_x = min_x.min(chamber.x - chamber.r);
+            min_y = min_y.min(chamber.y - chamber.r);
+            max_x = max_x.max(chamber.x + chamber.r);
+            max_y = max_y.max(chamber.y + chamber.r);
+        }
+
+        (min_x, min_y, max_x, max_y)
     }
 }
 

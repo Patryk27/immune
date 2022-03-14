@@ -47,7 +47,7 @@ impl Health {
 
     pub fn with_health(health: f32) -> Self {
         Self {
-            health: health,
+            health,
             max_health: health,
             regen_rate: REGEN_RATE,
         }

@@ -3,20 +3,38 @@ mod map;
 
 use std::collections::VecDeque;
 
+use bevy::math::vec2;
 use bevy::prelude::*;
 use instant::Instant;
 use pathfinding::prelude::astar;
 
 pub use self::discrete_map::*;
 pub use self::map::*;
-use crate::pathfinding::discrete_map::FieldKinds;
+use crate::level::{Level, LevelPoint};
 use crate::systems::bio::{LymphNode, Wall};
+use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Unit;
 
 type Pathseeker = Vec2;
 type Target = Vec2;
 
 pub struct PathfindingPlugin;
+
+impl PathfindingPlugin {
+    // TOOD(pwy) perhaps `Level` would be a better place for it?
+    fn world_to_level(pos: Vec2) -> LevelPoint {
+        let pos = pos / Wall::SIZE / PHYSICS_SCALE;
+
+        LevelPoint::new(pos.x as i32, pos.y as i32)
+    }
+
+    fn level_to_world(pos: LevelPoint) -> Vec2 {
+        vec2(
+            (pos.x as f32) * Wall::SIZE * PHYSICS_SCALE,
+            (pos.y as f32) * Wall::SIZE * PHYSICS_SCALE,
+        )
+    }
+}
 
 impl Plugin for PathfindingPlugin {
     fn build(&self, app: &mut App) {
@@ -47,22 +65,40 @@ impl PathfindingState {
 
 fn refresh_map(
     mut state: ResMut<PathfindingState>,
+    level: Res<Level>,
     lymph_nodes: Query<&Transform, With<LymphNode>>,
     walls: Query<&Transform, With<Wall>>,
 ) {
     state.map.lymph_nodes = lymph_nodes
         .iter()
         .map(|transform| MapLymphNode {
-            pos: transform.translation.truncate(),
+            pos: PathfindingPlugin::world_to_level(
+                transform.translation.truncate(),
+            ),
         })
         .collect();
+
+    // ---
 
     state.map.walls = walls
         .iter()
         .map(|transform| MapWall {
-            pos: transform.translation.truncate(),
+            pos: PathfindingPlugin::world_to_level(
+                transform.translation.truncate(),
+            ),
         })
         .collect();
+
+    // ---
+
+    let (min_x, min_y, max_x, max_y) = level.bounds();
+
+    state.map.bounds = MapBounds {
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+    };
 }
 
 fn hande_queue(
@@ -103,8 +139,10 @@ fn hande_queue(
             continue;
         };
 
-        let pathfinder = Pathfinder::new(&state.map, pathseeker, target);
-        let path = pathfinder.path();
+        let path = Pathfinder::new(&state.map, pathseeker, target)
+            .map(|pathfinder| pathfinder.into_path())
+            .unwrap_or_default();
+
         unit.set_path(path);
     }
 
@@ -113,13 +151,16 @@ fn hande_queue(
 
 #[derive(Component)]
 pub struct Pathfinder {
-    map: DiscreteMap,
     path: Vec<Vec2>,
 }
 
 impl Pathfinder {
-    pub fn new(map: &Map, pathseeker: Pathseeker, target: Target) -> Self {
-        let map = DiscreteMap::new(map, pathseeker, target, None);
+    pub fn new(
+        map: &Map,
+        pathseeker: Pathseeker,
+        target: Target,
+    ) -> Option<Self> {
+        let map = DiscreteMap::new(map, pathseeker, target)?;
         let start = map.start();
 
         let path = astar(
@@ -134,25 +175,13 @@ impl Pathfinder {
             .into_iter()
             .flatten()
             .map(|idx| map.idx_to_pos(*idx))
+            .map(PathfindingPlugin::level_to_world)
             .collect();
 
-        Self { map, path }
+        Some(Self { path })
     }
 
-    pub fn path(self) -> Vec<Vec2> {
+    pub fn into_path(self) -> Vec<Vec2> {
         self.path
-    }
-
-    #[allow(dead_code)]
-    fn debug_path(&self, path: &Option<Vec<DiscreteMap>>) {
-        let mut path_map = self.map.clone();
-        for map in path.iter().flatten() {
-            path_map.mark(map.pathseeker(), FieldKinds::Path)
-        }
-
-        path_map.mark(self.map.pathseeker(), FieldKinds::Pathseeker);
-        path_map.mark(self.map.target(), FieldKinds::Target);
-
-        println!("{}", path_map);
     }
 }

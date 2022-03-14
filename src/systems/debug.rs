@@ -146,37 +146,35 @@ pub fn capture_map(
                         (start.x + end.x) / 2f32,
                         (start.y + end.y) / 2f32,
                     );
-                    let map = DiscreteMap::new(
-                        &pathfinding_state.map,
-                        mid,
-                        end,
-                        None,
-                    );
 
-                    println!("{map}");
+                    if let Some(map) =
+                        DiscreteMap::new(&pathfinding_state.map, mid, end)
+                    {
+                        println!("{map}");
 
-                    if debug_state.draw_obstacles_from_map {
-                        for pos in map.obstacles() {
-                            // let field_size = FIELD_SIZE as f32 * 2f32.sqrt() / 2f32;
-                            let field_size = DEBUG_MAP_FIELD_SIZE;
+                        if debug_state.draw_obstacles_from_map {
+                            for pos in map.obstacles() {
+                                let field_size = DEBUG_MAP_FIELD_SIZE;
+                                let top_left = pos - field_size;
+                                let bottom_right = pos + field_size;
 
-                            let top_left = pos - field_size;
-                            let bottom_right = pos + field_size;
-
-                            draw_square_dur(
-                                &mut lines,
-                                top_left,
-                                bottom_right,
-                                10.0,
-                            );
+                                draw_square_dur(
+                                    &mut lines,
+                                    top_left,
+                                    bottom_right,
+                                    10.0,
+                                );
+                            }
                         }
                     }
                 }
+
                 // Drag start
                 (false, true) => {
                     debug_state.is_dragging = true;
                     debug_state.drag_start_pos = mouse_pos.0;
                 }
+
                 _ => (),
             }
         }

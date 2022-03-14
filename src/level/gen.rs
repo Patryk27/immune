@@ -82,7 +82,7 @@ pub fn progress(level: &mut Level) {
 
 fn spawn_chamber(level: &Level) -> LevelChamber {
     let mut rng = rand::thread_rng();
-    let (mut min_x, mut min_y, mut max_x, mut max_y) = aabb(level);
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = level.bounds();
 
     for _ in 0..100 {
         let r = rng.gen_range(8..20);
@@ -183,22 +183,6 @@ fn spawn_chamber_lymph_node(
             }
         }
     }
-}
-
-fn aabb(level: &Level) -> (i32, i32, i32, i32) {
-    let mut min_x = 0;
-    let mut min_y = 0;
-    let mut max_x = 0;
-    let mut max_y = 0;
-
-    for chamber in &level.chambers {
-        min_x = min_x.min(chamber.x - chamber.r);
-        min_y = min_y.min(chamber.y - chamber.r);
-        max_x = max_x.max(chamber.x + chamber.r);
-        max_y = max_y.max(chamber.y + chamber.r);
-    }
-
-    (min_x, min_y, max_x, max_y)
 }
 
 fn add_circle_wall(ops: &mut Vec<LevelWaveOp>, x: i32, y: i32, r: i32) {

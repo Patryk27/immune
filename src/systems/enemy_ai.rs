@@ -55,11 +55,9 @@ impl State {
             if closest_group.is_none() {
                 closest_group = Some(idx);
                 closest_distance = Some(distance);
-            } else {
-                if distance < closest_distance.unwrap() {
-                    closest_group = Some(idx);
-                    closest_distance = Some(distance);
-                }
+            } else if distance < closest_distance.unwrap() {
+                closest_group = Some(idx);
+                closest_distance = Some(distance);
             }
         }
 
