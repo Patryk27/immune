@@ -4,10 +4,11 @@ use bevy::prelude::*;
 use bevy_egui::EguiContext;
 use bevy_prototype_debug_lines::DebugLines;
 
-use super::{draw_square, InputState, MousePos};
+use super::{InputState, MousePos};
 use crate::systems::bio::LymphNode;
 use crate::systems::units::{Alignment, Unit};
 use crate::ui::UiEvent;
+use crate::utils::DebugLinesExt;
 
 const MIN_DRAG_DISTANCE: f32 = 1.0;
 
@@ -48,7 +49,7 @@ fn draw_selection_rect(
     mut lines: ResMut<DebugLines>,
 ) {
     if state.is_dragging {
-        draw_square(&mut lines, state.drag_start_pos, mouse_pos.0);
+        lines.square(state.drag_start_pos, mouse_pos.0).draw();
     }
 }
 

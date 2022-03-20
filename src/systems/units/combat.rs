@@ -83,7 +83,7 @@ fn deal_damage(
 
         if health.health <= 0.0 {
             match death_behavior {
-                DeathBehavior::Die => {
+                DeathBehavior::Despawn => {
                     commands.entity(entity).despawn_recursive()
                 }
                 DeathBehavior::SwitchSides => {

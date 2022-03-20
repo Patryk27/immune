@@ -6,12 +6,8 @@ use bevy::prelude::*;
 
 use super::{Map, MapBounds, PathfindingPlugin};
 use crate::level::LevelPoint;
-use crate::systems::bio::Wall;
-use crate::systems::physics::PHYSICS_SCALE;
 
 type Cost = i32;
-
-pub const FIELD_SIZE: usize = (Wall::SIZE * PHYSICS_SCALE) as _;
 
 #[derive(Debug, Clone)]
 pub struct DiscreteMap {
@@ -25,11 +21,11 @@ impl DiscreteMap {
     pub fn new(map: &Map, pathseeker: Vec2, target: Vec2) -> Option<Self> {
         let pathseeker = map
             .bounds
-            .try_pos_to_idx(PathfindingPlugin::world_to_level(pathseeker))?;
+            .try_pos_to_idx(PathfindingPlugin::world_to_local(pathseeker))?;
 
         let target = map
             .bounds
-            .try_pos_to_idx(PathfindingPlugin::world_to_level(target))?;
+            .try_pos_to_idx(PathfindingPlugin::world_to_local(target))?;
 
         let mut fields = vec![
             Field::default();
@@ -83,16 +79,6 @@ impl DiscreteMap {
 
     pub fn start(&self) -> PathNode {
         PathNode(self.pathseeker)
-    }
-
-    pub fn obstacles(&self) -> Vec<Vec2> {
-        self.fields
-            .iter()
-            .enumerate()
-            .filter(|(_, field)| field.kind == FieldKind::Occupied)
-            .map(|(idx, _)| self.bounds.idx_to_pos(idx))
-            .map(PathfindingPlugin::level_to_world)
-            .collect()
     }
 
     fn neighbours(

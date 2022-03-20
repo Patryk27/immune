@@ -91,7 +91,9 @@ impl<'a> Cell<'a> {
             }
         }
 
-        entity.insert(Unit::default()).insert(DeathBehavior::Die);
+        entity
+            .insert(Unit::default())
+            .insert(DeathBehavior::Despawn);
 
         let (body, proteins, color) = match self {
             Cell::Leukocyte(cell) => {

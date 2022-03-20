@@ -1,4 +1,3 @@
-mod debug_windows;
 mod lymph_node_editor;
 mod poll;
 mod radio_image_button;
@@ -28,8 +27,6 @@ impl Plugin for UiPlugin {
             .add_system(process_events)
             .add_system(process_lymph_node_editor)
             .add_system(tutorial::system);
-
-        debug_windows::initialize(app);
     }
 }
 

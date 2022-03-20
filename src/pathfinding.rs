@@ -3,7 +3,6 @@ mod map;
 
 use std::collections::VecDeque;
 
-use bevy::math::vec2;
 use bevy::prelude::*;
 use instant::Instant;
 use pathfinding::prelude::astar;
@@ -11,85 +10,80 @@ use pathfinding::prelude::astar;
 pub use self::discrete_map::*;
 pub use self::map::*;
 use crate::level::{Level, LevelPoint};
-use crate::systems::bio::{LymphNode, Wall};
-use crate::systems::physics::PHYSICS_SCALE;
+use crate::systems::bio::{LymphNode, Wall, WallFadeOut};
 use crate::systems::units::Unit;
-
-type Pathseeker = Vec2;
-type Target = Vec2;
 
 pub struct PathfindingPlugin;
 
 impl PathfindingPlugin {
-    // TOOD(pwy) perhaps `Level` would be a better place for it?
-    fn world_to_level(pos: Vec2) -> LevelPoint {
-        let pos = pos / Wall::SIZE / PHYSICS_SCALE;
+    pub const FIELD_SIZE: f32 = Level::FIELD_SIZE;
 
-        LevelPoint::new(pos.x as i32, pos.y as i32)
+    // TODO(pwy) to avoid confusion, we should return e.g. PathfindingPoint
+    pub fn world_to_local(pos: Vec2) -> LevelPoint {
+        Level::world_to_local(pos)
     }
 
-    fn level_to_world(pos: LevelPoint) -> Vec2 {
-        vec2(
-            (pos.x as f32) * Wall::SIZE * PHYSICS_SCALE,
-            (pos.y as f32) * Wall::SIZE * PHYSICS_SCALE,
-        )
+    pub fn local_to_world(pos: LevelPoint) -> Vec2 {
+        Level::local_to_world(pos)
     }
 }
 
 impl Plugin for PathfindingPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(PathfindingState::default())
-            .add_system(refresh_map)
-            .add_system(hande_queue);
+            .add_event::<LevelLayoutChanged>()
+            .add_event::<NavigateUnit>()
+            .add_system(process_level_changed_event)
+            .add_system(process_navigate_unit_event)
+            .add_system(process_queue);
     }
 }
 
 #[derive(Default)]
 pub struct PathfindingState {
-    pub map: Map,
-    pub queue: VecDeque<(Entity, Pathseeker, Target)>,
-    pub budget_ms: i32,
+    map: Map,
+    queue: VecDeque<(Entity, Vec2, Vec2)>,
+    budget_ms: i32,
 }
 
 impl PathfindingState {
-    pub fn add(
-        &mut self,
-        entity: Entity,
-        pathseeker: Pathseeker,
-        target: Target,
-    ) {
-        self.queue.retain(|(entity2, _, _)| *entity2 != entity);
-        self.queue.push_back((entity, pathseeker, target));
+    pub fn obstacles(&self) -> impl Iterator<Item = Vec2> + '_ {
+        let lymph_nodes = self.map.lymph_nodes.iter().map(|node| node.pos);
+        let walls = self.map.walls.iter().map(|wall| wall.pos);
+
+        lymph_nodes
+            .chain(walls)
+            .map(PathfindingPlugin::local_to_world)
     }
 }
 
-fn refresh_map(
+#[derive(Clone, Copy, Debug)]
+pub struct LevelLayoutChanged;
+
+#[derive(Clone, Debug)]
+pub struct NavigateUnit {
+    pub entity: Entity,
+    pub target: Vec2,
+}
+
+fn process_level_changed_event(
+    mut events: EventReader<LevelLayoutChanged>,
     mut state: ResMut<PathfindingState>,
     level: Res<Level>,
-    lymph_nodes: Query<&Transform, With<LymphNode>>,
-    walls: Query<&Transform, With<Wall>>,
+    lymph_nodes: Query<&LymphNode>,
+    walls: Query<&Wall, Without<WallFadeOut>>,
 ) {
+    if events.iter().next().is_none() {
+        return;
+    }
+
     state.map.lymph_nodes = lymph_nodes
         .iter()
-        .map(|transform| MapLymphNode {
-            pos: PathfindingPlugin::world_to_level(
-                transform.translation.truncate(),
-            ),
-        })
+        .map(|node| MapLymphNode { pos: node.pos })
         .collect();
 
-    // ---
-
-    state.map.walls = walls
-        .iter()
-        .map(|transform| MapWall {
-            pos: PathfindingPlugin::world_to_level(
-                transform.translation.truncate(),
-            ),
-        })
-        .collect();
-
-    // ---
+    state.map.walls =
+        walls.iter().map(|wall| MapWall { pos: wall.pos }).collect();
 
     let (min_x, min_y, max_x, max_y) = level.bounds();
 
@@ -101,7 +95,30 @@ fn refresh_map(
     };
 }
 
-fn hande_queue(
+fn process_navigate_unit_event(
+    mut events: EventReader<NavigateUnit>,
+    mut state: ResMut<PathfindingState>,
+    mut units: Query<(&Transform, &mut Unit)>,
+) {
+    for NavigateUnit { entity, target } in events.iter() {
+        state.queue.retain(|(entity2, _, _)| entity2 != entity);
+
+        if let Ok((transform, mut unit)) = units.get_mut(*entity) {
+            state.queue.push_back((
+                *entity,
+                transform.translation.truncate(),
+                *target,
+            ));
+
+            unit.target = Some(*target);
+        } else {
+            // Unit must've been destroyed before we were able to process the
+            // event (or someone requested navigation for a non-Unit)
+        }
+    }
+}
+
+fn process_queue(
     mut state: ResMut<PathfindingState>,
     mut units: Query<&mut Unit>,
 ) {
@@ -155,11 +172,7 @@ pub struct Pathfinder {
 }
 
 impl Pathfinder {
-    pub fn new(
-        map: &Map,
-        pathseeker: Pathseeker,
-        target: Target,
-    ) -> Option<Self> {
+    pub fn new(map: &Map, pathseeker: Vec2, target: Vec2) -> Option<Self> {
         let map = DiscreteMap::new(map, pathseeker, target)?;
         let start = map.start();
 
@@ -175,7 +188,7 @@ impl Pathfinder {
             .into_iter()
             .flatten()
             .map(|idx| map.idx_to_pos(*idx))
-            .map(PathfindingPlugin::level_to_world)
+            .map(PathfindingPlugin::local_to_world)
             .collect();
 
         Some(Self { path })

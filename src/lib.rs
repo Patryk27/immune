@@ -9,5 +9,4 @@ pub mod systems;
 pub mod theme;
 pub mod tutorial;
 pub mod ui;
-
-pub const DEBUG: bool = false;
+pub mod utils;

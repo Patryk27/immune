@@ -291,33 +291,30 @@ fn animate_walls(
         (With<Wall>, Without<WallFadeIn>),
     >,
 ) {
-    // TODO(pwy) the -0.05 part I'm not sure about, but something's off otherwise
-    const WALL_REAL_SIZE: f32 = Wall::SIZE / 2.0 - 0.05;
+    for (entity, mut transform, mut fade) in fade_ins.iter_mut() {
+        fade.progress += time.delta_seconds() / 1.2;
 
-    for (entity, mut transform, mut tag) in fade_ins.iter_mut() {
-        tag.tt += time.delta_seconds() / 1.2;
-
-        if tag.tt >= 1.0 {
+        transform.scale = if fade.progress >= 1.0 {
             commands.entity(entity).remove::<WallFadeIn>();
-        }
 
-        let progress = EaseInOutCubic.y(tag.tt.min(1.0) as f64) as f32;
-
-        transform.scale = Vec3::splat(progress * WALL_REAL_SIZE);
+            Vec3::splat(1.0)
+        } else {
+            Vec3::splat(EaseInOutCubic.y(fade.progress.min(1.0) as f64) as f32)
+        };
     }
 
-    // ---
+    for (entity, mut transform, mut fade) in fade_outs.iter_mut() {
+        fade.progress += time.delta_seconds() / 1.2;
 
-    for (entity, mut transform, mut tag) in fade_outs.iter_mut() {
-        tag.tt += time.delta_seconds() / 1.2;
+        transform.scale = if fade.progress >= 1.0 {
+            commands.entity(entity).despawn_recursive();
 
-        if tag.tt >= 1.0 {
-            commands.entity(entity).despawn();
-        }
-
-        let progress = 1.0 - EaseInOutCubic.y(tag.tt.min(1.0) as f64) as f32;
-
-        transform.scale = Vec3::splat(progress * WALL_REAL_SIZE);
+            Vec3::splat(0.0)
+        } else {
+            Vec3::splat(
+                1.0 - EaseInOutCubic.y(fade.progress.min(1.0) as f64) as f32,
+            )
+        };
     }
 }
 

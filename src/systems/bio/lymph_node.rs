@@ -13,6 +13,7 @@ use rand::Rng;
 
 use super::{AntigenBinder, Body, Leukocyte, Pathogen, Protein};
 use crate::compiling::CompilationWarning;
+use crate::level::{Level, LevelPoint};
 use crate::systems::input::{Collider, Selector};
 use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::combat::Weapon;
@@ -21,6 +22,7 @@ use crate::theme;
 
 #[derive(Component, Clone, Debug)]
 pub struct LymphNode {
+    pub pos: LevelPoint,
     pub resource: Option<LymphNodeResource>,
     pub target: LymphNodeTarget,
     pub product: Option<LymphNodeProduct>,
@@ -31,7 +33,7 @@ pub struct LymphNode {
 }
 
 impl LymphNode {
-    pub const SIZE: f32 = 0.45;
+    pub const SIZE: f32 = 0.25;
     pub const PRODUCTION_DURATION: f32 = 1.5;
 
     pub fn spawn(
@@ -40,13 +42,12 @@ impl LymphNode {
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<ColorMaterial>,
         assets: &AssetServer,
-        pos: Vec2,
         alignment: Alignment,
     ) {
-        let transform = Transform::from_translation(
-            (pos * PHYSICS_SCALE).extend(theme::z_index::LYMPH_NODE),
-        )
-        .with_scale(Vec3::splat(0.5));
+        let pos = Level::local_to_world(self.pos);
+
+        let transform =
+            Transform::from_translation(pos.extend(theme::z_index::LYMPH_NODE));
 
         let mut entity = commands.spawn();
 
@@ -55,7 +56,7 @@ impl LymphNode {
             .insert(GlobalTransform::default())
             .insert(Visibility::default())
             .insert_bundle(RigidBodyBundle {
-                position: pos.to_array().into(),
+                position: (pos / PHYSICS_SCALE).to_array().into(),
                 body_type: RigidBodyTypeComponent(RigidBodyType::Static),
                 ..Default::default()
             })
@@ -182,11 +183,15 @@ impl LymphNodeWarning {
         let transform = Transform::default()
             .with_translation(vec3(
                 0.0,
-                15.0,
+                10.0,
                 theme::z_index::LYMPH_NODE_COMPILATION_WARNING
                     - theme::z_index::LYMPH_NODE,
             ))
-            .with_scale(vec3(LymphNode::SIZE, LymphNode::SIZE, 1.0));
+            .with_scale(vec3(
+                LymphNode::SIZE - 0.05,
+                LymphNode::SIZE - 0.05,
+                1.0,
+            ));
 
         entity
             .spawn_bundle(SpriteBundle {
@@ -230,7 +235,7 @@ impl LymphNodeProgressBar {
                     }))
                     .into(),
                 material: materials.add(ColorMaterial::from(Color::GREEN)),
-                transform: Transform::from_translation(vec3(0.0, 18.0, 0.1)),
+                transform: Transform::from_translation(vec3(0.0, 10.0, 0.1)),
                 ..Default::default()
             })
             .insert(Self);
@@ -294,7 +299,7 @@ pub struct LymphNodeConnectionWire {
 
 impl LymphNodeConnectionWire {
     pub fn new(source: Vec2, target: Vec2, is_reverse: bool) -> Self {
-        const SEGMENT_LEN: f32 = 8.0;
+        const SEGMENT_LEN: f32 = 16.0;
 
         let mut rng = rand::thread_rng();
         let points_count = (source.distance(target) / SEGMENT_LEN) as i32;

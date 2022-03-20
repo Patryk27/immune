@@ -85,6 +85,8 @@ fn force_direction_from_path(
         // Compensate direction by path
         rotate(default_force_direction, path_direction)
     } else {
+        unit.path = Default::default();
+
         default_force_direction
     }
 }

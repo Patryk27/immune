@@ -1,60 +1,170 @@
+use std::env;
 use std::f32::consts::PI;
 
-use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
+use bevy_egui::{egui, EguiContext};
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier2d::prelude::*;
 
-use super::draw_square;
-use super::input::MousePos;
 use super::physics::world_to_pixel;
-use super::units::Unit;
-use crate::pathfinding::{DiscreteMap, PathfindingState};
-use crate::systems::draw_square_dur;
+use crate::pathfinding::{PathfindingPlugin, PathfindingState};
+use crate::systems::enemy_ai::{self, EnemyAiEnabled};
+use crate::systems::input::{SelectedUnits, SelectedUnitsChanged};
+use crate::systems::units::{Alignment, Unit};
+use crate::utils::DebugLinesExt;
 
-pub const DEBUG_MAP_FIELD_SIZE: f32 = 5.0;
+pub struct DebugPlugin;
 
-pub fn initialize(app: &mut App) {
-    app.insert_resource(DebugState::default())
-        .add_system(draw_motion_vectors)
-        .add_system(capture_map)
-        .add_system(draw_paths);
-}
-
-pub struct DebugState {
-    pub show_debug_window: bool,
-    pub show_motion_vectors: bool,
-    pub show_force_vectors: bool,
-    pub show_pathfinding: bool,
-    pub track_position: bool,
-    pub draw_obstacles_from_map: bool,
-    pub debug_print_map: bool,
-    pub is_dragging: bool,
-    pub drag_start_pos: Vec2,
-}
-
-impl Default for DebugState {
-    fn default() -> Self {
-        Self {
-            show_debug_window: true,
-            show_motion_vectors: false,
-            show_force_vectors: false,
-            show_pathfinding: false,
-            track_position: false,
-            draw_obstacles_from_map: false,
-            debug_print_map: false,
-            is_dragging: false,
-            drag_start_pos: Vec2::ZERO,
+impl Plugin for DebugPlugin {
+    fn build(&self, app: &mut App) {
+        if env::var("DEBUG").as_deref() == Ok("1") {
+            app.insert_resource(DebugState::default())
+                .add_system(draw_debug_window)
+                .add_system(draw_ai_debug_window)
+                .add_system(draw_vectors)
+                .add_system(draw_pathfinder_paths)
+                .add_system(draw_pathfinder_map);
         }
     }
 }
 
-pub fn draw_paths(
+#[derive(Default)]
+pub struct DebugState {
+    pub track_positions: bool,
+    pub show_velocity_vectors: bool,
+    pub show_force_vectors: bool,
+    pub show_pathfinder_paths: bool,
+    pub show_pathfinder_map: bool,
+}
+
+fn draw_debug_window(
+    time: Res<Time>,
+    mut state: ResMut<DebugState>,
+    mut egui: ResMut<EguiContext>,
+    mut units: Query<(&mut Unit, &mut Alignment)>,
+    selected_units: Res<SelectedUnits>,
+    mut commands: Commands,
+) {
+    egui::Window::new("Debug")
+        .collapsible(true)
+        .show(egui.ctx_mut(), |ctx| {
+            let fps = 1.0 / time.delta_seconds();
+            ctx.label(format!("FPS: ~{}", fps.round()));
+
+            ctx.checkbox(&mut state.track_positions, "Track positions");
+            ctx.checkbox(&mut state.show_velocity_vectors, "Show velocities");
+            ctx.checkbox(&mut state.show_force_vectors, "Show forces");
+            ctx.checkbox(
+                &mut state.show_pathfinder_paths,
+                "Show pathfinder's paths",
+            );
+            ctx.checkbox(
+                &mut state.show_pathfinder_map,
+                "Show pathfinder's map",
+            );
+
+            ctx.collapsing("Selected units", |ctx| {
+                if ctx.button("Delete").clicked() {
+                    for unit in selected_units.selected_units.iter() {
+                        commands.entity(*unit).despawn_recursive();
+                    }
+                }
+
+                if ctx.button("Flip alignment").clicked() {
+                    for unit in selected_units.selected_units.iter() {
+                        if let Ok((_, mut alignment)) = units.get_mut(*unit) {
+                            alignment.flip();
+                        }
+                    }
+                }
+            });
+        });
+}
+
+fn draw_ai_debug_window(
+    ai_state: ResMut<enemy_ai::State>,
+    mut ai_enabled: ResMut<EnemyAiEnabled>,
+    mut egui: ResMut<EguiContext>,
+    mut selected_units: ResMut<SelectedUnits>,
+    mut selected_units_changed: EventWriter<SelectedUnitsChanged>,
+) {
+    egui::Window::new("Ai Debug").collapsible(true).show(
+        egui.ctx_mut(),
+        |ctx| {
+            ctx.checkbox(&mut ai_enabled.0, "Ai Enabled");
+
+            ctx.label("Combat groups:");
+            egui::ScrollArea::vertical().show(ctx, |ctx| {
+                for (idx, combat_group) in
+                    ai_state.combat_groups.iter().enumerate()
+                {
+                    ctx.label(format!("Combat group #{idx}"));
+                    ctx.label(format!("Units: {}", combat_group.units.len()));
+
+                    if ctx.button("Select units").clicked() {
+                        selected_units.selected_units =
+                            combat_group.units.clone();
+                        selected_units_changed.send(SelectedUnitsChanged);
+                    }
+
+                    ctx.separator();
+                }
+            });
+        },
+    );
+}
+
+fn draw_vectors(
+    state: Res<DebugState>,
+    query: Query<(
+        &RigidBodyPositionComponent,
+        &RigidBodyVelocityComponent,
+        &RigidBodyForcesComponent,
+    )>,
+    mut lines: ResMut<DebugLines>,
+) {
+    if !state.show_velocity_vectors
+        && !state.show_force_vectors
+        && !state.track_positions
+    {
+        return;
+    }
+
+    for (position, velocity, force) in query.iter() {
+        let position = position.position.translation.vector;
+        let velocity = velocity.linvel;
+        let force = force.force;
+
+        if state.track_positions {
+            let pos = world_to_pixel(position);
+
+            lines.line(pos, pos + Vec3::X, 1.0);
+        }
+
+        if state.show_velocity_vectors {
+            let start = world_to_pixel(position);
+            let end = world_to_pixel(position + velocity);
+            let color = Color::rgb(0.0, 1.0, 0.0);
+
+            draw_arrow(&mut lines, start, end, color);
+        }
+
+        if state.show_force_vectors {
+            let start = world_to_pixel(position);
+            let end = world_to_pixel(position + force);
+            let color = Color::rgb(1.0, 0.0, 0.0);
+
+            draw_arrow(&mut lines, start, end, color);
+        }
+    }
+}
+
+fn draw_pathfinder_paths(
     state: Res<DebugState>,
     query: Query<(&Transform, &Unit)>,
     mut lines: ResMut<DebugLines>,
 ) {
-    if !state.show_pathfinding {
+    if !state.show_pathfinder_paths {
         return;
     }
 
@@ -65,139 +175,31 @@ pub fn draw_paths(
             draw_arrow(&mut lines, prev, target.extend(0.0), Color::TOMATO);
         }
 
-        if unit.path.is_empty() {
-            continue;
-        }
+        for next in &unit.path {
+            let next = next.extend(0.0);
 
-        for p in &unit.path {
-            let p = p.extend(0.0);
-            draw_arrow(&mut lines, prev, p, Color::FUCHSIA);
-            prev = p;
+            draw_arrow(&mut lines, prev, next, Color::FUCHSIA);
+
+            prev = next;
         }
     }
 }
 
-pub fn draw_motion_vectors(
+fn draw_pathfinder_map(
+    mut lines: ResMut<DebugLines>,
     state: Res<DebugState>,
-    query: Query<(
-        &RigidBodyPositionComponent,
-        &RigidBodyVelocityComponent,
-        &RigidBodyForcesComponent,
-    )>,
-    mut lines: ResMut<DebugLines>,
+    pathfinding: Res<PathfindingState>,
 ) {
-    if !state.show_motion_vectors
-        && !state.show_force_vectors
-        && !state.track_position
-    {
+    if !state.show_pathfinder_map {
         return;
     }
 
-    for (position, velocity, force) in query.iter() {
-        let position = position.position.translation.vector;
-        let velocity = velocity.linvel;
-        let force = force.force;
+    for pos in pathfinding.obstacles() {
+        let a = pos - PathfindingPlugin::FIELD_SIZE / 2.0;
+        let b = pos + PathfindingPlugin::FIELD_SIZE / 2.0;
 
-        if state.show_force_vectors {
-            let color = Color::rgb(1.0, 0.0, 0.0);
-
-            let start_pos = world_to_pixel(position);
-            let end_pos = world_to_pixel(position + force);
-
-            draw_arrow(&mut lines, start_pos, end_pos, color);
-        }
-
-        if state.track_position {
-            let pos = world_to_pixel(position);
-
-            lines.line(pos, pos + Vec3::X, 1.0);
-        }
-
-        if state.show_motion_vectors {
-            show_velocity_vector(position, velocity, &mut lines);
-        }
+        lines.square(a, b).color(Color::RED).draw();
     }
-}
-
-pub fn capture_map(
-    mouse_pos: Res<MousePos>,
-    mut debug_state: ResMut<DebugState>,
-    mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    mut lines: ResMut<DebugLines>,
-    pathfinding_state: Res<PathfindingState>,
-    mouse_button_input: Res<Input<MouseButton>>,
-) {
-    if !debug_state.debug_print_map {
-        return;
-    }
-
-    for event in mouse_button_input_events.iter() {
-        if event.button == MouseButton::Left {
-            match (debug_state.is_dragging, event.state.is_pressed()) {
-                // Drag end
-                (true, false)
-                    if mouse_button_input
-                        .just_released(MouseButton::Middle) =>
-                {
-                    debug_state.is_dragging = false;
-                    let start = debug_state.drag_start_pos;
-                    let end = mouse_pos.0;
-                    let mid = Vec2::new(
-                        (start.x + end.x) / 2f32,
-                        (start.y + end.y) / 2f32,
-                    );
-
-                    if let Some(map) =
-                        DiscreteMap::new(&pathfinding_state.map, mid, end)
-                    {
-                        println!("{map}");
-
-                        if debug_state.draw_obstacles_from_map {
-                            for pos in map.obstacles() {
-                                let field_size = DEBUG_MAP_FIELD_SIZE;
-                                let top_left = pos - field_size;
-                                let bottom_right = pos + field_size;
-
-                                draw_square_dur(
-                                    &mut lines,
-                                    top_left,
-                                    bottom_right,
-                                    10.0,
-                                );
-                            }
-                        }
-                    }
-                }
-
-                // Drag start
-                (false, true) => {
-                    debug_state.is_dragging = true;
-                    debug_state.drag_start_pos = mouse_pos.0;
-                }
-
-                _ => (),
-            }
-        }
-    }
-
-    if !debug_state.is_dragging {
-        return;
-    }
-
-    draw_square(&mut lines, debug_state.drag_start_pos, mouse_pos.0);
-}
-
-fn show_velocity_vector(
-    position: Vector<Real>,
-    velocity: Vector<Real>,
-    lines: &mut ResMut<DebugLines>,
-) {
-    let color = Color::rgb(0.0, 1.0, 0.0);
-
-    let start_pos = world_to_pixel(position);
-    let end_pos = world_to_pixel(position + velocity);
-
-    draw_arrow(lines, start_pos, end_pos, color);
 }
 
 fn draw_arrow(lines: &mut DebugLines, start: Vec3, end: Vec3, color: Color) {

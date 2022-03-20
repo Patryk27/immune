@@ -8,6 +8,7 @@ use crate::systems::bio::{
     LymphNodeTarget, LymphNodeWarning,
 };
 
+// TODO(pwy) replace with `LymphNodeConfigurationChanged`?
 #[derive(Clone, Debug)]
 pub struct RecompileEvent;
 

@@ -3,9 +3,7 @@ use bevy_egui::EguiContext;
 
 pub use self::collider::*;
 pub use self::selector::*;
-use super::draw_square;
-use super::units::Unit;
-use crate::pathfinding::PathfindingState;
+use crate::pathfinding::NavigateUnit;
 
 mod collider;
 mod selector;
@@ -80,27 +78,19 @@ fn movement_command(
     mut egui: ResMut<EguiContext>,
     mouse_pos: Res<MousePos>,
     selected_units: Res<SelectedUnits>,
-    mut pathfinding_queue: ResMut<PathfindingState>,
     mouse: Res<Input<MouseButton>>,
-    mut units: Query<(Entity, &mut Unit, &Transform)>,
+    mut navigate_tx: EventWriter<NavigateUnit>,
 ) {
     if egui.ctx_mut().is_pointer_over_area() {
         return;
     }
 
     if mouse.just_pressed(MouseButton::Right) {
-        for unit in selected_units.selected_units.iter() {
-            if let Ok((entity, mut unit, transform)) = units.get_mut(*unit) {
-                let target = mouse_pos.0;
-
-                pathfinding_queue.add(
-                    entity,
-                    transform.translation.truncate(),
-                    target,
-                );
-
-                unit.target = Some(target);
-            }
+        for &entity in selected_units.selected_units.iter() {
+            navigate_tx.send(NavigateUnit {
+                entity,
+                target: mouse_pos.0,
+            });
         }
     }
 }

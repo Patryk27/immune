@@ -2,9 +2,11 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use bevy::prelude::*;
+use itertools::Itertools;
 
 use super::bio::{LymphNode, Pathogen};
 use super::units::{Alignment, Unit};
+use crate::pathfinding::NavigateUnit;
 
 // Max size of a combat group
 const COMBAT_GROUP_SIZE: usize = 100;
@@ -109,18 +111,18 @@ fn attack_lymph_nodes(
     time: Res<Time>,
     enabled: Res<EnemyAiEnabled>,
     state: Res<State>,
-    mut pathogens: Query<(&mut Unit, &Alignment), Without<LymphNode>>,
-    lymph_nodes: Query<(&Transform, &Alignment, &LymphNode), With<LymphNode>>,
+    lymph_nodes: Query<(&Transform, &Alignment), With<LymphNode>>,
+    mut navigate_tx: EventWriter<NavigateUnit>,
 ) {
     if !enabled.0 {
         return;
     }
 
-    let player_owned_lymph_nodes: Vec<Vec2> = lymph_nodes
+    let player_owned_lymph_nodes = lymph_nodes
         .iter()
-        .filter(|(_, alignment, _)| alignment.is_player())
-        .map(|(transform, _, _)| transform.translation.truncate())
-        .collect();
+        .filter(|(_, alignment)| alignment.is_player())
+        .map(|(transform, _)| transform.translation.truncate())
+        .collect_vec();
 
     for combat_group in state.combat_groups.iter() {
         let combat_group_age =
@@ -129,10 +131,11 @@ fn attack_lymph_nodes(
         if combat_group_age < MAX_WAIT_TIME_BEFORE_ATTACKING
             && combat_group.len() < COMBAT_GROUP_SIZE
         {
-            for unit in combat_group.units.iter() {
-                if let Ok((mut unit, _)) = pathogens.get_mut(*unit) {
-                    unit.target = Some(combat_group.center);
-                }
+            for &entity in combat_group.units.iter() {
+                navigate_tx.send(NavigateUnit {
+                    entity,
+                    target: combat_group.center,
+                });
             }
         } else {
             let closest_lymph_node = player_owned_lymph_nodes
@@ -142,11 +145,9 @@ fn attack_lymph_nodes(
                     lhs.partial_cmp(rhs).unwrap_or(Ordering::Greater)
                 });
 
-            if let Some((pos, _)) = closest_lymph_node {
-                for unit in combat_group.units.iter() {
-                    if let Ok((mut unit, _)) = pathogens.get_mut(*unit) {
-                        unit.target = Some(*pos);
-                    }
+            if let Some((&target, _)) = closest_lymph_node {
+                for &entity in combat_group.units.iter() {
+                    navigate_tx.send(NavigateUnit { entity, target });
                 }
             }
         }

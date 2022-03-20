@@ -60,7 +60,7 @@ impl Health {
 
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DeathBehavior {
-    Die,
+    Despawn,
     SwitchSides,
 }
 
@@ -77,7 +77,7 @@ impl Alignment {
             Alignment::Unaligned => Alignment::Unaligned,
             Alignment::Player => Alignment::Enemy,
             Alignment::Enemy => Alignment::Player,
-        }
+        };
     }
 
     pub fn is_player(&self) -> bool {

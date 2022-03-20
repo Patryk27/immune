@@ -1,15 +1,14 @@
 mod progress_bars;
 
-use bevy::math::vec2;
 use bevy::prelude::*;
 use instant::{Duration, Instant};
 
 use crate::compiling::RecompileEvent;
-use crate::level::{Level, LevelWaveOp};
+use crate::level::{Level, LevelPoint, LevelWaveOp};
+use crate::pathfinding::LevelLayoutChanged;
 use crate::systems::bio::{
     LymphNode, LymphNodeState, LymphNodeTarget, Wall, WallFadeIn, WallFadeOut,
 };
-use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Alignment;
 use crate::tutorial::TutorialState;
 
@@ -72,17 +71,15 @@ fn progress(
     mut materials: ResMut<Assets<ColorMaterial>>,
     assets: Res<AssetServer>,
     mut state: ResMut<GameState>,
-    walls: Query<(Entity, &Transform), With<Wall>>,
+    walls: Query<(Entity, &Wall)>,
     mut level: ResMut<Level>,
+    mut level_changed_tx: EventWriter<LevelLayoutChanged>,
     mut recompile_event_tx: EventWriter<RecompileEvent>,
     lymph_nodes: Query<&Alignment, With<LymphNode>>,
 ) {
     if state.game_over {
         return;
     }
-
-    let build_pos =
-        |x: i32, y: i32| vec2((x as f32) * Wall::SIZE, (y as f32) * Wall::SIZE);
 
     loop {
         match state.vm {
@@ -113,19 +110,19 @@ fn progress(
 
                 match op {
                     LevelWaveOp::AddWall { x, y } => {
-                        Wall::spawn(&mut commands, &assets, build_pos(*x, *y));
+                        Wall {
+                            pos: LevelPoint::new(*x, *y),
+                        }
+                        .spawn(&mut commands, &assets);
+
+                        level_changed_tx.send(LevelLayoutChanged);
                     }
 
                     LevelWaveOp::RemoveWall { x, y } => {
                         sleep = false;
 
-                        let pos = build_pos(*x, *y) * PHYSICS_SCALE;
-
-                        for (entity, transform) in walls.iter() {
-                            if (pos.x - transform.translation.x).abs() < 0.001
-                                && (pos.y - transform.translation.y).abs()
-                                    < 0.001
-                            {
+                        for (entity, wall) in walls.iter() {
+                            if wall.pos.x == *x && wall.pos.y == *y {
                                 sleep = true;
 
                                 commands.entity(entity).remove::<WallFadeIn>();
@@ -133,12 +130,15 @@ fn progress(
                                 commands
                                     .entity(entity)
                                     .insert(WallFadeOut::default());
+
+                                level_changed_tx.send(LevelLayoutChanged);
                             }
                         }
                     }
 
                     LevelWaveOp::AddLymphNode { x, y, alignment } => {
                         LymphNode {
+                            pos: LevelPoint::new(*x, *y),
                             resource: None,
                             target: LymphNodeTarget::Outside,
                             product: None,
@@ -155,10 +155,10 @@ fn progress(
                             &mut meshes,
                             &mut materials,
                             &assets,
-                            build_pos(*x, *y),
                             *alignment,
                         );
 
+                        level_changed_tx.send(LevelLayoutChanged);
                         recompile_event_tx.send(RecompileEvent);
                     }
                 }

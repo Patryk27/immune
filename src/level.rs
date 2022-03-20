@@ -1,7 +1,10 @@
 mod gen;
 
+use bevy::math::{vec2, Vec2};
 use nalgebra::Point2;
 
+use crate::systems::bio::Wall;
+use crate::systems::physics::PHYSICS_SCALE;
 use crate::systems::units::Alignment;
 
 pub type LevelPoint = Point2<i32>;
@@ -16,6 +19,8 @@ pub struct Level {
 }
 
 impl Level {
+    pub const FIELD_SIZE: f32 = Wall::SIZE * PHYSICS_SCALE;
+
     pub fn start() -> Self {
         gen::start()
     }
@@ -24,7 +29,6 @@ impl Level {
         gen::progress(self)
     }
 
-    // TODO(pwy) add memoization
     pub fn bounds(&self) -> (i32, i32, i32, i32) {
         let mut min_x = 0;
         let mut min_y = 0;
@@ -39,6 +43,19 @@ impl Level {
         }
 
         (min_x, min_y, max_x, max_y)
+    }
+
+    pub fn world_to_local(pos: Vec2) -> LevelPoint {
+        let pos = pos / Self::FIELD_SIZE;
+
+        LevelPoint::new(pos.x as i32, pos.y as i32)
+    }
+
+    pub fn local_to_world(pos: LevelPoint) -> Vec2 {
+        vec2(
+            (pos.x as f32) * Self::FIELD_SIZE,
+            (pos.y as f32) * Self::FIELD_SIZE,
+        )
     }
 }
 
